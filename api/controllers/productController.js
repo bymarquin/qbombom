@@ -71,7 +71,7 @@ exports.create = async (req, res) => {
 
     if (Array.isArray(variations) && variations.length > 0) {
       await ProductVariation.bulkCreate(
-        variations.map((v) => ({ name: v.name, price: v.price, productId: product.id }))
+        variations.map((v) => ({ name: v.name, price: v.price, maxAdditionals: v.maxAdditionals ?? null, productId: product.id }))
       );
     }
 
@@ -102,7 +102,7 @@ exports.update = async (req, res) => {
       await ProductVariation.destroy({ where: { productId: product.id } });
       if (variations.length > 0) {
         await ProductVariation.bulkCreate(
-          variations.map((v) => ({ name: v.name, price: v.price, productId: product.id }))
+          variations.map((v) => ({ name: v.name, price: v.price, maxAdditionals: v.maxAdditionals ?? null, productId: product.id }))
         );
       }
     }
