@@ -235,11 +235,12 @@
 </template>
 
 <script setup>
-import { ref, shallowRef, computed, onMounted, onUnmounted, watch } from "vue";
+import { ref, shallowRef, computed, onMounted, onUnmounted } from "vue";
 import { useDark, useToggle } from "@vueuse/core";
 import { useToastStore } from "@/stores/toast";
 import { CatalogService, OrderService, SettingService } from "@/services/http";
 import { requestNotificationPermission, showNotification } from "@/utils/notifications";
+import { syncToLocalStorage } from "@/composables/useLocalStorage";
 import socket from "@/services/socket";
 import ProductModal from "@/components/customer/ProductModal.vue";
 import CartCheckout from "@/components/customer/CartCheckout.vue";
@@ -327,21 +328,8 @@ const checkout = ref(
   }),
 );
 
-watch(
-  carrinho,
-  (newVal) => {
-    localStorage.setItem("qbombom_carrinho", JSON.stringify(newVal));
-  },
-  { deep: true },
-);
-
-watch(
-  checkout,
-  (newVal) => {
-    localStorage.setItem("qbombom_checkout", JSON.stringify(newVal));
-  },
-  { deep: true },
-);
+syncToLocalStorage("qbombom_carrinho", carrinho);
+syncToLocalStorage("qbombom_checkout", checkout);
 
 const podeFinalizarPedido = computed(() => {
   if (!checkout.value.nome || !checkout.value.telefone) return false;
@@ -399,9 +387,9 @@ const carregarRastreio = async () => {
   try {
     const { data } = await OrderService.trackPublicOrder(rastreioAtual.value);
     pedidoRastreado.value = data;
-  } catch {
-    if (false?.status === 404) {
-      limparRastreio(); // O pedido foi deletado ou é antigo/inválido
+  } catch (error) {
+    if (error?.response?.status === 404) {
+      limparRastreio();
     }
   }
 };

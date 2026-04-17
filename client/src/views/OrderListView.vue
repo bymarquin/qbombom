@@ -504,11 +504,13 @@
 </template>
 
 <script setup>
-import { ref, shallowRef, onMounted, computed, onUnmounted } from "vue";
+import { ref, shallowRef, onMounted, computed } from "vue";
 import { Printer, CheckCircle2, Package, Check, RefreshCw, X } from "lucide-vue-next";
 import { OrderService, AuthService } from "@/services/http";
 import { useToastStore } from "@/stores/toast";
-import socket from "@/services/socket";
+import { useOrderSocket } from "@/composables/useOrderSocket";
+import { useOrderStatus } from "@/composables/useOrderStatus";
+import { formatarMoeda } from "@/utils/formatters";
 import { printReceipt } from "@/utils/printReceipt";
 
 const userRole = AuthService.getRole();
@@ -521,73 +523,39 @@ const showModal = ref(false);
 const selectedOrder = ref(null);
 const loadingItems = ref(false);
 
-onMounted(() => {
-  loadData();
-
-  // Conecta o socket se não estiver conectado (Real-time updates)
-  if (!socket.connected) {
-    socket.connect();
+function onOrderCreated(newOrder) {
+  const exists = orders.value.some((o) => o.id === newOrder.id);
+  if (!exists) {
+    orders.value = [newOrder, ...orders.value];
+    toast.success(`Novo pedido recebido: #${newOrder.trackingCode || newOrder.id.slice(0, 8)}`);
   }
+}
 
-  // Escuta novos pedidos
-  socket.on("orderCreated", (newOrder) => {
-    // Verifica se já não existe para evitar duplicação
-    const exists = orders.value.some((o) => o.id === newOrder.id);
-    if (!exists) {
-      orders.value = [newOrder, ...orders.value]; // Trigger reactivity by creating a new array
-      toast.success(`Novo pedido recebido: #${newOrder.trackingCode || newOrder.id.slice(0, 8)}`, {
-        duration: 5000,
-      });
+function onOrderUpdated(updated) {
+  const idx = orders.value.findIndex(
+    (o) => o.id === updated.id || o.trackingCode === updated.trackingCode,
+  );
 
-      // Opcional: Tocar um som de notificação aqui
-      // const audio = new Audio('/notification.mp3'); audio.play().catch(e => console.log(e));
+  if (idx !== -1) {
+    const newOrders = [...orders.value];
+    newOrders[idx] = { ...newOrders[idx], ...updated };
+    orders.value = newOrders;
+
+    if (selectedOrder.value?.id === updated.id || selectedOrder.value?.trackingCode === updated.trackingCode) {
+      Object.assign(selectedOrder.value, updated);
     }
-  });
 
-  // Escuta atualizações de pedidos (status, pagamento, comprovantes)
-  socket.on("orderUpdated", (updatedData) => {
-    // updatedData pode ser o pedido inteiro ou apenas um fragmento enviado pelo uploadReceipt
-    const idx = orders.value.findIndex(
-      (o) => o.id === updatedData.id || o.trackingCode === updatedData.trackingCode,
-    );
+    if (updated.message) toast.info(updated.message);
+  } else {
+    loadData();
+  }
+}
 
-    if (idx !== -1) {
-      // Atualiza as propriedades na lista imutavelmente para shallowRef
-      const newOrders = [...orders.value];
-      newOrders[idx] = { ...newOrders[idx] };
+useOrderSocket({ onCreated: onOrderCreated, onUpdated: onOrderUpdated });
 
-      if (updatedData.status) newOrders[idx].status = updatedData.status;
-      if (updatedData.paymentStatus) newOrders[idx].paymentStatus = updatedData.paymentStatus;
-      if (updatedData.receiptUrl) newOrders[idx].receiptUrl = updatedData.receiptUrl;
+const { statusLabel, statusClass } = useOrderStatus();
 
-      orders.value = newOrders;
-
-      // Atualiza o modal caso esteja aberto no mesmo pedido
-      if (
-        selectedOrder.value &&
-        (selectedOrder.value.id === updatedData.id ||
-          selectedOrder.value.trackingCode === updatedData.trackingCode)
-      ) {
-        if (updatedData.status) selectedOrder.value.status = updatedData.status;
-        if (updatedData.paymentStatus)
-          selectedOrder.value.paymentStatus = updatedData.paymentStatus;
-        if (updatedData.receiptUrl) selectedOrder.value.receiptUrl = updatedData.receiptUrl;
-      }
-
-      if (updatedData.message) {
-        toast.info(updatedData.message); // Ex: "Novo comprovante anexado"
-      }
-    } else {
-      // Se não achou na lista, talvez valha a pena recarregar a lista inteira
-      loadData();
-    }
-  });
-});
-
-onUnmounted(() => {
-  socket.off("orderCreated");
-  socket.off("orderUpdated");
-});
+onMounted(loadData);
 
 const loadData = async () => {
   loadingData.value = true;
@@ -693,7 +661,7 @@ const updateStatusForOrder = async (order, newStatus) => {
   try {
     await OrderService.updateOrderStatus(order.id, newStatus);
     toast.success(
-      `Pedido #${order.trackingCode || order.id.slice(0, 8)} atualizado para: ${formatStatus(newStatus)}`,
+      `Pedido #${order.trackingCode || order.id.slice(0, 8)} atualizado para: ${statusLabel(newStatus)}`,
     );
 
     // Atualiza na listagem principal de forma imutável
@@ -761,18 +729,6 @@ const formatDateOnlyTime = (dateString) => {
   return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 };
 
-const formatStatus = (status) => {
-  const map = {
-    aguardando_pagamento: "Aguardando Pagamento",
-    novo: "Novo",
-    em_preparo: "Em Preparo",
-    pronto: "Pronto",
-    em_rota: "Em Rota de Entrega",
-    entregue: "Entregue / Finalizado",
-    cancelado: "Cancelado",
-  };
-  return map[status] || status;
-};
 </script>
 
 <style scoped>

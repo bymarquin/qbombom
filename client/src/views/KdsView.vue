@@ -187,10 +187,8 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToastStore } from '@/stores/toast'
 import { OrderService, AuthService } from '@/services/http'
-import socket from '@/services/socket'
+import { useOrderSocket } from '@/composables/useOrderSocket'
 import { LogOut, Clock, AlertCircle, Flame, CheckCircle2, ChefHat } from 'lucide-vue-next'
-
-// Reutilizamos a lógica em um micro-componente interno
 import PedidoCard from '@/components/kds/PedidoCard.vue'
 
 const router = useRouter()
@@ -212,98 +210,67 @@ const atualizarRelogio = () => {
   relogio.value = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 }
 
-// Buscar Pedidos Iniciais
 const carregarPedidos = async () => {
   try {
     const { data } = await OrderService.getOrders()
-    // Exibe do mais antigo para o mais novo no topo
     pedidos.value = data.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
     isOnline.value = true
-  } catch (err) {
-    console.error('Falha ao sincronizar KDS', err)
+  } catch {
     isOnline.value = false
   }
 }
 
-const configurarWebsocket = () => {
-  socket.connect()
+function onOrderCreated(novoPedido) {
+  toast.info(`Novo pedido recebido!`)
+  pedidos.value.push(novoPedido)
+}
 
-  socket.on('connect', () => {
-    isOnline.value = true
-    toast.success('KDS Conectado ao servidor!')
-  })
+function onOrderUpdated(atualizado) {
+  const index = pedidos.value.findIndex((p) => p.id === atualizado.id)
+  if (index === -1) return
+  if (atualizado.status === 'entregue' || atualizado.status === 'cancelado') {
+    pedidos.value.splice(index, 1)
+  } else {
+    pedidos.value[index].status = atualizado.status
+  }
+}
 
-  socket.on('disconnect', () => {
-    isOnline.value = false
-    toast.error('KDS perdeu a conexão. Tentando reconectar...')
-  })
-
-  // Novo pedido criado no PDV
-  socket.on('orderCreated', (novoPedido) => {
-    // Toca um sonzinho rápido (opcional, só visual por enquanto)
-    toast.info(`Novo pedido #${novoPedido.id} recebido!`)
-
-    // Adiciona na lista
-    pedidos.value.push(novoPedido)
-  })
-
-  // Pedido alterado (ex: outro monitor KDS finalizou)
-  socket.on('orderUpdated', (pedidoAtualizado) => {
-    const index = pedidos.value.findIndex((p) => p.id === pedidoAtualizado.id)
-    if (index > -1) {
-      if (pedidoAtualizado.status === 'entregue') {
-        pedidos.value.splice(index, 1)
-      } else {
-        // Atualiza apenas os campos necessários, mantendo a reatividade
-        pedidos.value[index].status = pedidoAtualizado.status
-      }
-    }
-  })
+const TOAST_POR_STATUS = {
+  em_preparo: 'Pedido foi para a chapa!',
+  pronto: 'Pedido marcado como pronto!',
 }
 
 const atualizarStatus = async (id, novoStatus) => {
+  const index = pedidos.value.findIndex((p) => p.id === id)
+  if (index > -1) {
+    novoStatus === 'entregue'
+      ? pedidos.value.splice(index, 1)
+      : pedidos.value[index].status = novoStatus
+  }
+
   try {
-    // Optimistic UI (Avança visualmente antes da API responder para parecer instantâneo)
-    const pedidoIndex = pedidos.value.findIndex((p) => p.id === id)
-    if (pedidoIndex > -1) {
-      // Remove temporariamente se for entregue (arquivado), ou move
-      if (novoStatus === 'entregue') {
-        pedidos.value.splice(pedidoIndex, 1)
-      } else {
-        pedidos.value[pedidoIndex].status = novoStatus
-      }
-    }
-
     await OrderService.updateOrderStatus(id, novoStatus)
-
-    // Se não for 'entregue' manda pro BD normalmente e confia na alteração otimista
-    if (novoStatus === 'em_preparo') toast.success('Pedido foi para a chapa!')
-    if (novoStatus === 'pronto') toast.success('Pedido marcado como pronto!')
+    if (TOAST_POR_STATUS[novoStatus]) toast.success(TOAST_POR_STATUS[novoStatus])
   } catch {
-    // Reverte UI em caso de falha (Refaz fetch do estado real)
     carregarPedidos()
   }
 }
 
-onMounted(() => {
-  if (!AuthService.isAuthenticated()) {
-    router.push('/login')
-    return
-  }
+useOrderSocket({
+  onConnect:    () => { isOnline.value = true; toast.success('KDS conectado!') },
+  onDisconnect: () => { isOnline.value = false; toast.error('KDS perdeu conexão. Reconectando...') },
+  onCreated:    onOrderCreated,
+  onUpdated:    onOrderUpdated,
+})
 
+onMounted(() => {
+  if (!AuthService.isAuthenticated()) { router.push('/login'); return }
   atualizarRelogio()
   relogioInterval = setInterval(atualizarRelogio, 1000)
-
-  carregarPedidos(false)
-
-  // Substitui o Polling pelo WebSocket
-  configurarWebsocket()
+  carregarPedidos()
 })
 
-onUnmounted(() => {
-  clearInterval(relogioInterval)
-  socket.disconnect()
-})
+onUnmounted(() => clearInterval(relogioInterval))
 
 const fazerLogout = () => {
   AuthService.logout()

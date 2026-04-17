@@ -141,13 +141,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToastStore } from '@/stores/toast';
 import { OrderService, AuthService } from '@/services/http';
-import socket from '@/services/socket';
-import { 
-  LogOut, Package, Bike as Motorcycle, MapPin, Phone, 
+import { useOrderSocket } from '@/composables/useOrderSocket';
+import { formatarTempo, formatarMoeda } from '@/utils/formatters';
+import {
+  LogOut, Package, Bike as Motorcycle, MapPin, Phone,
   MapPinOff, CheckCircle2, CreditCard, Banknote
 } from 'lucide-vue-next';
 
@@ -167,47 +168,29 @@ const pedidosListados = computed(() => abaAtiva.value === 'pronto' ? pedidosPron
 const carregarPedidos = async () => {
   try {
     const { data } = await OrderService.getOrders();
-    // Exibe do mais antigo para o mais novo
     pedidos.value = data.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
     isOnline.value = true;
   } catch {
-    console.error('Falha ao sincronizar Entregas');
     isOnline.value = false;
   }
 };
 
-const configurarWebsocket = () => {
-  if (!socket.connected) socket.connect();
+function onOrderCreated(novoPedido) {
+  pedidos.value.push(novoPedido);
+}
 
-  socket.on('connect', () => {
-    isOnline.value = true;
-  });
-
-  socket.on('disconnect', () => {
-    isOnline.value = false;
-    toast.error('Sem conexão. Tentando reconectar...');
-  });
-
-  socket.on('orderCreated', (novoPedido) => {
-    pedidos.value.push(novoPedido);
-  });
-
-  socket.on('orderUpdated', (pedidoAtualizado) => {
-    const index = pedidos.value.findIndex(p => p.id === pedidoAtualizado.id);
-    if (index > -1) {
-      if (pedidoAtualizado.status === 'entregue' || pedidoAtualizado.status === 'cancelado') {
-        pedidos.value.splice(index, 1);
-      } else {
-        pedidos.value[index].status = pedidoAtualizado.status;
-      }
+function onOrderUpdated(atualizado) {
+  const index = pedidos.value.findIndex(p => p.id === atualizado.id);
+  if (index > -1) {
+    if (['entregue', 'cancelado'].includes(atualizado.status)) {
+      pedidos.value.splice(index, 1);
     } else {
-      // Pode ser que um pedido antigo foi atualizado e precisa entrar na lista
-      if (['pronto', 'em_rota'].includes(pedidoAtualizado.status)) {
-        pedidos.value.push(pedidoAtualizado);
-      }
+      pedidos.value[index].status = atualizado.status;
     }
-  });
-};
+  } else if (['pronto', 'em_rota'].includes(atualizado.status)) {
+    pedidos.value.push(atualizado);
+  }
+}
 
 const mudarStatus = async (id, novoStatus) => {
   try {
@@ -230,24 +213,18 @@ const mudarStatus = async (id, novoStatus) => {
   }
 };
 
-const fazerLogout = () => {
-  AuthService.logout();
-};
+const fazerLogout = () => AuthService.logout();
 
-import { formatarTempo, formatarMoeda } from "@/utils/formatters"
-
-onMounted(() => {
-  if (!AuthService.isAuthenticated()) {
-    router.push('/login');
-    return;
-  }
-  carregarPedidos();
-  configurarWebsocket();
+useOrderSocket({
+  onConnect:    () => { isOnline.value = true },
+  onDisconnect: () => { isOnline.value = false; toast.error('Sem conexão. Tentando reconectar...') },
+  onCreated:    onOrderCreated,
+  onUpdated:    onOrderUpdated,
 });
 
-onUnmounted(() => {
-  socket.off('orderUpdated');
-  socket.off('orderCreated');
+onMounted(() => {
+  if (!AuthService.isAuthenticated()) { router.push('/login'); return; }
+  carregarPedidos();
 });
 </script>
 

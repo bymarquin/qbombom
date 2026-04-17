@@ -77,7 +77,7 @@
             Faturamento
           </h3>
           <p class="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
-            {{ formatCurrency(metrics.revenue) }}
+            {{ formatarMoeda(metrics.revenue) }}
           </p>
         </div>
 
@@ -115,7 +115,7 @@
             Ticket Médio
           </h3>
           <p class="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
-            {{ formatCurrency(metrics.averageTicket) }}
+            {{ formatarMoeda(metrics.averageTicket) }}
           </p>
         </div>
 
@@ -210,13 +210,13 @@
                   <td class="px-6 py-4">
                     <span
                       class="px-2.5 py-1 rounded-md text-xs font-medium border"
-                      :class="getStatusClass(order.status)"
+                      :class="statusClass(order.status)"
                     >
-                      {{ getStatusLabel(order.status) }}
+                      {{ statusLabel(order.status) }}
                     </span>
                   </td>
                   <td class="px-6 py-4 font-medium text-neutral-900 dark:text-neutral-100">
-                    {{ formatCurrency(order.total) }}
+                    {{ formatarMoeda(order.total) }}
                   </td>
                 </tr>
               </tbody>
@@ -262,7 +262,7 @@
                   </p>
                 </div>
                 <div class="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                  {{ formatCurrency(prod.revenue) }}
+                  {{ formatarMoeda(prod.revenue) }}
                 </div>
               </li>
             </ul>
@@ -278,6 +278,8 @@ import { ref, onMounted } from 'vue'
 import { DollarSign, ShoppingBag, Receipt, XOctagon } from 'lucide-vue-next'
 import { DashboardService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
+import { formatarMoeda } from '@/utils/formatters'
+import { useOrderStatus } from '@/composables/useOrderStatus'
 
 const toast = useToastStore()
 const loading = ref(true)
@@ -312,40 +314,7 @@ const changePeriod = (newPeriod) => {
   loadDashboard()
 }
 
-onMounted(() => {
-  loadDashboard()
-})
+const { statusLabel, statusClass } = useOrderStatus()
 
-const formatCurrency = (val) => {
-  const number = typeof val === 'string' ? parseFloat(val) : val
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(number || 0)
-}
-
-const getStatusLabel = (status) => {
-  const map = {
-    novo: 'Novo',
-    em_preparo: 'Preparo',
-    pronto: 'Pronto',
-    entregue: 'Entregue',
-    cancelado: 'Cancelado',
-  }
-  return map[status] || status
-}
-
-const getStatusClass = (status) => {
-  switch (status) {
-    case 'novo':
-      return 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20'
-    case 'em_preparo':
-      return 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-500/20'
-    case 'pronto':
-      return 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/20'
-    case 'entregue':
-      return 'bg-neutral-50 dark:bg-neutral-800/50 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700'
-    case 'cancelado':
-      return 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20'
-    default:
-      return 'bg-neutral-50 dark:bg-neutral-950 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800'
-  }
-}
+onMounted(loadDashboard)
 </script>
