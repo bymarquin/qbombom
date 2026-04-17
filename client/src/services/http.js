@@ -2,7 +2,7 @@ import axios from 'axios'
 import { useToastStore } from '@/stores/toast'
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3000/api' : '/api')
+  import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3006/api' : '/api')
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -244,7 +244,7 @@ export const OrderService = {
     const payload = {};
     if (status) payload.status = status;
     if (paymentStatus) payload.paymentStatus = paymentStatus;
-    
+
     return api.patch(`/orders/${id}/status`, payload)
   },
 }

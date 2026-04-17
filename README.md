@@ -78,8 +78,8 @@ R2_CDN_URL=
 ### `client/.env`
 
 ```env
-VITE_API_URL=http://localhost:3000/api
-VITE_SOCKET_URL=http://localhost:3000
+VITE_API_URL=http://localhost:3006/api
+VITE_SOCKET_URL=http://localhost:3006
 ```
 
 ## Perfis de Acesso
