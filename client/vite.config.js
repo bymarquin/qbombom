@@ -47,8 +47,11 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,svg,woff2}'],
         runtimeCaching: [
           {
-            // Nunca cacheia chamadas de API — dados de pedidos devem ser sempre frescos
             urlPattern: /\/api\/.*/i,
+            handler: 'NetworkOnly',
+          },
+          {
+            urlPattern: /^https:\/\/pub-.*\.r2\.dev\/.*/i,
             handler: 'NetworkOnly',
           },
         ],
