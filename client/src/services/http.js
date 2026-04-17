@@ -321,6 +321,9 @@ export const UserService = {
   deleteUser(id) {
     return api.delete(`/users/${id}`)
   },
+  resendInvite(id) {
+    return api.post(`/users/${id}/invite`)
+  },
 }
 
 export default api

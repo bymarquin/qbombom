@@ -12,5 +12,6 @@ router.post('/', userController.create);
 router.get('/:id', userController.show);
 router.put('/:id', userController.update);
 router.delete('/:id', userController.destroy);
+router.post('/:id/invite', userController.resendInvite);
 
 module.exports = router;
