@@ -38,9 +38,7 @@
               <button
                 @click="copiarChave"
                 class="w-full py-2.5 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2"
-                :class="copiado
-                  ? 'bg-green-600 text-white'
-                  : 'bg-red-600 hover:bg-red-700 text-white'"
+                :class="copiado ? 'bg-green-600 text-white' : 'bg-red-600 hover:bg-red-700 text-white'"
               >
                 <Check v-if="copiado" class="w-4 h-4" />
                 <Copy v-else class="w-4 h-4" />
@@ -102,42 +100,27 @@
 import { ref, computed } from "vue";
 import { Check, Copy } from "lucide-vue-next";
 import { formatarMoeda } from "@/utils/formatters";
-import { generatePixPayload } from "@/utils/pix";
 import QrcodeVue from "qrcode.vue";
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   subtotalEnviado: { type: Number, required: true },
   checkoutEnviado: { type: Object, required: true },
-  pedidoCriado: { type: Object, default: null },
-  pixConfig: { type: Object, default: () => ({}) },
+  pixPayload: { type: String, default: "" },
 });
 
 const emit = defineEmits(["acompanhar", "fechar"]);
 
 const copiado = ref(false);
-
 const isPix = computed(() => props.checkoutEnviado.pagamento === "PIX");
-
-const pixPayload = computed(() => {
-  if (!isPix.value || !props.pedidoCriado || !props.pixConfig?.key) return "";
-  return generatePixPayload(
-    props.pixConfig.key,
-    props.pixConfig.type,
-    props.pixConfig.name,
-    props.pixConfig.city,
-    props.pedidoCriado.total,
-    props.pedidoCriado.id || "***",
-  );
-});
 
 const copiarChave = async () => {
   try {
-    await navigator.clipboard.writeText(pixPayload.value);
+    await navigator.clipboard.writeText(props.pixPayload);
     copiado.value = true;
     setTimeout(() => { copiado.value = false; }, 2000);
   } catch {
-    // sem feedback visual extra
+    // silent
   }
 };
 </script>

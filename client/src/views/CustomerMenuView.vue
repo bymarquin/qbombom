@@ -198,8 +198,7 @@
       v-model="telaSucesso"
       :subtotal-enviado="subtotalEnviado"
       :checkout-enviado="checkoutEnviado"
-      :pedido-criado="pedidoCriado"
-      :pix-config="pixConfig"
+      :pix-payload="pixPayloadSucesso"
       @acompanhar="abrirAcompanhamento"
       @fechar="fecharSucesso"
     />
@@ -243,6 +242,8 @@ import { useToastStore } from "@/stores/toast";
 import { CatalogService, OrderService, SettingService } from "@/services/http";
 import { requestNotificationPermission, showNotification } from "@/utils/notifications";
 import { syncToLocalStorage } from "@/composables/useLocalStorage";
+import { generatePixPayload } from "@/utils/pix";
+import { formatarMoeda } from "@/utils/formatters";
 import socket from "@/services/socket";
 import ProductModal from "@/components/customer/ProductModal.vue";
 import CartCheckout from "@/components/customer/CartCheckout.vue";
@@ -351,15 +352,13 @@ const checkoutEnviado = ref({});
 const subtotalEnviado = ref(0);
 const pedidoCriado = ref(null);
 
-const pixConfig = computed(() => {
-  const pix = storeSettings.value?.pix;
+const pixPayloadSucesso = computed(() => {
+  if (!pedidoCriado.value || !storeSettings.value?.pix?.key) return "";
+  const pix = storeSettings.value.pix;
   const profile = storeSettings.value?.profile;
-  return {
-    key: pix?.key || "",
-    type: pix?.type || "cpf",
-    name: profile?.name || "Qbombom",
-    city: (profile?.address?.city || "Sao Paulo").split("-")[0].trim(),
-  };
+  const name = profile?.name || "Qbombom";
+  const city = (profile?.address?.city || "Sao Paulo").split("-")[0].trim();
+  return generatePixPayload(pix.key, pix.type || "cpf", name, city, pedidoCriado.value.total, pedidoCriado.value.id || "***");
 });
 
 // --- Lógica Rastreio (Tracking) ---
@@ -544,8 +543,6 @@ const produtosFiltrados = computed(() => {
 const subtotal = computed(() => {
   return carrinho.value.reduce((acc, item) => acc + item.totalPrice * item.quantity, 0);
 });
-
-import { formatarMoeda } from "@/utils/formatters";
 
 // --- Lógica do Produto (Modal) ---
 const modalProduto = ref(false);
