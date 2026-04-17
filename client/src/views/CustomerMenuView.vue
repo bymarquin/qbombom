@@ -508,9 +508,12 @@ onMounted(() => {
         } else if (updatedOrder.status === "cancelado") {
           toast.info("Seu pedido foi cancelado.");
           showNotification("Pedido Cancelado", { body: "Seu pedido foi cancelado com sucesso." });
-        } else if (updatedOrder.status === "entregue" || updatedOrder.status === "finalizado") {
+        } else if (updatedOrder.status === "entregue") {
           toast.success("Pedido entregue! Bom apetite 😋");
           showNotification("Pedido Entregue! 😋", { body: "Bom apetite! Agradecemos a preferência." });
+        } else if (updatedOrder.status === "finalizado") {
+          toast.success("Obrigado pela preferência! 😋");
+          showNotification("Pedido Concluído! 🎉", { body: "Agradecemos a preferência. Até a próxima!" });
           limparRastreio();
         }
       }
