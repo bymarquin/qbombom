@@ -468,21 +468,20 @@
                   <PlusCircle class="w-4 h-4 text-red-600" />
                   {{ grupo.name }}
                 </h3>
-                <p class="text-xs text-neutral-500 dark:text-neutral-400">
-                  <span v-if="grupo.minChoices > 0">Mínimo: {{ grupo.minChoices }} | </span>
-                  Máximo: {{ grupo.maxChoices }} opções
-                  <span v-if="grupo.freeChoices > 0"> | ({{ grupo.freeChoices }} grátis)</span>
+                <p v-if="grupo.freeChoices > 0" class="text-xs text-neutral-500 dark:text-neutral-400">
+                  {{ grupo.freeChoices }} grátis
                 </p>
               </div>
               <span
-                class="text-xs font-medium px-2 py-1 rounded"
+                v-if="grupo.minChoices > 0"
+                class="text-xs font-semibold px-2 py-1 rounded-md border"
                 :class="
                   qtdSelecionadaNoGrupo(grupo.id) < grupo.minChoices
-                    ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                    : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+                    ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-100 dark:border-red-800/50'
+                    : 'bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700'
                 "
               >
-                {{ qtdSelecionadaNoGrupo(grupo.id) }} / {{ grupo.maxChoices }}
+                {{ qtdSelecionadaNoGrupo(grupo.id) }} / {{ grupo.minChoices }}
               </span>
             </div>
 
