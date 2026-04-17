@@ -78,7 +78,7 @@
             :class="
               categoriaAtiva === categoria.id
                 ? 'bg-red-600 text-white shadow-sm dark:shadow-none'
-                : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:bg-neutral-700'
+                : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700'
             "
           >
             {{ categoria.name }}
@@ -296,7 +296,7 @@
 
                 <div class="flex items-center bg-neutral-100 dark:bg-neutral-800 rounded-md">
                   <button
-                    class="px-2 py-1 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:bg-neutral-700 rounded-l-md"
+                    class="px-2 py-1 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-l-md"
                     @click="item.quantity > 1 ? item.quantity-- : null"
                   >
                     -
@@ -305,7 +305,7 @@
                     item.quantity
                   }}</span>
                   <button
-                    class="px-2 py-1 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:bg-neutral-700 rounded-r-md"
+                    class="px-2 py-1 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-r-md"
                     @click="item.quantity++"
                   >
                     +
@@ -555,7 +555,7 @@
           <div class="flex gap-3">
             <button
               @click="fecharModalProduto"
-              class="px-6 py-2.5 font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:bg-neutral-700 rounded-lg transition-colors duration-200"
+              class="px-6 py-2.5 font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors duration-200"
             >
               Cancelar
             </button>
@@ -655,7 +655,7 @@
         >
           <button
             @click="fecharModalPagamento"
-            class="px-5 py-2.5 font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:bg-neutral-700 rounded-lg transition-colors"
+            class="px-5 py-2.5 font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors"
           >
             Cancelar
           </button>

@@ -268,7 +268,7 @@
           </h3>
           <button
             @click="closeModal"
-            class="text-neutral-400 hover:text-neutral-600 dark:text-neutral-400 transition-colors rounded-full p-1 hover:bg-neutral-200 dark:bg-neutral-700"
+            class="text-neutral-400 hover:text-neutral-600 dark:text-neutral-400 transition-colors rounded-full p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700"
           >
             <X class="w-5 h-5" />
           </button>
