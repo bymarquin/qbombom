@@ -53,12 +53,6 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/kds',
-      name: 'kds',
-      component: () => import('../views/KdsView.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
       path: '/delivery',
       name: 'delivery',
       component: () => import('../views/DeliveryView.vue'),

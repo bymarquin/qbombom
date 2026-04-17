@@ -198,6 +198,8 @@
       v-model="telaSucesso"
       :subtotal-enviado="subtotalEnviado"
       :checkout-enviado="checkoutEnviado"
+      :pedido-criado="pedidoCriado"
+      :pix-config="pixConfig"
       @acompanhar="abrirAcompanhamento"
       @fechar="fecharSucesso"
     />
@@ -347,6 +349,18 @@ const enviando = ref(false);
 const telaSucesso = ref(false);
 const checkoutEnviado = ref({});
 const subtotalEnviado = ref(0);
+const pedidoCriado = ref(null);
+
+const pixConfig = computed(() => {
+  const pix = storeSettings.value?.pix;
+  const profile = storeSettings.value?.profile;
+  return {
+    key: pix?.key || "",
+    type: pix?.type || "cpf",
+    name: profile?.name || "Qbombom",
+    city: (profile?.address?.city || "Sao Paulo").split("-")[0].trim(),
+  };
+});
 
 // --- Lógica Rastreio (Tracking) ---
 const rastreioAberto = ref(false);
@@ -630,6 +644,7 @@ const enviarPedido = async () => {
     // Sucesso UI
     checkoutEnviado.value = { ...checkout.value };
     subtotalEnviado.value = subtotal.value;
+    pedidoCriado.value = response.data;
 
     sacolaAberta.value = false;
     telaSucesso.value = true;

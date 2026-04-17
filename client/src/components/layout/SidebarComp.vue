@@ -235,7 +235,6 @@ const roleLabel = computed(
       SUPER_ADMIN: "Super Admin",
       MANAGER: "Gerente",
       CASHIER: "Caixa",
-      PRODUCTION: "Produção",
       DELIVERY: "Entregador",
       VIEWER: "Visualizador",
     })[currentUserRole] ?? currentUserRole,

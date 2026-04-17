@@ -335,13 +335,6 @@
               {{ salvandoPedido ? 'Enviando...' : 'Cobrar e Produzir' }}
             </button>
             <button
-              @click="router.push('/kds')"
-              class="py-2.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2"
-            >
-              <ChefHat class="w-4 h-4" />
-              Ver KDS
-            </button>
-            <button
               @click="carrinho = []; nomeCliente = ''; telefoneCliente = ''; enderecoEntrega = ''"
               class="py-2.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2"
             >
@@ -666,7 +659,6 @@ import {
   Trash2,
   MessageSquareWarning,
   CreditCard,
-  ChefHat,
   XCircle,
   Plus,
   Coffee,
