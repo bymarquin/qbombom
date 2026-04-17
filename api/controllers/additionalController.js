@@ -15,8 +15,8 @@ exports.getAllGroups = async (req, res) => {
 
 exports.createGroup = async (req, res) => {
   try {
-    const { name, minChoices, maxChoices, freeChoices } = req.body;
-    const group = await AdditionalGroup.create({ name, minChoices: minChoices || 0, maxChoices: maxChoices || 5, freeChoices: freeChoices || 0 });
+    const { name } = req.body;
+    const group = await AdditionalGroup.create({ name, minChoices: 0, maxChoices: 99, freeChoices: 0 });
     res.status(201).json(group);
   } catch (error) {
     res.status(500).json({ error: 'Failed to create group' });

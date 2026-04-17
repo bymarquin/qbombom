@@ -415,7 +415,7 @@
                 <div class="px-4 py-3 flex items-center justify-between">
                   <div>
                     <p class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{{ group.name }}</p>
-                    <p class="text-xs text-neutral-400">Máx: {{ group.maxChoices }} itens · {{ group.items?.length || 0 }} opções</p>
+                    <p class="text-xs text-neutral-400">{{ group.items?.length || 0 }} opções</p>
                   </div>
                   <div class="flex items-center gap-1.5">
                     <button @click="editGroup(group)" class="p-1.5 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors">
@@ -454,10 +454,6 @@
               <form @submit.prevent="saveGroup" class="flex flex-col gap-3">
                 <p class="text-xs font-semibold text-neutral-700 dark:text-neutral-300">{{ groupForm.id ? 'Editar Grupo' : 'Novo Grupo' }}</p>
                 <input v-model="groupForm.name" type="text" required placeholder="Nome do grupo" class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 focus:outline-none focus:border-red-500" />
-                <div class="flex items-center gap-2">
-                  <input v-model="groupForm.maxChoices" type="number" min="1" required placeholder="Máx itens" class="w-28 px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 focus:outline-none focus:border-red-500" />
-                  <span class="text-xs text-neutral-400">itens que o cliente pode escolher</span>
-                </div>
                 <div class="flex justify-end gap-2">
                   <button type="button" @click="cancelGroupForm" class="px-3 py-1.5 text-xs text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 rounded hover:bg-neutral-200 transition-colors">Cancelar</button>
                   <button type="submit" class="px-3 py-1.5 text-xs text-white bg-indigo-600 rounded hover:bg-indigo-700 transition-colors">Salvar</button>
@@ -494,7 +490,7 @@
                 </div>
                 <div>
                   <p class="text-sm font-medium text-neutral-900 dark:text-neutral-100">{{ group.name }}</p>
-                  <p class="text-xs text-neutral-400">{{ group.items?.length || 0 }} opções · máx {{ group.maxChoices }}</p>
+                  <p class="text-xs text-neutral-400">{{ group.items?.length || 0 }} opções</p>
                 </div>
               </div>
             </div>
@@ -531,7 +527,7 @@ const allGroups = shallowRef([])
 const assignedGroupIds = ref(new Set())
 const loadingGroups = ref(false)
 const isCreatingGroup = ref(false)
-const groupForm = ref({ id: null, name: '', minChoices: 0, maxChoices: 5, freeChoices: 0 })
+const groupForm = ref({ id: null, name: '' })
 const newItemForm = ref({})
 
 onMounted(() => loadData())
@@ -714,7 +710,7 @@ const cancelGroupForm = () => {
 }
 
 const editGroup = (group) => {
-  groupForm.value = { id: group.id, name: group.name, minChoices: 0, maxChoices: group.maxChoices, freeChoices: 0 }
+  groupForm.value = { id: group.id, name: group.name }
   isCreatingGroup.value = true
 }
 
