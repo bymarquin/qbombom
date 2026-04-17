@@ -109,8 +109,10 @@
                   >Telefone/WhatsApp</label
                 >
                 <input
-                  v-model="form.profile.phone"
-                  type="text"
+                  :value="form.profile.phone"
+                  @input="form.profile.phone = mascararTelefone($event.target.value)"
+                  type="tel"
+                  inputmode="numeric"
                   class="w-full px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all"
                   placeholder="(00) 00000-0000"
                 />
@@ -617,6 +619,7 @@ import { ref, reactive, watch } from "vue";
 import { useToastStore } from "@/stores/toast";
 import { SettingService, WhatsAppService } from "@/services/http";
 import { onMounted } from "vue";
+import { mascararTelefone } from "@/utils/formatters";
 
 // Estado
 const toast = useToastStore();
