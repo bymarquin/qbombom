@@ -13,10 +13,11 @@ module.exports = (sequelize, DataTypes) => {
         as: 'variations',
         onDelete: 'CASCADE'
       });
-      Product.hasMany(models.AdditionalGroup, {
+      Product.belongsToMany(models.AdditionalGroup, {
+        through: models.ProductAdditionalGroup,
         foreignKey: 'productId',
+        otherKey: 'additionalGroupId',
         as: 'additionalGroups',
-        onDelete: 'CASCADE'
       });
       Product.hasMany(models.OrderItem, {
         foreignKey: 'productId',

@@ -3,14 +3,16 @@ const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class AdditionalGroup extends Model {
     static associate(models) {
-      AdditionalGroup.belongsTo(models.Product, {
-        foreignKey: 'productId',
-        as: 'product'
+      AdditionalGroup.belongsToMany(models.Product, {
+        through: models.ProductAdditionalGroup,
+        foreignKey: 'additionalGroupId',
+        otherKey: 'productId',
+        as: 'products',
       });
       AdditionalGroup.hasMany(models.AdditionalItem, {
         foreignKey: 'additionalGroupId',
         as: 'items',
-        onDelete: 'CASCADE'
+        onDelete: 'CASCADE',
       });
     }
   }
@@ -18,36 +20,28 @@ module.exports = (sequelize, DataTypes) => {
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
+      primaryKey: true,
     },
     name: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: false,
     },
     minChoices: {
       type: DataTypes.INTEGER,
-      defaultValue: 0
+      defaultValue: 0,
     },
     maxChoices: {
       type: DataTypes.INTEGER,
-      defaultValue: 1
+      defaultValue: 1,
     },
     freeChoices: {
       type: DataTypes.INTEGER,
-      defaultValue: 0
+      defaultValue: 0,
     },
-    productId: {
-      type: DataTypes.UUID,
-      allowNull: false,
-      references: {
-        model: 'Products',
-        key: 'id'
-      }
-    }
   }, {
     sequelize,
     modelName: 'AdditionalGroup',
-    tableName: 'AdditionalGroups'
+    tableName: 'AdditionalGroups',
   });
   return AdditionalGroup;
 };

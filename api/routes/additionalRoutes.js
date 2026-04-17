@@ -4,14 +4,21 @@ const additionalController = require('../controllers/additionalController');
 const auth = require('../middlewares/auth');
 const checkPermission = require('../middlewares/checkPermission');
 
-// GROUPS
-router.post('/groups', auth, checkPermission('products.update'), additionalController.createGroup);
-router.put('/groups/:id', auth, checkPermission('products.update'), additionalController.updateGroup);
-router.delete('/groups/:id', auth, checkPermission('products.update'), additionalController.destroyGroup);
+const guard = [auth, checkPermission('products.update')];
+
+// GROUPS globais
+router.get('/groups', auth, checkPermission('products.update'), additionalController.getAllGroups);
+router.post('/groups', ...guard, additionalController.createGroup);
+router.put('/groups/:id', ...guard, additionalController.updateGroup);
+router.delete('/groups/:id', ...guard, additionalController.destroyGroup);
+
+// Assign / unassign grupo a produto
+router.post('/groups/:id/assign', ...guard, additionalController.assignGroup);
+router.delete('/groups/:id/assign/:productId', ...guard, additionalController.unassignGroup);
 
 // ITEMS
-router.post('/items', auth, checkPermission('products.update'), additionalController.createItem);
-router.put('/items/:id', auth, checkPermission('products.update'), additionalController.updateItem);
-router.delete('/items/:id', auth, checkPermission('products.update'), additionalController.destroyItem);
+router.post('/items', ...guard, additionalController.createItem);
+router.put('/items/:id', ...guard, additionalController.updateItem);
+router.delete('/items/:id', ...guard, additionalController.destroyItem);
 
 module.exports = router;

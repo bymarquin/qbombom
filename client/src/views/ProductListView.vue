@@ -367,229 +367,130 @@
       v-if="showConfigModal && activeProduct"
       class="fixed inset-0 bg-neutral-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
     >
-      <div
-        class="bg-white dark:bg-neutral-900 rounded-2xl w-full max-w-2xl shadow-2xl border border-neutral-100 dark:border-neutral-800/50 overflow-hidden max-h-[90vh] flex flex-col transform transition-all"
-      >
-        <div
-          class="px-8 py-6 border-b border-neutral-100 dark:border-neutral-800/50 flex justify-between items-center shrink-0 bg-neutral-50 dark:bg-neutral-950/50"
-        >
+      <div class="bg-white dark:bg-neutral-900 rounded-2xl w-full max-w-4xl shadow-2xl border border-neutral-100 dark:border-neutral-800/50 overflow-hidden max-h-[90vh] flex flex-col">
+        <!-- Header -->
+        <div class="px-6 py-5 border-b border-neutral-100 dark:border-neutral-800/50 flex justify-between items-center shrink-0 bg-neutral-50 dark:bg-neutral-950/50">
           <div>
-            <h3 class="text-xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
-              Complementos
-            </h3>
-            <p class="text-sm text-neutral-500 dark:text-neutral-500 mt-1">
-              {{ activeProduct.name }}
-            </p>
+            <h3 class="text-lg font-bold text-neutral-900 dark:text-neutral-100">Complementos</h3>
+            <p class="text-sm text-neutral-500 mt-0.5">{{ activeProduct.name }}</p>
           </div>
-          <button
-            @click="closeConfigModal"
-            class="text-neutral-400 hover:text-neutral-600 dark:text-neutral-400 transition-colors rounded-full p-1 hover:bg-neutral-200 dark:bg-neutral-700"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              ></path>
-            </svg>
+          <button @click="closeConfigModal" class="text-neutral-400 hover:text-neutral-600 rounded-full p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-8 bg-neutral-50 dark:bg-neutral-950/30">
-          <!-- Lista de Grupos -->
-          <div class="space-y-6">
-            <div v-if="loadingGroups" class="flex justify-center py-8">
-              <div
-                class="w-6 h-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin"
-              ></div>
+        <div class="flex flex-1 overflow-hidden">
+          <!-- Coluna esquerda: grupos globais -->
+          <div class="w-1/2 border-r border-neutral-100 dark:border-neutral-800/50 flex flex-col overflow-hidden">
+            <div class="px-5 py-3 border-b border-neutral-100 dark:border-neutral-800/50 flex items-center justify-between shrink-0">
+              <span class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Todos os Grupos</span>
+              <button @click="openNewGroupForm" class="text-xs font-medium text-red-600 hover:text-red-700 flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Novo grupo
+              </button>
             </div>
 
-            <div
-              v-else-if="!activeProductGroups || activeProductGroups.length === 0"
-              class="text-center py-8 bg-white dark:bg-neutral-900 rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700"
-            >
-              <p class="text-neutral-500 dark:text-neutral-500 text-sm">
-                Nenhum grupo de complemento cadastrado.
-              </p>
-            </div>
-
-            <!-- Grupo Item -->
-            <div
-              v-else
-              v-for="group in activeProductGroups"
-              :key="group.id"
-              class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden shadow-sm dark:shadow-none"
-            >
-              <!-- Header do Grupo -->
-              <div
-                class="p-4 bg-neutral-50 dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800 flex justify-between items-center"
-              >
-                <div>
-                  <h4 class="font-bold text-neutral-900 dark:text-neutral-100 text-sm">
-                    {{ group.name }}
-                  </h4>
-                  <p class="text-xs text-neutral-500 dark:text-neutral-500">
-                    Mín: {{ group.minChoices }} | Máx: {{ group.maxChoices }} | Grátis:
-                    {{ group.freeChoices }}
-                  </p>
-                </div>
-                <div class="flex items-center gap-2">
-                  <button
-                    @click="editGroup(group)"
-                    title="Editar Grupo"
-                    class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
-                  >
-                    <Pencil class="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    @click="deleteGroup(group.id)"
-                    title="Excluir Grupo"
-                    class="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
-                  >
-                    <Trash2 class="w-3.5 h-3.5" />
-                  </button>
-                </div>
+            <div class="flex-1 overflow-y-auto p-4 space-y-3">
+              <div v-if="loadingGroups" class="flex justify-center py-8">
+                <div class="w-5 h-5 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
               </div>
 
-              <!-- Itens do Grupo -->
-              <div class="p-4">
-                <table class="w-full text-left text-sm mb-3">
-                  <tbody>
-                    <tr v-if="!group.items || group.items.length === 0">
-                      <td
-                        class="text-xs text-neutral-400 py-2 italic text-center border-b border-neutral-100 dark:border-neutral-800/50 last:border-0"
-                      >
-                        Nenhum item neste grupo.
-                      </td>
-                    </tr>
-                    <tr
-                      v-for="item in group.items"
-                      :key="item.id"
-                      class="border-b border-neutral-100 dark:border-neutral-800/50 last:border-0"
-                    >
-                      <td class="py-2.5 font-medium text-neutral-700 dark:text-neutral-300">
-                        {{ item.name }}
-                      </td>
-                      <td class="py-2.5 text-neutral-500 dark:text-neutral-500 text-right w-24">
-                        R$ {{ parseFloat(item.price).toFixed(2) }}
-                      </td>
-                      <td class="py-2.5 text-right w-16">
-                        <button
-                          @click="deleteItem(item.id)"
-                          class="text-red-500 hover:text-red-700 p-1"
-                        >
-                          <Trash2 class="w-3.5 h-3.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div v-else-if="allGroups.length === 0" class="text-center py-8 text-neutral-400 text-sm">
+                Nenhum grupo criado ainda.
+              </div>
 
-                <!-- Add Item Form Inline -->
-                <form
-                  @submit.prevent="saveItem(group.id)"
-                  class="flex items-end gap-2 bg-neutral-50 dark:bg-neutral-950 p-2 rounded-lg border border-neutral-100 dark:border-neutral-800/50"
-                >
-                  <div class="flex-1">
-                    <input
-                      v-model="newItemForm[group.id].name"
-                      type="text"
-                      placeholder="Nome do item (ex: Bacon)"
-                      required
-                      class="w-full px-2.5 py-1.5 text-xs border border-neutral-300 dark:border-neutral-700 rounded focus:outline-none focus:border-red-500"
-                    />
+              <div
+                v-for="group in allGroups"
+                :key="group.id"
+                class="bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden"
+              >
+                <div class="px-4 py-3 flex items-center justify-between">
+                  <div>
+                    <p class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{{ group.name }}</p>
+                    <p class="text-xs text-neutral-400">Máx: {{ group.maxChoices }} itens · {{ group.items?.length || 0 }} opções</p>
                   </div>
-                  <div class="w-24">
-                    <input
-                      v-model="newItemForm[group.id].price"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="Preço"
-                      required
-                      class="w-full px-2.5 py-1.5 text-xs border border-neutral-300 dark:border-neutral-700 rounded focus:outline-none focus:border-red-500"
-                    />
+                  <div class="flex items-center gap-1.5">
+                    <button @click="editGroup(group)" class="p-1.5 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors">
+                      <Pencil class="w-3.5 h-3.5" />
+                    </button>
+                    <button @click="deleteGroup(group.id)" class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors">
+                      <Trash2 class="w-3.5 h-3.5" />
+                    </button>
                   </div>
-                  <button
-                    type="submit"
-                    class="px-3 py-1.5 bg-neutral-800 text-white rounded text-xs font-medium hover:bg-neutral-900 transition-colors"
-                  >
-                    Add
-                  </button>
+                </div>
+
+                <!-- Itens do grupo -->
+                <div class="px-4 pb-3 space-y-0.5">
+                  <div v-for="item in group.items" :key="item.id" class="flex justify-between items-center text-xs text-neutral-600 dark:text-neutral-400 py-0.5">
+                    <span>{{ item.name }}</span>
+                    <div class="flex items-center gap-2">
+                      <span>R$ {{ parseFloat(item.price).toFixed(2) }}</span>
+                      <button @click="deleteItem(item.id, group.id)" class="text-red-400 hover:text-red-600 transition-colors">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Add item inline -->
+                <form @submit.prevent="saveItem(group.id)" class="flex gap-2 px-4 pb-3">
+                  <input v-model="newItemForm[group.id].name" type="text" placeholder="+ item" required class="flex-1 px-2.5 py-1.5 text-xs border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 focus:outline-none focus:border-red-500" />
+                  <input v-model="newItemForm[group.id].price" type="number" step="0.01" min="0" placeholder="R$" required class="w-16 px-2 py-1.5 text-xs border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 focus:outline-none focus:border-red-500" />
+                  <button type="submit" class="px-2.5 py-1.5 bg-neutral-800 dark:bg-neutral-700 text-white rounded text-xs font-medium hover:bg-neutral-900 transition-colors">Add</button>
                 </form>
               </div>
             </div>
+
+            <!-- Form novo/editar grupo -->
+            <div v-if="isCreatingGroup" class="border-t border-neutral-200 dark:border-neutral-800 p-4 bg-white dark:bg-neutral-900 shrink-0">
+              <form @submit.prevent="saveGroup" class="flex flex-col gap-3">
+                <p class="text-xs font-semibold text-neutral-700 dark:text-neutral-300">{{ groupForm.id ? 'Editar Grupo' : 'Novo Grupo' }}</p>
+                <input v-model="groupForm.name" type="text" required placeholder="Nome do grupo" class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 focus:outline-none focus:border-red-500" />
+                <div class="flex items-center gap-2">
+                  <input v-model="groupForm.maxChoices" type="number" min="1" required placeholder="Máx itens" class="w-28 px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 focus:outline-none focus:border-red-500" />
+                  <span class="text-xs text-neutral-400">itens que o cliente pode escolher</span>
+                </div>
+                <div class="flex justify-end gap-2">
+                  <button type="button" @click="cancelGroupForm" class="px-3 py-1.5 text-xs text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 rounded hover:bg-neutral-200 transition-colors">Cancelar</button>
+                  <button type="submit" class="px-3 py-1.5 text-xs text-white bg-indigo-600 rounded hover:bg-indigo-700 transition-colors">Salvar</button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
 
-        <!-- Footer / Novo Grupo Btn -->
-        <div
-          class="p-6 bg-white dark:bg-neutral-900 border-t border-neutral-100 dark:border-neutral-800/50 shrink-0"
-        >
-          <form
-            v-if="isCreatingGroup"
-            @submit.prevent="saveGroup"
-            class="bg-neutral-50 dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 mb-4"
-          >
-            <h4 class="text-sm font-bold text-neutral-900 dark:text-neutral-100 mb-3">
-              {{ groupForm.id ? 'Editar Grupo' : 'Novo Grupo de Complementos' }}
-            </h4>
-            <div class="flex flex-col gap-3 mb-4">
-              <div>
-                <label class="text-xs font-medium text-neutral-700 dark:text-neutral-300">Nome do Grupo</label>
-                <input
-                  v-model="groupForm.name"
-                  type="text"
-                  required
-                  class="w-full mt-1 px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded focus:outline-none focus:border-red-500"
-                  placeholder="Ex: Complementos Pagos"
-                />
+          <!-- Coluna direita: grupos vinculados ao produto -->
+          <div class="w-1/2 flex flex-col overflow-hidden">
+            <div class="px-5 py-3 border-b border-neutral-100 dark:border-neutral-800/50 shrink-0">
+              <span class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Vinculados a este produto</span>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 space-y-2">
+              <div v-if="allGroups.length === 0" class="text-center py-8 text-neutral-400 text-sm">
+                Crie grupos ao lado primeiro.
               </div>
-              <div>
-                <label class="text-xs font-medium text-neutral-700 dark:text-neutral-300">Quantos itens o cliente pode escolher?</label>
-                <input
-                  v-model="groupForm.maxChoices"
-                  type="number"
-                  min="1"
-                  required
-                  class="w-full mt-1 px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded focus:outline-none focus:border-red-500"
-                  placeholder="Ex: 5"
-                />
+
+              <div
+                v-for="group in allGroups"
+                :key="group.id"
+                @click="toggleAssign(group)"
+                class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all"
+                :class="isAssigned(group.id)
+                  ? 'border-red-500 bg-red-50 dark:bg-red-900/20 ring-1 ring-red-500'
+                  : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-red-300 dark:hover:border-red-700'"
+              >
+                <div
+                  class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
+                  :class="isAssigned(group.id) ? 'border-red-600 bg-red-600' : 'border-neutral-300 dark:border-neutral-600'"
+                >
+                  <svg v-if="isAssigned(group.id)" class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-neutral-900 dark:text-neutral-100">{{ group.name }}</p>
+                  <p class="text-xs text-neutral-400">{{ group.items?.length || 0 }} opções · máx {{ group.maxChoices }}</p>
+                </div>
               </div>
             </div>
-            <div class="flex justify-end gap-2">
-              <button
-                type="button"
-                @click="cancelGroupForm"
-                class="px-3 py-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-400 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded hover:bg-neutral-50 dark:hover:bg-neutral-800/50 dark:bg-neutral-950"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                class="px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700"
-              >
-                Salvar Grupo
-              </button>
-            </div>
-          </form>
-
-          <button
-            v-else
-            @click="openNewGroupForm"
-            class="w-full py-3 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-xl text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:border-red-500 hover:text-red-600 transition-colors flex items-center justify-center gap-2"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 4v16m8-8H4"
-              ></path>
-            </svg>
-            Criar Novo Grupo de Complementos
-          </button>
+          </div>
         </div>
       </div>
     </div>
@@ -618,10 +519,11 @@ const cropperRef = ref(null)
 // --- ESTADOS DOS COMPLEMENTOS ---
 const showConfigModal = ref(false)
 const activeProduct = ref(null)
-const activeProductGroups = shallowRef([])
+const allGroups = shallowRef([])
+const assignedGroupIds = ref(new Set())
 const loadingGroups = ref(false)
 const isCreatingGroup = ref(false)
-const groupForm = ref({ id: null, name: '', minChoices: 0, maxChoices: 1, freeChoices: 0 })
+const groupForm = ref({ id: null, name: '', minChoices: 0, maxChoices: 5, freeChoices: 0 })
 const newItemForm = ref({})
 
 onMounted(() => loadData())
@@ -739,27 +641,32 @@ const deleteProduct = async (id) => {
 }
 
 // --- FUNÇÕES DOS COMPLEMENTOS ---
-const openConfigModal = (prod) => {
+const openConfigModal = async (prod) => {
   activeProduct.value = prod
   showConfigModal.value = true
-  loadGroups(prod.id)
+  await loadGroups(prod.id)
 }
 
 const closeConfigModal = () => {
   showConfigModal.value = false
   activeProduct.value = null
-  activeProductGroups.value = []
+  allGroups.value = []
+  assignedGroupIds.value = new Set()
   isCreatingGroup.value = false
 }
 
 const loadGroups = async (productId) => {
   loadingGroups.value = true
   try {
-    const res = await CatalogService.getProduct(productId, { all: true })
-    activeProductGroups.value = res.data.additionalGroups || []
+    const [allRes, prodRes] = await Promise.all([
+      AdditionalService.getGroups(),
+      CatalogService.getProduct(productId, { all: true }),
+    ])
+    allGroups.value = allRes.data
+    const assigned = prodRes.data.additionalGroups || []
+    assignedGroupIds.value = new Set(assigned.map((g) => g.id))
 
-    // Inicializar o formulário de novos itens para cada grupo
-    activeProductGroups.value.forEach((group) => {
+    allGroups.value.forEach((group) => {
       if (!newItemForm.value[group.id]) {
         newItemForm.value[group.id] = { name: '', price: 0 }
       }
@@ -769,6 +676,23 @@ const loadGroups = async (productId) => {
     toast.error('Erro ao carregar complementos')
   } finally {
     loadingGroups.value = false
+  }
+}
+
+const isAssigned = (groupId) => assignedGroupIds.value.has(groupId)
+
+const toggleAssign = async (group) => {
+  try {
+    if (isAssigned(group.id)) {
+      await AdditionalService.unassignGroup(group.id, activeProduct.value.id)
+      assignedGroupIds.value.delete(group.id)
+    } else {
+      await AdditionalService.assignGroup(group.id, activeProduct.value.id)
+      assignedGroupIds.value.add(group.id)
+    }
+    assignedGroupIds.value = new Set(assignedGroupIds.value)
+  } catch (error) {
+    toast.error('Erro ao atualizar vínculo')
   }
 }
 
@@ -782,25 +706,19 @@ const cancelGroupForm = () => {
 }
 
 const editGroup = (group) => {
-  groupForm.value = { ...group, minChoices: 0, freeChoices: 0 }
+  groupForm.value = { id: group.id, name: group.name, minChoices: 0, maxChoices: group.maxChoices, freeChoices: 0 }
   isCreatingGroup.value = true
 }
 
 const saveGroup = async () => {
   try {
-    const payload = {
-      ...groupForm.value,
-      productId: activeProduct.value.id,
-    }
-
     if (groupForm.value.id) {
-      await AdditionalService.updateGroup(groupForm.value.id, payload)
+      await AdditionalService.updateGroup(groupForm.value.id, groupForm.value)
       toast.success('Grupo atualizado!')
     } else {
-      await AdditionalService.createGroup(payload)
+      await AdditionalService.createGroup(groupForm.value)
       toast.success('Grupo criado!')
     }
-
     isCreatingGroup.value = false
     await loadGroups(activeProduct.value.id)
   } catch (error) {
@@ -810,7 +728,7 @@ const saveGroup = async () => {
 }
 
 const deleteGroup = async (id) => {
-  if (!confirm('Deseja excluir este grupo e todos os seus itens?')) return
+  if (!confirm('Excluir este grupo e todos os seus itens?')) return
   try {
     await AdditionalService.deleteGroup(id)
     toast.success('Grupo excluído!')
@@ -824,18 +742,8 @@ const deleteGroup = async (id) => {
 const saveItem = async (groupId) => {
   try {
     const itemData = newItemForm.value[groupId]
-    if (!itemData.name) return
-
-    const payload = {
-      ...itemData,
-      additionalGroupId: groupId,
-      status: true,
-    }
-
-    await AdditionalService.createItem(payload)
-    toast.success('Item adicionado!')
-
-    // Limpar o form
+    if (!itemData?.name) return
+    await AdditionalService.createItem({ ...itemData, additionalGroupId: groupId, status: true })
     newItemForm.value[groupId] = { name: '', price: 0 }
     await loadGroups(activeProduct.value.id)
   } catch (error) {
@@ -845,10 +753,8 @@ const saveItem = async (groupId) => {
 }
 
 const deleteItem = async (itemId) => {
-  if (!confirm('Deseja excluir este item?')) return
   try {
     await AdditionalService.deleteItem(itemId)
-    toast.success('Item excluído!')
     await loadGroups(activeProduct.value.id)
   } catch (error) {
     console.error(error)

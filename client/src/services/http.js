@@ -197,6 +197,9 @@ export const CatalogService = {
 }
 
 export const AdditionalService = {
+  getGroups() {
+    return api.get('/additionals/groups')
+  },
   createGroup(data) {
     return api.post('/additionals/groups', data)
   },
@@ -205,6 +208,12 @@ export const AdditionalService = {
   },
   deleteGroup(id) {
     return api.delete(`/additionals/groups/${id}`)
+  },
+  assignGroup(groupId, productId) {
+    return api.post(`/additionals/groups/${groupId}/assign`, { productId })
+  },
+  unassignGroup(groupId, productId) {
+    return api.delete(`/additionals/groups/${groupId}/assign/${productId}`)
   },
 
   createItem(data) {
