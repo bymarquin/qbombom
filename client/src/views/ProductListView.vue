@@ -442,8 +442,8 @@
 
                 <!-- Add item inline -->
                 <form @submit.prevent="saveItem(group.id)" class="flex gap-2 px-4 pb-3">
-                  <input v-model="newItemForm[group.id].name" type="text" placeholder="+ item" required class="flex-1 px-2.5 py-1.5 text-xs border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 focus:outline-none focus:border-red-500" />
-                  <input v-model="newItemForm[group.id].price" type="number" step="0.01" min="0" placeholder="R$" required class="w-16 px-2 py-1.5 text-xs border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 focus:outline-none focus:border-red-500" />
+                  <input v-model="newItemForm[group.id].name" type="text" placeholder="+ item" required class="flex-1 px-2.5 py-1.5 text-xs border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-red-500" />
+                  <input v-model="newItemForm[group.id].price" type="number" step="0.01" min="0" placeholder="R$" required class="w-16 px-2 py-1.5 text-xs border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-red-500" />
                   <button type="submit" class="px-2.5 py-1.5 bg-neutral-800 dark:bg-neutral-700 text-white rounded text-xs font-medium hover:bg-neutral-900 transition-colors">Add</button>
                 </form>
               </div>
@@ -453,7 +453,7 @@
             <div v-if="isCreatingGroup" class="border-t border-neutral-200 dark:border-neutral-800 p-4 bg-white dark:bg-neutral-900 shrink-0">
               <form @submit.prevent="saveGroup" class="flex flex-col gap-3">
                 <p class="text-xs font-semibold text-neutral-700 dark:text-neutral-300">{{ groupForm.id ? 'Editar Grupo' : 'Novo Grupo' }}</p>
-                <input v-model="groupForm.name" type="text" required placeholder="Nome do grupo" class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 focus:outline-none focus:border-red-500" />
+                <input v-model="groupForm.name" type="text" required placeholder="Nome do grupo" class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-red-500" />
                 <div class="flex justify-end gap-2">
                   <button type="button" @click="cancelGroupForm" class="px-3 py-1.5 text-xs text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 rounded hover:bg-neutral-200 transition-colors">Cancelar</button>
                   <button type="submit" class="px-3 py-1.5 text-xs text-white bg-indigo-600 rounded hover:bg-indigo-700 transition-colors">Salvar</button>
