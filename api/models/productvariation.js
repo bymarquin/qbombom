@@ -35,6 +35,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       defaultValue: 0
     },
+    maxAdditionals: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
     productId: {
       type: DataTypes.UUID,
       allowNull: false,

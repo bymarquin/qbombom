@@ -285,7 +285,15 @@
                   min="0"
                   placeholder="Preço"
                   required
-                  class="w-28 px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15"
+                  class="w-24 px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15"
+                />
+                <input
+                  v-model="variation.maxAdditionals"
+                  type="number"
+                  min="0"
+                  placeholder="Máx comp."
+                  title="Máximo de complementos gratuitos neste tamanho"
+                  class="w-24 px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15"
                 />
                 <button
                   type="button"
@@ -567,7 +575,7 @@ const openModal = (prod = null) => {
       status: prod.status,
       manageStock: prod.manageStock || false,
       stock: prod.stock || 0,
-      variations: (prod.variations || []).map((v) => ({ name: v.name, price: v.price })),
+      variations: (prod.variations || []).map((v) => ({ name: v.name, price: v.price, maxAdditionals: v.maxAdditionals ?? null })),
     }
   } else {
     editingItem.value = null
@@ -622,7 +630,7 @@ const saveProduct = async () => {
 }
 
 const addVariation = () => {
-  form.value.variations.push({ name: '', price: 0 })
+  form.value.variations.push({ name: '', price: 0, maxAdditionals: null })
 }
 
 const removeVariation = (index) => {

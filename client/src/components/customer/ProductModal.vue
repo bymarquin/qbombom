@@ -96,7 +96,7 @@
               <p class="text-xs text-neutral-500 dark:text-neutral-500 mt-1">
                 <span v-if="grupo.minChoices > 0">Mín: {{ grupo.minChoices }}</span>
                 <span v-if="grupo.minChoices > 0 && grupo.maxChoices > 0"> • </span>
-                Máx: {{ grupo.maxChoices }}
+                Máx: {{ maxEfetivoDoGrupo(grupo) }}
                 <span v-if="grupo.freeChoices > 0" class="text-red-600 dark:text-red-400 font-medium">
                   • ({{ grupo.freeChoices }} grátis)</span
                 >
@@ -110,7 +110,7 @@
                   : 'bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700'
               "
             >
-              {{ qtdSelecionadaNoGrupo(grupo.id) }} / {{ grupo.maxChoices }}
+              {{ qtdSelecionadaNoGrupo(grupo.id) }} / {{ maxEfetivoDoGrupo(grupo) }}
             </span>
           </div>
 
@@ -239,7 +239,12 @@ const itensSelecionadosNoGrupo = (grupoId) =>
 const qtdSelecionadaNoGrupo = (grupoId) => itensSelecionadosNoGrupo(grupoId).length;
 const isAdicionalSelecionado = (adicional) =>
   adicionaisSelecionados.value.some((a) => a.id === adicional.id);
-const atingiuMaximo = (grupo) => qtdSelecionadaNoGrupo(grupo.id) >= grupo.maxChoices;
+const maxEfetivoDoGrupo = (grupo) => {
+  const limiteVariacao = tamanhoSelecionado.value?.maxAdditionals
+  const todosGratis = grupo.items?.every((i) => parseFloat(i.price) === 0)
+  return limiteVariacao && todosGratis ? limiteVariacao : grupo.maxChoices
+}
+const atingiuMaximo = (grupo) => qtdSelecionadaNoGrupo(grupo.id) >= maxEfetivoDoGrupo(grupo);
 
 const podeConfirmarProduto = computed(() => {
   if (!props.produtoDetalhado) return false;
