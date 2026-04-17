@@ -14,6 +14,7 @@ const client = axios.create({
 const DEFAULT_MESSAGES = {
   em_preparo: '🍧 Seu pedido está sendo preparado! Em breve ficará pronto.',
   pronto: '✅ Seu pedido está pronto! Pode retirar ou aguardar a entrega.',
+  em_rota: '🛵 Seu pedido saiu para entrega! Acompanhe e confirme o recebimento pelo link abaixo:',
   finalizado: '🎉 Pedido finalizado. Obrigado pela preferência! Volte sempre 😊',
   cancelado: '❌ Seu pedido foi cancelado. Entre em contato se tiver dúvidas.',
 }
@@ -23,7 +24,7 @@ const formatPhone = (phone) => {
   return digits.startsWith('55') ? digits : `55${digits}`
 }
 
-exports.sendStatusMessage = async (phone, status, orderNumber) => {
+exports.sendStatusMessage = async (phone, status, orderNumber, trackingUrl = null) => {
   if (!phone) return
   let messages = DEFAULT_MESSAGES
   try {
@@ -33,10 +34,13 @@ exports.sendStatusMessage = async (phone, status, orderNumber) => {
   const message = messages[status]
   if (!message) return
 
+  let text = `*Qbombom* — Pedido #${orderNumber}\n\n${message}`
+  if (trackingUrl) text += `\n${trackingUrl}`
+
   try {
     await client.post(`/message/sendText/${INSTANCE}`, {
       number: formatPhone(phone),
-      text: `*Qbombom* — Pedido #${orderNumber}\n\n${message}`,
+      text,
     })
   } catch (error) {
     // Falha no WhatsApp não deve derrubar a operação principal

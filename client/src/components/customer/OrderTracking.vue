@@ -254,6 +254,18 @@
             class="bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800 p-4 shrink-0 shadow-sm dark:shadow-none z-20 absolute bottom-0 w-full"
           >
             <button
+              v-if="canConfirmDelivery"
+              @click="confirmarRecebimento"
+              :disabled="confirmingDelivery"
+              class="w-full mb-2 py-3 bg-green-600 text-white rounded-lg text-sm font-semibold transition-all hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <svg v-if="!confirmingDelivery" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <div v-else class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              {{ confirmingDelivery ? "Confirmando..." : "Recebi meu pedido" }}
+            </button>
+            <button
               v-if="canCancelOrder"
               @click="cancelarPedido"
               :disabled="cancellingOrder"
@@ -310,6 +322,7 @@ const toast = useToastStore();
 
 const uploadingReceipt = ref(false);
 const cancellingOrder = ref(false);
+const confirmingDelivery = ref(false);
 
 // Configurações do PIX da Loja (Buscadas do backend)
 const chavePixLoja = ref("");
@@ -373,6 +386,25 @@ const canCancelOrder = computed(() => {
   const cancellableStatuses = ["aguardando_pagamento", "novo"];
   return cancellableStatuses.includes(props.pedidoRastreado.status);
 });
+
+const canConfirmDelivery = computed(() =>
+  props.pedidoRastreado?.status === "em_rota" && props.pedidoRastreado?.type === "Entrega"
+);
+
+const confirmarRecebimento = async () => {
+  if (!props.pedidoRastreado?.trackingCode || confirmingDelivery.value) return;
+
+  confirmingDelivery.value = true;
+  try {
+    await OrderService.confirmDelivery(props.pedidoRastreado.trackingCode);
+    toast.success("Obrigado! Bom apetite 😋");
+  } catch (error) {
+    const msg = error?.response?.data?.error || "Não foi possível confirmar o recebimento.";
+    toast.error(msg);
+  } finally {
+    confirmingDelivery.value = false;
+  }
+};
 
 const copiarChave = async () => {
   try {

@@ -33,11 +33,16 @@ async function restoreStock(items, transaction) {
   }
 }
 
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+
 async function notifyCustomer(order, status) {
   if (!order.customerId) return;
   const customer = await Customer.findByPk(order.customerId, { attributes: ['phone'] });
   if (customer?.phone) {
-    whatsappService.sendStatusMessage(customer.phone, status, order.id.slice(-6).toUpperCase());
+    const trackingUrl = status === 'em_rota' && order.trackingCode
+      ? `${CLIENT_URL}/cardapio?track=${order.trackingCode}`
+      : null;
+    whatsappService.sendStatusMessage(customer.phone, status, order.id.slice(-6).toUpperCase(), trackingUrl);
   }
 }
 
@@ -306,6 +311,40 @@ exports.cancelOrder = async (req, res) => {
     await transaction.rollback();
     console.error('[orders.cancelOrder]', error);
     return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+exports.confirmDeliveryByTracking = async (req, res) => {
+  try {
+    const order = await Order.findOne({ where: { trackingCode: req.params.code } });
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    if (order.status !== 'em_rota') {
+      return res.status(409).json({ error: 'Pedido não está em rota de entrega.' });
+    }
+
+    order.status = 'entregue';
+    await order.save();
+
+    const io = req.app.get('io');
+    io?.emit('orderUpdated', order);
+    notifyCustomer(order, 'entregue');
+
+    res.json(order);
+
+    setTimeout(async () => {
+      try {
+        order.status = 'finalizado';
+        await order.save();
+        io?.emit('orderUpdated', order);
+        notifyCustomer(order, 'finalizado');
+      } catch (e) {
+        console.error('[auto-finalizar confirmDelivery]', e);
+      }
+    }, 3000);
+  } catch (error) {
+    console.error('[orders.confirmDeliveryByTracking]', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 

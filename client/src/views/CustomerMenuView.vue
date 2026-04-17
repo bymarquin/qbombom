@@ -475,11 +475,22 @@ onMounted(() => {
     }
   }
 
-  // Checa se há um pedido sendo rastreado
-  const trackingAtivo = localStorage.getItem("qbombom_tracking");
-  if (trackingAtivo) {
-    rastreioAtual.value = trackingAtivo;
+  // Checa se há um pedido sendo rastreado (via URL ?track= ou localStorage)
+  const params = new URLSearchParams(window.location.search);
+  const trackParam = params.get("track");
+  if (trackParam) {
+    localStorage.setItem("qbombom_tracking", trackParam);
+    rastreioAtual.value = trackParam;
     carregarRastreio();
+    rastreioAberto.value = true;
+    // Limpa o query param da URL sem recarregar
+    window.history.replaceState({}, "", window.location.pathname);
+  } else {
+    const trackingAtivo = localStorage.getItem("qbombom_tracking");
+    if (trackingAtivo) {
+      rastreioAtual.value = trackingAtivo;
+      carregarRastreio();
+    }
   }
 
   // Conecta o socket se não estiver conectado (para o cliente receber updates)

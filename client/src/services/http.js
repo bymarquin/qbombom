@@ -248,6 +248,9 @@ export const OrderService = {
   cancelPublicOrder(trackingCode) {
     return api.patch(`/orders/track/${trackingCode}/cancel`)
   },
+  confirmDelivery(trackingCode) {
+    return api.patch(`/orders/track/${trackingCode}/confirm`)
+  },
   trackPublicOrder(trackingCode) {
     // Rota pública para consultar status do pedido por código
     return api.get(`/orders/track/${trackingCode}`)

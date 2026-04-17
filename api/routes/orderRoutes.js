@@ -13,6 +13,7 @@ router.post('/public', checkStoreOpen, orderController.create);
 router.get('/track/:code', orderController.track);
 router.post('/track/:code/receipt', orderController.uploadReceipt);
 router.patch('/track/:code/cancel', orderController.cancelByTracking);
+router.patch('/track/:code/confirm', orderController.confirmDeliveryByTracking);
 
 // ---- ROTAS PRIVADAS (FUNCIONÁRIOS) ----
 // Listar pedidos e ver detalhes (Permissão: orders.view)
