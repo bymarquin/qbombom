@@ -57,7 +57,7 @@ export const printReceipt = (order) => {
               width: 80mm;
               color: #000;
               background: #fff;
-              padding: 4mm 3mm;
+              padding: 4mm 6mm;
             }
 
             .center { text-align: center; }
