@@ -1,12 +1,14 @@
 <template>
   <div
-    class="fixed top-4 right-4 z-[99999] flex flex-col gap-2 w-full max-w-sm pointer-events-none"
+    class="fixed z-[99999] flex flex-col gap-2 pointer-events-none
+           bottom-4 left-4 right-4
+           sm:bottom-auto sm:top-4 sm:left-auto sm:right-4 sm:w-full sm:max-w-sm"
   >
     <TransitionGroup name="toast" tag="div" class="flex flex-col gap-2">
       <div
         v-for="toast in toasts"
         :key="toast.id"
-        class="bg-white dark:bg-neutral-900 pointer-events-auto flex items-start gap-3 p-4 rounded-xl shadow-lg border border-neutral-100 dark:border-neutral-800/50 opacity-100"
+        class="bg-white dark:bg-neutral-900 pointer-events-auto flex items-start gap-3 p-3 sm:p-4 rounded-xl shadow-lg border border-neutral-100 dark:border-neutral-800/50 opacity-100"
       >
         <!-- Ícone baseado no tipo -->
         <div class="flex-shrink-0 mt-0.5">
