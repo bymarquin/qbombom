@@ -23,7 +23,7 @@ exports.register = async (req, res) => {
 
     const user = await User.create({ name, email, password, role, pin });
     user.password = undefined;
-    
+
     res.status(201).json(user);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
@@ -131,7 +131,7 @@ exports.forgotPassword = async (req, res) => {
     const resetLink = `${clientUrl}/auth/reset-password?token=${token}&id=${user.id}`;
 
     // Send the email using the template
-    await sendTemplateEmail(user.email, 'Recuperação de Senha - QbomBom', 'forgot-password', {
+    await sendTemplateEmail(user.email, 'Recuperação de Senha - Qbombom', 'forgot-password', {
       name: user.name,
       resetLink: resetLink
     });
@@ -171,7 +171,7 @@ exports.resetPassword = async (req, res) => {
     try {
       // Verify token
       const decoded = jwt.verify(token, resetSecret);
-      
+
       // Update password (the 'beforeSave' hook in Sequelize model handles bcrypt hashing)
       user.password = password;
       await user.save();

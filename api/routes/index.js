@@ -11,6 +11,7 @@ const customerRoutes = require('./customerRoutes');
 const settingRoutes = require('./settingRoutes');
 const userRoutes = require('./userRoutes');
 const mailerRoutes = require('./mailerRoutes');
+const whatsappRoutes = require('./whatsappRoutes');
 
 router.use('/auth', authRoutes);
 router.use('/categories', categoryRoutes);
@@ -22,5 +23,6 @@ router.use('/customers', customerRoutes);
 router.use('/settings', settingRoutes);
 router.use('/users', userRoutes);
 router.use('/mailer', mailerRoutes);
+router.use('/whatsapp', whatsappRoutes);
 
 module.exports = router;

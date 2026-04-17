@@ -10,10 +10,10 @@ const sendTestEmail = async (req, res) => {
   try {
     const result = await sendTemplateEmail(
       to,
-      subject || 'Test Email - QbomBom',
+      subject || 'Test Email - Qbombom',
       'test-email',
       {
-        message: message || 'Este é um email de teste enviado via SMTP configurado no QbomBom.'
+        message: message || 'Este é um email de teste enviado via SMTP configurado no Qbombom.'
       }
     );
 

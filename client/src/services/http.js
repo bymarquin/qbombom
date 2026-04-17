@@ -131,21 +131,24 @@ export const AuthService = {
       localStorage.removeItem('accessToken')
       localStorage.removeItem('refreshToken')
       localStorage.removeItem('userRole')
+      localStorage.removeItem('userName')
       window.location.href = '/login'
     })
   },
   getMe() {
     return api.get('/auth/me')
   },
-  setTokens(accessToken, refreshToken, role = null) {
+  setTokens(accessToken, refreshToken, role = null, name = null) {
     localStorage.setItem('accessToken', accessToken)
     localStorage.setItem('refreshToken', refreshToken)
-    if (role) {
-      localStorage.setItem('userRole', role)
-    }
+    if (role) localStorage.setItem('userRole', role)
+    if (name) localStorage.setItem('userName', name)
   },
   getRole() {
     return localStorage.getItem('userRole') || null
+  },
+  getName() {
+    return localStorage.getItem('userName') || null
   },
   getDefaultRoute() {
     const role = this.getRole()
@@ -271,6 +274,12 @@ export const CustomerService = {
   deleteCustomer(id) {
     return api.delete(`/customers/${id}`)
   },
+}
+
+export const WhatsAppService = {
+  getStatus() { return api.get('/whatsapp/status') },
+  getQRCode() { return api.get('/whatsapp/qrcode') },
+  createInstance() { return api.post('/whatsapp/instance') },
 }
 
 export const SettingService = {

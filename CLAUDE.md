@@ -27,7 +27,7 @@ npm run format     # Formatador Oxfmt
 O Sequelize CLI gerencia as migrations. Config em `api/config/config.json`. Bancos: `qbombom` (dev), `qbombom_test` (test), `qbombom_production` (prod).
 
 ### Variáveis de Ambiente
-- Copiar `api/.env.example` → `api/.env` (DATABASE_URL, JWT_SECRET, config SMTP)
+- Copiar `api/.env.example` → `api/.env` (JWT_SECRET, config SMTP)
 - Copiar `client/.env.example` → `client/.env` (VITE_API_URL, VITE_SOCKET_URL)
 - Requer Node 20.19+ ou 22.12+ (lado do client)
 

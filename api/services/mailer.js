@@ -25,7 +25,7 @@ const sendEmail = async (to, subject, html) => {
   const transporter = createTransporter();
 
   const mailOptions = {
-    from: process.env.SMTP_FROM || '"QbomBom" <no-reply@qbombom.com>',
+    from: process.env.SMTP_FROM || '"Qbombom" <no-reply@qbombom.com>',
     to,
     subject,
     html,

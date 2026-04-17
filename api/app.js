@@ -21,7 +21,7 @@ app.use('/api', routes);
 
 // Root endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'QbomBom API is running' });
+  res.json({ status: 'OK', message: 'Qbombom API is running' });
 });
 
 // ======= CONFIGURAÇÃO DO SERVIDOR HTTP + WEBSOCKET (SOCKET.IO) =======

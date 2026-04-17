@@ -3,7 +3,7 @@
     <div class="w-full flex flex-col justify-center px-6 sm:px-12 md:px-20 lg:px-24">
       <div class="w-full max-w-[420px] mx-auto">
         <div class="flex items-center justify-center gap-3 mb-12">
-          <!-- Logo QbomBom -->
+          <!-- Logo Qbombom -->
           <svg
             width="40"
             height="40"
@@ -25,7 +25,7 @@
             </text>
           </svg>
           <span class="text-2xl font-black tracking-tight text-neutral-900 dark:text-neutral-100"
-            >QbomBom</span
+            >Qbombom</span
           >
         </div>
 
@@ -54,7 +54,10 @@
             />
           </div>
 
-          <div v-if="successMsg" class="bg-green-50 text-green-700 p-3 rounded-lg text-sm border border-green-200 text-center">
+          <div
+            v-if="successMsg"
+            class="bg-green-50 text-green-700 p-3 rounded-lg text-sm border border-green-200 text-center"
+          >
             {{ successMsg }}
           </div>
 
@@ -101,7 +104,11 @@
               stroke="currentColor"
               stroke-width="2"
             >
-              <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
             </svg>
             Voltar para o login
           </RouterLink>
@@ -112,29 +119,29 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { AuthService } from '@/services/http'
-import { useToastStore } from '@/stores/toast'
+import { ref } from "vue";
+import { AuthService } from "@/services/http";
+import { useToastStore } from "@/stores/toast";
 
-const email = ref('')
-const loading = ref(false)
-const successMsg = ref('')
-const toast = useToastStore()
+const email = ref("");
+const loading = ref(false);
+const successMsg = ref("");
+const toast = useToastStore();
 
 const handleForgot = async () => {
-  if (!email.value) return
+  if (!email.value) return;
 
-  loading.value = true
-  successMsg.value = ''
-  
+  loading.value = true;
+  successMsg.value = "";
+
   try {
-    await AuthService.forgotPassword(email.value)
-    toast.success('Se o email existir, você receberá um link de recuperação em instantes.')
+    await AuthService.forgotPassword(email.value);
+    toast.success("Se o email existir, você receberá um link de recuperação em instantes.");
   } catch (error) {
-    console.error(error)
-    toast.error('Ocorreu um erro ao solicitar a recuperação de senha')
+    console.error(error);
+    toast.error("Ocorreu um erro ao solicitar a recuperação de senha");
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 </script>

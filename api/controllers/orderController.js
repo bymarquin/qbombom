@@ -1,4 +1,5 @@
-const { Order, OrderItem, Product, ProductVariation, Customer, sequelize } = require('../models');
+const { Order, OrderItem, Product, ProductVariation, Customer, sequelize } = require('../models')
+const whatsappService = require('../services/whatsappService');
 
 exports.index = async (req, res) => {
   try {
@@ -337,6 +338,7 @@ exports.updateStatus = async (req, res) => {
     if (!order) return res.status(404).json({ error: 'Order not found' });
 
     // Atualiza apenas os campos que vieram no body
+    const previousStatus = order.status;
     if (status) order.status = status;
     if (paymentStatus) order.paymentStatus = paymentStatus;
 
@@ -345,6 +347,14 @@ exports.updateStatus = async (req, res) => {
     const io = req.app.get('io');
     if (io) {
       io.emit('orderUpdated', order);
+    }
+
+    // Notifica cliente via WhatsApp se o status mudou e tem cliente com telefone
+    if (status && status !== previousStatus && order.customerId) {
+      const customer = await Customer.findByPk(order.customerId, { attributes: ['phone'] });
+      if (customer?.phone) {
+        whatsappService.sendStatusMessage(customer.phone, status, order.id.slice(-6).toUpperCase());
+      }
     }
 
     res.json(order);

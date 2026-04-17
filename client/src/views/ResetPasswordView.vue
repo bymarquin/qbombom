@@ -3,7 +3,7 @@
     <div class="w-full flex flex-col justify-center px-6 sm:px-12 md:px-20 lg:px-24">
       <div class="w-full max-w-[420px] mx-auto">
         <div class="flex items-center justify-center gap-3 mb-12">
-          <!-- Logo QbomBom -->
+          <!-- Logo Qbombom -->
           <svg
             width="40"
             height="40"
@@ -25,7 +25,7 @@
             </text>
           </svg>
           <span class="text-2xl font-black tracking-tight text-neutral-900 dark:text-neutral-100"
-            >QbomBom</span
+            >Qbombom</span
           >
         </div>
 
@@ -137,7 +137,11 @@
               stroke="currentColor"
               stroke-width="2"
             >
-              <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
             </svg>
             Voltar para o login
           </RouterLink>
@@ -148,47 +152,47 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { AuthService } from '@/services/http'
-import { useToastStore } from '@/stores/toast'
-import { Eye, EyeOff } from 'lucide-vue-next'
+import { ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { AuthService } from "@/services/http";
+import { useToastStore } from "@/stores/toast";
+import { Eye, EyeOff } from "lucide-vue-next";
 
-const route = useRoute()
-const router = useRouter()
-const toast = useToastStore()
+const route = useRoute();
+const router = useRouter();
+const toast = useToastStore();
 
-const password = ref('')
-const passwordConfirm = ref('')
-const showPassword = ref(false)
-const showPasswordConfirm = ref(false)
-const loading = ref(false)
+const password = ref("");
+const passwordConfirm = ref("");
+const showPassword = ref(false);
+const showPasswordConfirm = ref(false);
+const loading = ref(false);
 
 const handleReset = async () => {
   if (password.value.length < 8) {
-    return toast.error('A senha deve ter pelo menos 8 caracteres.')
+    return toast.error("A senha deve ter pelo menos 8 caracteres.");
   }
-  
+
   if (password.value !== passwordConfirm.value) {
-    return toast.error('As senhas não coincidem.')
+    return toast.error("As senhas não coincidem.");
   }
 
-  const { id, token } = route.query
+  const { id, token } = route.query;
   if (!id || !token) {
-    return toast.error('Link de recuperação inválido ou ausente.')
+    return toast.error("Link de recuperação inválido ou ausente.");
   }
 
-  loading.value = true
+  loading.value = true;
 
   try {
-    await AuthService.resetPassword(id, token, password.value)
-    toast.success('Senha redefinida com sucesso! Faça login.')
-    router.push('/auth/login')
+    await AuthService.resetPassword(id, token, password.value);
+    toast.success("Senha redefinida com sucesso! Faça login.");
+    router.push("/auth/login");
   } catch (error) {
-    console.error(error)
+    console.error(error);
     // O erro genérico já é tratado pelo interceptor e exibido em um toast
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 </script>

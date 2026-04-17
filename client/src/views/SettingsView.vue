@@ -522,21 +522,136 @@
             </div>
           </div>
         </div>
+
+        <!-- Tab: WhatsApp -->
+        <div v-show="currentTab === 'whatsapp'" class="space-y-6 animate-fadeIn">
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <h2 class="text-xl font-bold text-neutral-900 dark:text-neutral-100">WhatsApp</h2>
+              <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">Notificações automáticas de status do pedido para o cliente</p>
+            </div>
+            <button
+              @click="recarregarStatus"
+              :disabled="waLoading"
+              class="text-sm px-3 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
+            >
+              {{ waLoading ? 'Verificando...' : 'Atualizar status' }}
+            </button>
+          </div>
+
+          <!-- Status -->
+          <div class="flex items-center gap-3 p-4 rounded-xl border"
+            :class="waStatus === 'open' ? 'border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-900/10' : 'border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/30'"
+          >
+            <div class="w-3 h-3 rounded-full shrink-0"
+              :class="waStatus === 'open' ? 'bg-green-500 animate-pulse' : 'bg-neutral-400'"
+            />
+            <div>
+              <p class="font-semibold text-sm"
+                :class="waStatus === 'open' ? 'text-green-700 dark:text-green-400' : 'text-neutral-700 dark:text-neutral-300'"
+              >
+                {{ waStatus === 'open' ? 'Conectado' : 'Desconectado' }}
+              </p>
+              <p class="text-xs text-neutral-500 dark:text-neutral-400">
+                {{ waStatus === 'open' ? 'Envio de mensagens ativo' : 'Escaneie o QR Code para conectar' }}
+              </p>
+            </div>
+          </div>
+
+          <!-- QR Code -->
+          <div v-if="waStatus !== 'open'" class="space-y-4">
+            <div v-if="!waQrCode" class="flex gap-3">
+              <button
+                @click="criarInstancia"
+                :disabled="waLoading"
+                class="px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-medium text-sm transition-colors"
+              >
+                {{ waLoading ? 'Aguarde...' : 'Gerar QR Code' }}
+              </button>
+            </div>
+
+            <div v-if="waQrCode" class="flex flex-col items-center gap-4 py-4">
+              <p class="text-sm text-neutral-600 dark:text-neutral-400 text-center">
+                Abra o WhatsApp no celular → <strong>Dispositivos conectados</strong> → <strong>Conectar dispositivo</strong> e escaneie:
+              </p>
+              <div class="p-4 bg-white rounded-2xl border border-neutral-200 shadow-sm inline-block">
+                <img :src="'data:image/png;base64,' + waQrCode" alt="QR Code WhatsApp" class="w-56 h-56" />
+              </div>
+              <button @click="buscarQRCode" class="text-sm text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 underline">
+                Atualizar QR Code
+              </button>
+            </div>
+          </div>
+
+          <!-- Conectado -->
+          <div v-if="waStatus === 'open'" class="p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/30 space-y-2">
+            <h3 class="font-semibold text-neutral-900 dark:text-neutral-100">Mensagens enviadas automaticamente:</h3>
+            <ul class="text-sm text-neutral-600 dark:text-neutral-400 space-y-1.5 mt-2">
+              <li class="flex items-start gap-2"><span>🍧</span> <span><strong>Em preparo</strong> — quando a cozinha aceitar o pedido</span></li>
+              <li class="flex items-start gap-2"><span>✅</span> <span><strong>Pronto</strong> — quando o pedido estiver pronto para retirada/entrega</span></li>
+              <li class="flex items-start gap-2"><span>🎉</span> <span><strong>Finalizado</strong> — quando o pedido for concluído</span></li>
+              <li class="flex items-start gap-2"><span>❌</span> <span><strong>Cancelado</strong> — se o pedido for cancelado</span></li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from "vue";
+import { ref, reactive, watch } from "vue";
 import { useToastStore } from "@/stores/toast";
-import { SettingService } from "@/services/http";
+import { SettingService, WhatsAppService } from "@/services/http";
 import { onMounted } from "vue";
 
 // Estado
 const toast = useToastStore();
 const currentTab = ref("profile");
 const isSaving = ref(false);
+
+// WhatsApp
+const waStatus = ref('disconnected')
+const waQrCode = ref(null)
+const waLoading = ref(false)
+
+const recarregarStatus = async () => {
+  waLoading.value = true
+  try {
+    const { data } = await WhatsAppService.getStatus()
+    waStatus.value = data.status
+  } catch {
+    waStatus.value = 'disconnected'
+  } finally {
+    waLoading.value = false
+  }
+}
+
+const buscarQRCode = async () => {
+  try {
+    const { data } = await WhatsAppService.getQRCode()
+    waQrCode.value = data.base64 || data.qrcode || null
+  } catch (e) {
+    toast.error('Erro ao buscar QR Code')
+  }
+}
+
+const criarInstancia = async () => {
+  waLoading.value = true
+  try {
+    await WhatsAppService.createInstance()
+    await buscarQRCode()
+  } catch {
+    // instância já existe, tenta pegar o QR Code direto
+    await buscarQRCode()
+  } finally {
+    waLoading.value = false
+  }
+}
+
+watch(currentTab, (tab) => {
+  if (tab === 'whatsapp') recarregarStatus()
+})
 
 // Abas de Configuração
 const tabs = [
@@ -565,12 +680,17 @@ const tabs = [
     label: "Impressão",
     icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>',
   },
+  {
+    id: "whatsapp",
+    label: "WhatsApp",
+    icon: '<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>',
+  },
 ];
 
 // Dados do Formulário (Simulando um fetch inicial)
 const form = reactive({
   profile: {
-    name: "QbomBom Lanches",
+    name: "Qbombom Lanches",
     cnpj: "12.345.678/0001-90",
     phone: "(11) 99999-9999",
     email: "contato@qbombom.com.br",
