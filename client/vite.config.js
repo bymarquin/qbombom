@@ -13,6 +13,9 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       includeAssets: ['favicon.ico', 'pwa-192.svg', 'pwa-512.svg'],
       manifest: {
         name: 'Qbombom Sorvetes',
@@ -43,18 +46,8 @@ export default defineConfig({
           },
         ],
       },
-      workbox: {
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,svg,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /\/api\/.*/i,
-            handler: 'NetworkOnly',
-          },
-          {
-            urlPattern: /^https:\/\/pub-.*\.r2\.dev\/.*/i,
-            handler: 'NetworkOnly',
-          },
-        ],
       },
     }),
   ],
