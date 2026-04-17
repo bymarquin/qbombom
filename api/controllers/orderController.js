@@ -240,13 +240,27 @@ exports.updateStatus = async (req, res) => {
     if (paymentStatus) order.paymentStatus = paymentStatus;
     await order.save();
 
-    req.app.get('io')?.emit('orderUpdated', order);
+    const io = req.app.get('io');
+    io?.emit('orderUpdated', order);
 
     if (status && status !== previousStatus) {
       notifyCustomer(order, status);
     }
 
     res.json(order);
+
+    if (status === 'entregue') {
+      setTimeout(async () => {
+        try {
+          order.status = 'finalizado';
+          await order.save();
+          io?.emit('orderUpdated', order);
+          notifyCustomer(order, 'finalizado');
+        } catch (e) {
+          console.error('[auto-finalizar]', e);
+        }
+      }, 3000);
+    }
   } catch (error) {
     console.error('[orders.updateStatus]', error);
     res.status(500).json({ error: 'Internal server error' });
