@@ -166,8 +166,10 @@
               <div class="relative">
                 <Phone class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
                 <input
-                  type="text"
-                  v-model="telefoneCliente"
+                  type="tel"
+                  :value="telefoneCliente"
+                  @input="telefoneCliente = mascararTelefone($event.target.value)"
+                  inputmode="numeric"
                   placeholder="WhatsApp do Cliente (Opcional)"
                   class="w-full pl-10 pr-3.5 py-2.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-all duration-200 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 placeholder-neutral-400"
                 />
@@ -745,7 +747,7 @@ const produtosFiltrados = computed(() => {
   return filtrados
 })
 
-import { formatarMoeda } from "@/utils/formatters"
+import { formatarMoeda, mascararTelefone } from "@/utils/formatters"
 
 // --- CARRINHO ---
 const carrinho = ref([])
