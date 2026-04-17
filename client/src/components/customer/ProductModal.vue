@@ -279,7 +279,6 @@ const confirmarItem = () => {
     totalPrice: totalItemAtual.value,
   });
 
-  toast.success("Adicionado à sacola!");
   fechar();
 };
 </script>
