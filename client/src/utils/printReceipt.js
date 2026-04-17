@@ -57,7 +57,7 @@ export const printReceipt = (order) => {
               width: 80mm;
               color: #000;
               background: #fff;
-              padding: 4mm 6mm;
+              padding: 4mm 10mm;
             }
 
             .center { text-align: center; }
@@ -223,7 +223,7 @@ export const printReceipt = (order) => {
 
             @media print {
               body { width: 100%; padding: 0; }
-              @page { margin: 0; size: 80mm auto; }
+              @page { margin: 4mm 10mm; size: 80mm auto; }
             }
           </style>
         </head>
