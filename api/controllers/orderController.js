@@ -42,7 +42,7 @@ async function notifyCustomer(order, status) {
     const trackingUrl = status === 'em_rota' && order.trackingCode
       ? `${CLIENT_URL}/cardapio?track=${order.trackingCode}`
       : null;
-    whatsappService.sendStatusMessage(customer.phone, status, order.id.slice(-6).toUpperCase(), trackingUrl);
+    whatsappService.sendStatusMessage(customer.phone, status, order.id.slice(-6).toUpperCase(), trackingUrl, order.id);
   }
 }
 
@@ -78,7 +78,7 @@ exports.create = async (req, res) => {
   try {
     const {
       type, customerName, customerPhone, deliveryAddress,
-      paymentStatus, paymentMethod, subtotal, discount, total, observation, items
+      paymentStatus, paymentMethod, subtotal, discount, total, observation, items, whatsappOptIn
     } = req.body;
 
     let customerId = null;
@@ -154,6 +154,10 @@ exports.create = async (req, res) => {
 
     await transaction.commit();
 
+    if (customerPhone && typeof whatsappOptIn === 'boolean') {
+      await whatsappService.setPhoneOptIn(customerPhone, whatsappOptIn);
+    }
+
     const createdOrder = await Order.findByPk(order.id, { include: ORDER_INCLUDES });
     req.app.get('io')?.emit('orderCreated', createdOrder);
 
@@ -162,6 +166,24 @@ exports.create = async (req, res) => {
     await transaction.rollback();
     console.error('[orders.create]', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+exports.optOutWhatsappByTracking = async (req, res) => {
+  try {
+    const order = await Order.findOne({ where: { trackingCode: req.params.code } });
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    const customerPhone = order.customerPhone;
+    if (!customerPhone) {
+      return res.status(400).json({ error: 'Pedido não possui telefone para opt-out.' });
+    }
+
+    await whatsappService.setPhoneOptOut(customerPhone, true);
+    return res.json({ message: 'Notificações de WhatsApp desativadas para este número.' });
+  } catch (error) {
+    console.error('[orders.optOutWhatsappByTracking]', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 };
 

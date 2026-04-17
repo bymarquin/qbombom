@@ -320,6 +320,7 @@ const checkout = ref(
     telefone: "",
     tipo: "Mesa",
     mesa: "",
+    whatsappOptIn: false,
     pagamento: "PIX",
     precisaTroco: false,
     trocoPara: "",
@@ -622,6 +623,7 @@ const enviarPedido = async () => {
       type: checkout.value.tipo,
       customerName: finalCustomerName,
       customerPhone: limparTelefone(checkout.value.telefone),
+      whatsappOptIn: Boolean(checkout.value.whatsappOptIn),
       deliveryAddress: endEntrega || undefined,
       paymentStatus: "pendente", // Pedido online nasce como pagamento pendente sempre
       paymentMethod: checkout.value.pagamento,

@@ -140,6 +140,17 @@
                 placeholder="(00) 00000-0000"
                 class="w-full px-3.5 py-2.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-all duration-200 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 placeholder-neutral-400"
               />
+
+              <label class="flex items-start gap-2 text-xs text-neutral-600 dark:text-neutral-400 mt-1">
+                <input
+                  v-model="checkout.whatsappOptIn"
+                  type="checkbox"
+                  class="mt-0.5 accent-red-600 w-4 h-4"
+                />
+                <span>
+                  Quero receber atualizações do pedido no WhatsApp. Posso desativar depois no rastreio.
+                </span>
+              </label>
             </div>
 
             <div class="grid grid-cols-3 gap-2 p-1.5 bg-neutral-100 dark:bg-neutral-800/60 rounded-xl border border-neutral-200/60 dark:border-neutral-700/50 relative">

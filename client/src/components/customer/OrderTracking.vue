@@ -274,6 +274,14 @@
               {{ cancellingOrder ? "Cancelando pedido..." : "Cancelar Pedido" }}
             </button>
             <button
+              v-if="pedidoRastreado?.trackingCode"
+              @click="desativarWhatsapp"
+              :disabled="waOptingOut"
+              class="w-full mb-2 py-3 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm font-semibold transition-all hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {{ waOptingOut ? "Desativando WhatsApp..." : "Parar notificações no WhatsApp" }}
+            </button>
+            <button
               @click="emit('limpar')"
               class="w-full py-3 bg-neutral-50 dark:bg-neutral-950 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/50 rounded-lg text-sm font-semibold transition-all hover:bg-red-50 dark:hover:bg-neutral-900"
             >
@@ -323,6 +331,7 @@ const toast = useToastStore();
 const uploadingReceipt = ref(false);
 const cancellingOrder = ref(false);
 const confirmingDelivery = ref(false);
+const waOptingOut = ref(false);
 
 // Configurações do PIX da Loja (Buscadas do backend)
 const chavePixLoja = ref("");
@@ -466,6 +475,21 @@ const cancelarPedido = async () => {
     toast.error(msg);
   } finally {
     cancellingOrder.value = false;
+  }
+};
+
+const desativarWhatsapp = async () => {
+  if (!props.pedidoRastreado?.trackingCode || waOptingOut.value) return;
+
+  waOptingOut.value = true;
+  try {
+    await OrderService.optOutWhatsappByTracking(props.pedidoRastreado.trackingCode);
+    toast.success("Notificações de WhatsApp desativadas.");
+  } catch (error) {
+    const msg = error?.response?.data?.error || "Não foi possível desativar agora.";
+    toast.error(msg);
+  } finally {
+    waOptingOut.value = false;
   }
 };
 </script>

@@ -248,6 +248,9 @@ export const OrderService = {
   cancelPublicOrder(trackingCode) {
     return api.patch(`/orders/track/${trackingCode}/cancel`)
   },
+  optOutWhatsappByTracking(trackingCode) {
+    return api.patch(`/orders/track/${trackingCode}/whatsapp-optout`)
+  },
   confirmDelivery(trackingCode) {
     return api.patch(`/orders/track/${trackingCode}/confirm`)
   },
