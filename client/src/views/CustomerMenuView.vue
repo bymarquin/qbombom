@@ -389,7 +389,7 @@ const statusFluxo = computed(() => {
     );
   }
 
-  base.push({ id: "cancelado", label: "Cancelado", activeMsg: "Pedido cancelado." });
+  base.push({ id: "finalizado", label: "Concluído", activeMsg: "Obrigado pela preferência! 🎉" });
 
   return base;
 });
