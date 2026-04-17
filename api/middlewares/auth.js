@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
-const SECRET = process.env.JWT_SECRET || 'qbombom_super_secret_key_2026';
+const SECRET = process.env.JWT_SECRET;
+if (!SECRET) throw new Error('JWT_SECRET environment variable is required');
 
 module.exports = (req, res, next) => {
   const authHeader = req.headers.authorization;
