@@ -229,6 +229,20 @@ watch(() => props.produtoDetalhado, () => {
   observacaoProduto.value = "";
 });
 
+watch(tamanhoSelecionado, () => {
+  if (!props.produtoDetalhado?.additionalGroups) return;
+  for (const grupo of props.produtoDetalhado.additionalGroups) {
+    const max = maxEfetivoDoGrupo(grupo);
+    const selecionados = itensSelecionadosNoGrupo(grupo.id);
+    if (selecionados.length > max) {
+      const excesso = selecionados.slice(max).map((i) => i.id);
+      adicionaisSelecionados.value = adicionaisSelecionados.value.filter(
+        (a) => !excesso.includes(a.id)
+      );
+    }
+  }
+});
+
 const fecharModalProduto = () => {
   modelValue.value = false;
 };
