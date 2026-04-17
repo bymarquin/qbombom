@@ -250,6 +250,53 @@
               </div>
             </div>
 
+            <!-- Variações -->
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center justify-between">
+                <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Variações (tamanhos)</label>
+                <button
+                  type="button"
+                  @click="addVariation"
+                  class="text-xs font-medium text-red-600 hover:text-red-700 flex items-center gap-1"
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                  Adicionar
+                </button>
+              </div>
+              <div v-if="form.variations.length === 0" class="text-xs text-neutral-400 italic py-1">
+                Sem variações — o produto terá apenas o preço base.
+              </div>
+              <div
+                v-for="(variation, i) in form.variations"
+                :key="i"
+                class="flex items-center gap-2"
+              >
+                <input
+                  v-model="variation.name"
+                  type="text"
+                  placeholder="Ex: 300ml"
+                  required
+                  class="flex-1 px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15"
+                />
+                <input
+                  v-model="variation.price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Preço"
+                  required
+                  class="w-28 px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15"
+                />
+                <button
+                  type="button"
+                  @click="removeVariation(i)"
+                  class="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+            </div>
+
             <div class="grid grid-cols-2 gap-4">
               <div class="flex items-center gap-3">
                 <input
@@ -588,7 +635,7 @@ const products = shallowRef([])
 const categories = shallowRef([])
 const showModal = ref(false)
 const editingItem = ref(null)
-const form = ref({ name: '', description: '', basePrice: 0, categoryId: '', status: true, manageStock: false, stock: 0 })
+const form = ref({ name: '', description: '', basePrice: 0, categoryId: '', status: true, manageStock: false, stock: 0, variations: [] })
 const imagePreview = ref(null)
 const imageBase64 = ref(null)
 const cropSrc = ref(null)
@@ -644,6 +691,7 @@ const openModal = (prod = null) => {
       status: prod.status,
       manageStock: prod.manageStock || false,
       stock: prod.stock || 0,
+      variations: (prod.variations || []).map((v) => ({ name: v.name, price: v.price })),
     }
   } else {
     editingItem.value = null
@@ -656,6 +704,7 @@ const openModal = (prod = null) => {
       status: true,
       manageStock: false,
       stock: 0,
+      variations: [],
     }
   }
   showModal.value = true
@@ -694,6 +743,14 @@ const saveProduct = async () => {
   } catch (error) {
     console.error(error)
   }
+}
+
+const addVariation = () => {
+  form.value.variations.push({ name: '', price: 0 })
+}
+
+const removeVariation = (index) => {
+  form.value.variations.splice(index, 1)
 }
 
 const deleteProduct = async (id) => {

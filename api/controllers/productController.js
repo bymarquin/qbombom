@@ -65,9 +65,16 @@ async function extractAndUploadImage(imageBase64) {
 // MÉTODOS CRUD ADMIN
 exports.create = async (req, res) => {
   try {
-    const { name, description, basePrice, status, categoryId, manageStock, stock, imageBase64 } = req.body;
+    const { name, description, basePrice, status, categoryId, manageStock, stock, imageBase64, variations } = req.body;
     const imageUrl = await extractAndUploadImage(imageBase64);
     const product = await Product.create({ name, description, basePrice, status, categoryId, manageStock, stock, imageUrl });
+
+    if (Array.isArray(variations) && variations.length > 0) {
+      await ProductVariation.bulkCreate(
+        variations.map((v) => ({ name: v.name, price: v.price, productId: product.id }))
+      );
+    }
+
     res.status(201).json(product);
   } catch (error) {
     res.status(500).json({ error: 'Failed to create product' });
@@ -79,10 +86,9 @@ exports.update = async (req, res) => {
     const product = await Product.findByPk(req.params.id);
     if (!product) return res.status(404).json({ error: 'Product not found' });
 
-    const { imageBase64, ...rest } = req.body;
+    const { imageBase64, variations, ...rest } = req.body;
 
     if (imageBase64) {
-      // Remove imagem antiga do R2 se existir
       if (product.imageUrl) {
         const oldKey = product.imageUrl.replace(`${process.env.R2_CDN_URL}/`, '');
         deleteFile(oldKey).catch(() => {});
@@ -91,6 +97,16 @@ exports.update = async (req, res) => {
     }
 
     await product.update(rest);
+
+    if (Array.isArray(variations)) {
+      await ProductVariation.destroy({ where: { productId: product.id } });
+      if (variations.length > 0) {
+        await ProductVariation.bulkCreate(
+          variations.map((v) => ({ name: v.name, price: v.price, productId: product.id }))
+        );
+      }
+    }
+
     res.json(product);
   } catch (error) {
     console.error('[update product]', error);
