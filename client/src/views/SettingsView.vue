@@ -630,7 +630,7 @@ const recarregarStatus = async () => {
 const buscarQRCode = async () => {
   try {
     const { data } = await WhatsAppService.getQRCode()
-    waQrCode.value = data.base64 || data.qrcode || null
+    waQrCode.value = data.base64 || data.qrcode || data.code || null
   } catch (e) {
     toast.error('Erro ao buscar QR Code')
   }

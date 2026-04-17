@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   evolution:
-    image: atendai/evolution-api:v2.2.3
+    image: atendai/evolution-api:v2.3.7
     container_name: evolution_api
     restart: always
     ports:
@@ -21,6 +21,7 @@ services:
       - DATABASE_URL=postgresql://marquin:Senha123!@172.18.0.1:5432/evolution_api
       - DATABASE_CONNECTION_CLIENT_NAME=evolution_api
       - CACHE_REDIS_ENABLED=false
+      - CONFIG_SESSION_PHONE_VERSION=2.3000.1023204200
     volumes:
       - evolution_data:/evolution/instances
 
