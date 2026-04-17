@@ -37,7 +37,7 @@
           </svg>
           <span
             class="font-bold text-lg text-neutral-900 dark:text-neutral-100 tracking-tight whitespace-nowrap overflow-hidden"
-            >Qbombom</span
+            >Qbombom Sorvetes Sorvetes</span
           >
         </div>
         <button

@@ -336,7 +336,7 @@ const waOptingOut = ref(false);
 // Configurações do PIX da Loja (Buscadas do backend)
 const chavePixLoja = ref("");
 const tipoChavePix = ref("cpf");
-const nomeLoja = ref("Qbombom Delivery");
+const nomeLoja = ref("Qbombom Sorvetes Sorvetes");
 const cidadeLoja = ref("Sao Paulo");
 
 const carregarConfiguracoes = async () => {

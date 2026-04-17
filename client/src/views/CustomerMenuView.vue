@@ -61,7 +61,7 @@
               <h1
                 class="text-xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight leading-tight"
               >
-                Qbombom
+                Qbombom Sorvetes
               </h1>
             </div>
           </div>
@@ -358,7 +358,7 @@ const pixPayloadSucesso = computed(() => {
   if (!pedidoCriado.value || !storeSettings.value?.pix?.key) return "";
   const pix = storeSettings.value.pix;
   const profile = storeSettings.value?.profile;
-  const name = profile?.name || "Qbombom";
+  const name = profile?.name || "Qbombom Sorvetes Sorvetes";
   const city = (profile?.address?.city || "Sao Paulo").split("-")[0].trim();
   return generatePixPayload(pix.key, pix.type || "cpf", name, city, pedidoCriado.value.total, pedidoCriado.value.id || "***");
 });

@@ -7,7 +7,7 @@
     >
       <div class="text-center mb-8">
         <div class="flex justify-center mb-5">
-          <!-- Placeholder da Logo Qbombom -->
+          <!-- Placeholder da Logo Qbombom Sorvetes -->
           <svg
             width="48"
             height="48"

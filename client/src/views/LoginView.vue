@@ -4,7 +4,7 @@
     <div class="w-full flex flex-col justify-center px-6 sm:px-12 md:px-20 lg:px-24">
       <div class="w-full max-w-[420px] mx-auto">
         <div class="flex items-center justify-center gap-3 mb-12">
-          <!-- Logo Qbombom -->
+          <!-- Logo Qbombom Sorvetes -->
           <svg
             width="40"
             height="40"
@@ -26,7 +26,7 @@
             </text>
           </svg>
           <span class="text-2xl font-black tracking-tight text-neutral-900 dark:text-neutral-100"
-            >Qbombom</span
+            >Qbombom Sorvetes Sorvetes</span
           >
         </div>
 

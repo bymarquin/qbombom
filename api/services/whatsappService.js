@@ -142,7 +142,7 @@ exports.sendStatusMessage = async (phone, status, orderNumber, trackingUrl = nul
   const message = messages[status]
   if (!message) return
 
-  let text = `*Qbombom* — Pedido #${orderNumber}\n\n${message}`
+  let text = `*Qbombom Sorvetes Sorvetes* — Pedido #${orderNumber}\n\n${message}`
   if (trackingUrl) text += `\n${trackingUrl}`
 
   const statusKey = `${orderId || orderNumber}:${status}`
