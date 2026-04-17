@@ -744,7 +744,7 @@ const tabs = [
 // Dados do Formulário (Simulando um fetch inicial)
 const form = reactive({
   profile: {
-    name: "Qbombom Sorvetes Sorvetes",
+    name: "Qbombom Sorvetes",
     cnpj: "12.345.678/0001-90",
     phone: "(11) 99999-9999",
     email: "contato@qbombom.com.br",

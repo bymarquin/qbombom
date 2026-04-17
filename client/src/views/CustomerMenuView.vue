@@ -57,12 +57,9 @@
                 Q
               </text>
             </svg>
-            <div>
-              <h1
-                class="text-xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight leading-tight"
-              >
-                Qbombom Sorvetes
-              </h1>
+            <div class="flex flex-col leading-none">
+              <span class="text-xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">Qbombom</span>
+              <span class="text-xs font-semibold tracking-widest text-neutral-500 dark:text-neutral-400 uppercase">Sorvetes</span>
             </div>
           </div>
 
@@ -358,7 +355,7 @@ const pixPayloadSucesso = computed(() => {
   if (!pedidoCriado.value || !storeSettings.value?.pix?.key) return "";
   const pix = storeSettings.value.pix;
   const profile = storeSettings.value?.profile;
-  const name = profile?.name || "Qbombom Sorvetes Sorvetes";
+  const name = profile?.name || "Qbombom Sorvetes";
   const city = (profile?.address?.city || "Sao Paulo").split("-")[0].trim();
   return generatePixPayload(pix.key, pix.type || "cpf", name, city, pedidoCriado.value.total, pedidoCriado.value.id || "***");
 });

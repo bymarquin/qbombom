@@ -139,7 +139,7 @@ exports.forgotPassword = async (req, res) => {
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
     const resetLink = `${clientUrl}/auth/reset-password?token=${token}&id=${user.id}`;
 
-    await sendTemplateEmail(user.email, 'Recuperação de Senha - Qbombom Sorvetes Sorvetes', 'forgot-password', {
+    await sendTemplateEmail(user.email, 'Recuperação de Senha - Qbombom Sorvetes', 'forgot-password', {
       name: user.name,
       resetLink
     });

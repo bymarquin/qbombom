@@ -24,9 +24,10 @@
               Q
             </text>
           </svg>
-          <span class="text-2xl font-black tracking-tight text-neutral-900 dark:text-neutral-100"
-            >Qbombom Sorvetes Sorvetes</span
-          >
+          <div class="flex flex-col leading-none">
+            <span class="text-2xl font-black tracking-tight text-neutral-900 dark:text-neutral-100">Qbombom</span>
+            <span class="text-sm font-semibold tracking-widest text-neutral-500 dark:text-neutral-400 uppercase">Sorvetes</span>
+          </div>
         </div>
 
         <div class="mb-8">

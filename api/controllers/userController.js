@@ -24,7 +24,7 @@ async function sendInviteEmail(user) {
   const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
   const inviteLink = `${clientUrl}/auth/reset-password?token=${token}&id=${user.id}`;
 
-  await sendTemplateEmail(user.email, 'Convite de Acesso — Qbombom Sorvetes Sorvetes', 'invite-user', {
+  await sendTemplateEmail(user.email, 'Convite de Acesso — Qbombom Sorvetes', 'invite-user', {
     name: user.name,
     role: ROLE_LABELS[user.role] || user.role,
     inviteLink,
