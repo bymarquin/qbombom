@@ -33,7 +33,7 @@
     <header
       class="bg-white dark:bg-neutral-900 shrink-0 border-b border-neutral-200 dark:border-neutral-800 shadow-sm dark:shadow-none z-10 relative"
     >
-      <div class="px-5 pt-8 pb-4">
+      <div class="px-5 pt-4 pb-4">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
             <!-- Logo Exata do Login -->
