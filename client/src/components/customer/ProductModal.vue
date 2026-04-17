@@ -110,7 +110,7 @@
                   : 'bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700'
               "
             >
-              {{ qtdSelecionadaNoGrupo(grupo.id) }} / {{ maxEfetivoDoGrupo(grupo) }}
+              {{ limiteGlobal ? totalSelecionado : qtdSelecionadaNoGrupo(grupo.id) }} / {{ limiteGlobal ?? maxEfetivoDoGrupo(grupo) }}
             </span>
           </div>
 
@@ -241,6 +241,10 @@ watch(tamanhoSelecionado, () => {
       );
     }
   }
+  const max = limiteGlobal.value;
+  if (max !== null && adicionaisSelecionados.value.length > max) {
+    adicionaisSelecionados.value = adicionaisSelecionados.value.slice(0, max);
+  }
 });
 
 const fecharModalProduto = () => {
@@ -253,12 +257,18 @@ const itensSelecionadosNoGrupo = (grupoId) =>
 const qtdSelecionadaNoGrupo = (grupoId) => itensSelecionadosNoGrupo(grupoId).length;
 const isAdicionalSelecionado = (adicional) =>
   adicionaisSelecionados.value.some((a) => a.id === adicional.id);
+const limiteGlobal = computed(() => tamanhoSelecionado.value?.maxAdditionals ?? null);
+const totalSelecionado = computed(() => adicionaisSelecionados.value.length);
+const atingiuMaximoGlobal = computed(() =>
+  limiteGlobal.value !== null && totalSelecionado.value >= limiteGlobal.value
+);
 const maxEfetivoDoGrupo = (grupo) => {
   const limiteVariacao = tamanhoSelecionado.value?.maxAdditionals
   const todosGratis = grupo.items?.every((i) => parseFloat(i.price) === 0)
   return limiteVariacao && todosGratis ? limiteVariacao : grupo.maxChoices
 }
-const atingiuMaximo = (grupo) => qtdSelecionadaNoGrupo(grupo.id) >= maxEfetivoDoGrupo(grupo);
+const atingiuMaximo = (grupo) =>
+  atingiuMaximoGlobal.value || qtdSelecionadaNoGrupo(grupo.id) >= maxEfetivoDoGrupo(grupo);
 
 const podeConfirmarProduto = computed(() => {
   if (!props.produtoDetalhado) return false;
