@@ -1,115 +1,86 @@
+'use strict';
+
 const { Order, OrderItem, Product, sequelize } = require('../models');
 const { Op } = require('sequelize');
-const moment = require('moment');
+
+function getDateRange(period) {
+  const now = new Date();
+  const endOf = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+  const startOf = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+
+  if (period === 'week') {
+    const from = new Date(now);
+    from.setDate(now.getDate() - 7);
+    return { start: startOf(from), end: endOf(now) };
+  }
+
+  if (period === 'month') {
+    return { start: new Date(now.getFullYear(), now.getMonth(), 1), end: endOf(now) };
+  }
+
+  return { start: startOf(now), end: endOf(now) };
+}
 
 exports.getMetrics = async (req, res) => {
   try {
-    const { period } = req.query; // 'today', 'week', 'month'
-    
-    let startDate;
-    let endDate = moment().endOf('day').toDate();
+    const { start, end } = getDateRange(req.query.period);
 
-    if (period === 'week') {
-      startDate = moment().subtract(7, 'days').startOf('day').toDate();
-    } else if (period === 'month') {
-      startDate = moment().startOf('month').toDate();
-    } else {
-      // Default: today
-      startDate = moment().startOf('day').toDate();
-    }
+    const withinPeriod = { createdAt: { [Op.between]: [start, end] } };
+    const notCancelled = { status: { [Op.ne]: 'cancelado' } };
 
-    const whereClause = {
-      createdAt: {
-        [Op.between]: [startDate, endDate]
-      }
-    };
-
-    // 1. Faturamento Total (Apenas pedidos não cancelados)
-    const revenueResult = await Order.sum('total', {
-      where: {
-        ...whereClause,
-        status: { [Op.ne]: 'cancelado' }
-      }
-    });
-    const revenue = revenueResult || 0;
-
-    // 2. Total de Pedidos (Não cancelados)
-    const totalOrders = await Order.count({
-      where: {
-        ...whereClause,
-        status: { [Op.ne]: 'cancelado' }
-      }
-    });
-
-    // 3. Ticket Médio
-    const averageTicket = totalOrders > 0 ? (revenue / totalOrders) : 0;
-
-    // 4. Cancelamentos
-    const cancellations = await Order.count({
-      where: {
-        ...whereClause,
-        status: 'cancelado'
-      }
-    });
-
-    // 5. Pedidos Recentes
-    const recentOrders = await Order.findAll({
-      where: whereClause,
-      order: [['createdAt', 'DESC']],
-      limit: 5
-    });
-
-    // 6. Top Produtos (Mais vendidos no período)
-    const topProductsRaw = await OrderItem.findAll({
-      attributes: [
-        'productId',
-        [sequelize.fn('SUM', sequelize.col('quantity')), 'totalQuantity'],
-        [sequelize.fn('SUM', sequelize.col('totalPrice')), 'totalRevenue']
-      ],
-      include: [
-        {
-          model: Order,
-          as: 'order',
-          attributes: [],
-          where: {
-            ...whereClause,
-            status: { [Op.ne]: 'cancelado' }
+    const [revenue, totalOrders, cancellations, recentOrders, topProductsRaw] = await Promise.all([
+      Order.sum('total', { where: { ...withinPeriod, ...notCancelled } }),
+      Order.count({ where: { ...withinPeriod, ...notCancelled } }),
+      Order.count({ where: { ...withinPeriod, status: 'cancelado' } }),
+      Order.findAll({ where: withinPeriod, order: [['createdAt', 'DESC']], limit: 5 }),
+      OrderItem.findAll({
+        attributes: [
+          'productId',
+          [sequelize.fn('SUM', sequelize.col('quantity')), 'totalQuantity'],
+          [sequelize.fn('SUM', sequelize.col('totalPrice')), 'totalRevenue']
+        ],
+        include: [
+          {
+            model: Order,
+            as: 'order',
+            attributes: [],
+            where: { ...withinPeriod, ...notCancelled },
+            required: true
           },
-          required: true
-        },
-        {
-          model: Product,
-          as: 'product',
-          attributes: ['name']
-        }
-      ],
-      group: ['productId', 'product.id'],
-      order: [[sequelize.fn('SUM', sequelize.col('quantity')), 'DESC']],
-      limit: 5,
-      raw: true
-    });
+          {
+            model: Product,
+            as: 'product',
+            attributes: ['name']
+          }
+        ],
+        group: ['productId', 'product.id'],
+        order: [[sequelize.fn('SUM', sequelize.col('quantity')), 'DESC']],
+        limit: 5,
+        raw: true
+      })
+    ]);
 
-    // Clean up raw results
-    const topProducts = topProductsRaw.map(item => ({
+    const topProducts = topProductsRaw.map((item) => ({
       id: item.productId,
       name: item['product.name'],
       quantity: parseInt(item.totalQuantity, 10),
       revenue: parseFloat(item.totalRevenue)
     }));
 
+    const safeRevenue = revenue || 0;
+
     res.json({
       metrics: {
-        revenue,
+        revenue: safeRevenue,
         totalOrders,
-        averageTicket,
+        averageTicket: totalOrders > 0 ? safeRevenue / totalOrders : 0,
         cancellations
       },
       recentOrders,
       topProducts
     });
-
   } catch (error) {
-    console.error('Error fetching dashboard metrics:', error);
+    console.error('[dashboard.getMetrics]', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

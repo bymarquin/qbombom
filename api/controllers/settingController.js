@@ -1,42 +1,28 @@
+'use strict';
+
 const { Setting } = require('../models');
 
-// Obter as configurações gerais (Chave única)
+const STORE_CONFIG_KEY = 'store_config';
+
 exports.getSettings = async (req, res) => {
   try {
-    const configKey = 'store_config';
-    
-    // Tenta encontrar, senão retorna o defaultValue {}
-    let setting = await Setting.findOne({ where: { key: configKey } });
-    
-    if (!setting) {
-      setting = await Setting.create({ key: configKey, value: {} });
-    }
-
-    res.status(200).json(setting.value);
+    const [setting] = await Setting.findOrCreate({
+      where: { key: STORE_CONFIG_KEY },
+      defaults: { key: STORE_CONFIG_KEY, value: {} }
+    });
+    res.json(setting.value);
   } catch (error) {
-    console.error('Erro ao buscar configurações:', error);
+    console.error('[settings.get]', error);
     res.status(500).json({ error: 'Erro ao buscar configurações' });
   }
 };
 
-// Atualizar ou criar configurações
 exports.updateSettings = async (req, res) => {
   try {
-    const configKey = 'store_config';
-    const newConfigData = req.body;
-
-    let setting = await Setting.findOne({ where: { key: configKey } });
-    
-    if (setting) {
-      setting.value = newConfigData;
-      await setting.save();
-    } else {
-      setting = await Setting.create({ key: configKey, value: newConfigData });
-    }
-
-    res.status(200).json({ message: 'Configurações atualizadas com sucesso', data: setting.value });
+    const [setting] = await Setting.upsert({ key: STORE_CONFIG_KEY, value: req.body });
+    res.json(setting.value);
   } catch (error) {
-    console.error('Erro ao salvar configurações:', error);
+    console.error('[settings.update]', error);
     res.status(500).json({ error: 'Erro ao salvar configurações' });
   }
 };

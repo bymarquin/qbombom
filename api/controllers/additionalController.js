@@ -27,7 +27,7 @@ exports.updateGroup = async (req, res) => {
   try {
     const group = await AdditionalGroup.findByPk(req.params.id);
     if (!group) return res.status(404).json({ error: 'Group not found' });
-    await group.update(req.body);
+    await group.update({ name: req.body.name });
     res.json(group);
   } catch (error) {
     res.status(500).json({ error: 'Failed to update group' });
@@ -82,7 +82,8 @@ exports.updateItem = async (req, res) => {
   try {
     const item = await AdditionalItem.findByPk(req.params.id);
     if (!item) return res.status(404).json({ error: 'Item not found' });
-    await item.update(req.body);
+    const { name, price, status } = req.body;
+    await item.update({ name, price, status });
     res.json(item);
   } catch (error) {
     res.status(500).json({ error: 'Failed to update item' });

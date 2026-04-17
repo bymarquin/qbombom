@@ -1,10 +1,24 @@
-const { Customer } = require('../models');
-const bcrypt = require('bcryptjs');
+'use strict';
+
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const { Customer } = require('../models');
+const { SECRET } = require('../config/jwt');
 
-const SECRET = process.env.JWT_SECRET || 'qbombom_super_secret_key_2026';
+function generateCustomerToken(customer) {
+  return jwt.sign({ id: customer.id, role: 'CUSTOMER' }, SECRET, { expiresIn: '7d' });
+}
 
-// Cadastro de Cliente por E-mail/Senha
+function formatCustomer(customer) {
+  return {
+    id: customer.id,
+    name: customer.name,
+    email: customer.email,
+    phone: customer.phone,
+    address: customer.address ?? undefined
+  };
+}
+
 exports.register = async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
@@ -13,40 +27,19 @@ exports.register = async (req, res) => {
       return res.status(400).json({ error: 'Nome, email e senha são obrigatórios.' });
     }
 
-    // Verifica se já existe um cliente com esse e-mail
-    const existingCustomer = await Customer.findOne({ where: { email } });
-    if (existingCustomer) {
-      return res.status(400).json({ error: 'Este e-mail já está cadastrado.' });
-    }
+    const existing = await Customer.findOne({ where: { email } });
+    if (existing) return res.status(400).json({ error: 'Este e-mail já está cadastrado.' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const customer = await Customer.create({ name, email, phone, password: hashedPassword });
 
-    const customer = await Customer.create({
-      name,
-      email,
-      phone,
-      password: hashedPassword,
-    });
-
-    // Token do Cliente
-    const token = jwt.sign({ id: customer.id, role: 'CUSTOMER' }, SECRET, { expiresIn: '7d' });
-
-    res.status(201).json({
-      token,
-      customer: {
-        id: customer.id,
-        name: customer.name,
-        email: customer.email,
-        phone: customer.phone
-      }
-    });
+    res.status(201).json({ token: generateCustomerToken(customer), customer: formatCustomer(customer) });
   } catch (error) {
-    console.error('Erro no cadastro do cliente:', error);
-    res.status(500).json({ error: 'Erro interno no servidor ao cadastrar.' });
+    console.error('[customerAuth.register]', error);
+    res.status(500).json({ error: 'Erro interno no servidor.' });
   }
 };
 
-// Login de Cliente por E-mail/Senha
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -56,32 +49,16 @@ exports.login = async (req, res) => {
     }
 
     const customer = await Customer.findOne({ where: { email } });
-    
-    // Se o cliente não existir ou não tiver senha (só usou googleId)
-    if (!customer || !customer.password) {
+    if (!customer?.password) {
       return res.status(401).json({ error: 'Credenciais inválidas.' });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, customer.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ error: 'Credenciais inválidas.' });
-    }
+    const valid = await bcrypt.compare(password, customer.password);
+    if (!valid) return res.status(401).json({ error: 'Credenciais inválidas.' });
 
-    // Token do Cliente
-    const token = jwt.sign({ id: customer.id, role: 'CUSTOMER' }, SECRET, { expiresIn: '7d' });
-
-    res.json({
-      token,
-      customer: {
-        id: customer.id,
-        name: customer.name,
-        email: customer.email,
-        phone: customer.phone,
-        address: customer.address
-      }
-    });
+    res.json({ token: generateCustomerToken(customer), customer: formatCustomer(customer) });
   } catch (error) {
-    console.error('Erro no login do cliente:', error);
-    res.status(500).json({ error: 'Erro interno no servidor ao fazer login.' });
+    console.error('[customerAuth.login]', error);
+    res.status(500).json({ error: 'Erro interno no servidor.' });
   }
 };
