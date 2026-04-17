@@ -18,6 +18,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd /home/marquin/var/www/qbombom
+            git stash
             git pull origin main
 
             cd api
