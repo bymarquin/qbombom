@@ -237,7 +237,7 @@ import { ref, onMounted } from 'vue'
 import { Pencil, Trash2 } from 'lucide-vue-next'
 import { CustomerService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
-import { mascararTelefone } from '@/utils/formatters'
+import { mascararTelefone, limparTelefone } from '@/utils/formatters'
 
 const toast = useToastStore()
 const customers = ref([])
@@ -267,7 +267,7 @@ const openModal = (cust = null) => {
     editingItem.value = cust
     form.value = {
       name: cust.name,
-      phone: cust.phone || '',
+      phone: mascararTelefone(cust.phone || ''),
       email: cust.email || '',
       address: cust.address || '',
       status: cust.status,
@@ -281,11 +281,12 @@ const openModal = (cust = null) => {
 
 const saveCustomer = async () => {
   try {
+    const payload = { ...form.value, phone: limparTelefone(form.value.phone) }
     if (editingItem.value) {
-      await CustomerService.updateCustomer(editingItem.value.id, form.value)
+      await CustomerService.updateCustomer(editingItem.value.id, payload)
       toast.success('Cliente atualizado!')
     } else {
-      await CustomerService.createCustomer(form.value)
+      await CustomerService.createCustomer(payload)
       toast.success('Cliente criado!')
     }
     closeModal()

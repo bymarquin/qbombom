@@ -243,6 +243,7 @@ import { CatalogService, OrderService, SettingService } from "@/services/http";
 import { requestNotificationPermission, showNotification } from "@/utils/notifications";
 import { syncToLocalStorage } from "@/composables/useLocalStorage";
 import { generatePixPayload } from "@/utils/pix";
+import { limparTelefone, mascararTelefone } from "@/utils/formatters";
 import { formatarMoeda } from "@/utils/formatters";
 import socket from "@/services/socket";
 import ProductModal from "@/components/customer/ProductModal.vue";
@@ -465,7 +466,7 @@ onMounted(() => {
     try {
       const parsed = JSON.parse(ghostProfile);
       checkout.value.nome = parsed.nome || "";
-      checkout.value.telefone = parsed.telefone || "";
+      checkout.value.telefone = mascararTelefone(parsed.telefone || "");
       if (parsed.endereco) {
         checkout.value.endereco = parsed.endereco;
       }
@@ -609,7 +610,7 @@ const enviarPedido = async () => {
     const payload = {
       type: checkout.value.tipo,
       customerName: finalCustomerName,
-      customerPhone: checkout.value.telefone,
+      customerPhone: limparTelefone(checkout.value.telefone),
       deliveryAddress: endEntrega || undefined,
       paymentStatus: "pendente", // Pedido online nasce como pagamento pendente sempre
       paymentMethod: checkout.value.pagamento,

@@ -619,7 +619,7 @@ import { ref, reactive, watch } from "vue";
 import { useToastStore } from "@/stores/toast";
 import { SettingService, WhatsAppService } from "@/services/http";
 import { onMounted } from "vue";
-import { mascararTelefone } from "@/utils/formatters";
+import { mascararTelefone, limparTelefone } from "@/utils/formatters";
 
 // Estado
 const toast = useToastStore();
@@ -819,6 +819,7 @@ const carregarConfiguracoes = async () => {
     if (res.data && Object.keys(res.data).length > 0) {
       // Mescla os dados do banco no form mantendo as propriedades reativas
       Object.assign(form, res.data);
+      if (form.profile?.phone) form.profile.phone = mascararTelefone(form.profile.phone);
     }
   } catch (error) {
     console.error("Erro ao carregar configurações do banco:", error);
@@ -838,7 +839,9 @@ const salvarConfiguracoes = async () => {
       throw new Error("O nome da loja é obrigatório.");
     }
 
-    await SettingService.saveSettings(form);
+    const payload = JSON.parse(JSON.stringify(form));
+    if (payload.profile?.phone) payload.profile.phone = limparTelefone(payload.profile.phone);
+    await SettingService.saveSettings(payload);
     toast.success("Configurações salvas com sucesso!");
   } catch (error) {
     if (error instanceof Error) {

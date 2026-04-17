@@ -747,7 +747,7 @@ const produtosFiltrados = computed(() => {
   return filtrados
 })
 
-import { formatarMoeda, mascararTelefone } from "@/utils/formatters"
+import { formatarMoeda, mascararTelefone, limparTelefone } from "@/utils/formatters"
 
 // --- CARRINHO ---
 const carrinho = ref([])
@@ -784,7 +784,7 @@ const finalizarPedido = async () => {
     const payload = {
       type: tipoConsumo.value,
       customerName: nomeCliente.value,
-      customerPhone: tipoConsumo.value === 'Entrega' ? telefoneCliente.value : undefined,
+      customerPhone: tipoConsumo.value === 'Entrega' ? limparTelefone(telefoneCliente.value) : undefined,
       deliveryAddress: tipoConsumo.value === 'Entrega' ? enderecoEntrega.value : undefined,
       paymentStatus: 'pago',
       paymentMethod: metodoPagamentoSelecionado.value,

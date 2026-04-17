@@ -1,3 +1,5 @@
+export const limparTelefone = (valor) => String(valor || '').replace(/\D/g, '')
+
 export const mascararTelefone = (valor) => {
   const digits = String(valor || '').replace(/\D/g, '').slice(0, 11)
   if (digits.length <= 2) return digits.length ? `(${digits}` : ''
