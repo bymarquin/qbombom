@@ -32,6 +32,10 @@ module.exports = {
         type: Sequelize.INTEGER,
         defaultValue: 0
       },
+      imageUrl: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
       categoryId: {
         type: Sequelize.UUID,
         allowNull: false,
