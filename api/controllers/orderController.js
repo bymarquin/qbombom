@@ -365,6 +365,40 @@ exports.updateStatus = async (req, res) => {
 };
 
 
+exports.cancelOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findByPk(id);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    if (order.status === 'cancelado') {
+      return res.status(400).json({ error: 'Pedido já está cancelado.' });
+    }
+    if (['finalizado', 'entregue'].includes(order.status)) {
+      return res.status(400).json({ error: 'Não é possível cancelar um pedido já finalizado.' });
+    }
+
+    const previousStatus = order.status;
+    order.status = 'cancelado';
+    await order.save();
+
+    const io = req.app.get('io');
+    if (io) io.emit('orderUpdated', order);
+
+    if (order.customerId) {
+      const customer = await Customer.findByPk(order.customerId, { attributes: ['phone'] });
+      if (customer?.phone) {
+        whatsappService.sendStatusMessage(customer.phone, 'cancelado', order.id.slice(-6).toUpperCase());
+      }
+    }
+
+    res.json(order);
+  } catch (error) {
+    console.error('Error cancelling order:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 exports.uploadReceipt = async (req, res) => {
   try {
     const { code } = req.params;

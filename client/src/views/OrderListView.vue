@@ -413,67 +413,90 @@
             Imprimir Comanda
           </button>
 
-          <label
-            class="text-xs font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider mt-2"
-            >Alterar Status do Pedido:</label
-          >
-          <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
-            <button
-              @click="updateStatusForOrder(selectedOrder, 'novo')"
-              :class="
-                selectedOrder.status === 'novo'
-                  ? 'bg-blue-600 text-white ring-2 ring-offset-2 ring-blue-600/30'
-                  : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 dark:bg-neutral-950'
-              "
-              class="px-2 py-2 rounded-lg text-xs font-medium transition-all shadow-sm dark:shadow-none"
+          <!-- Controles completos de status: apenas MANAGER e SUPER_ADMIN -->
+          <template v-if="userRole === 'SUPER_ADMIN' || userRole === 'MANAGER'">
+            <label
+              class="text-xs font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider mt-2"
+              >Alterar Status do Pedido:</label
             >
-              Novo
-            </button>
-            <button
-              @click="updateStatusForOrder(selectedOrder, 'em_preparo')"
-              :class="
-                selectedOrder.status === 'em_preparo'
-                  ? 'bg-yellow-500 text-white ring-2 ring-offset-2 ring-yellow-500/30'
-                  : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 dark:bg-neutral-950'
-              "
-              class="px-2 py-2 rounded-lg text-xs font-medium transition-all shadow-sm dark:shadow-none"
+            <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
+              <button
+                @click="updateStatusForOrder(selectedOrder, 'novo')"
+                :class="
+                  selectedOrder.status === 'novo'
+                    ? 'bg-blue-600 text-white ring-2 ring-offset-2 ring-blue-600/30'
+                    : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 dark:bg-neutral-950'
+                "
+                class="px-2 py-2 rounded-lg text-xs font-medium transition-all shadow-sm dark:shadow-none"
+              >
+                Novo
+              </button>
+              <button
+                @click="updateStatusForOrder(selectedOrder, 'em_preparo')"
+                :class="
+                  selectedOrder.status === 'em_preparo'
+                    ? 'bg-yellow-500 text-white ring-2 ring-offset-2 ring-yellow-500/30'
+                    : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 dark:bg-neutral-950'
+                "
+                class="px-2 py-2 rounded-lg text-xs font-medium transition-all shadow-sm dark:shadow-none"
+              >
+                Preparo
+              </button>
+              <button
+                @click="updateStatusForOrder(selectedOrder, 'pronto')"
+                :class="
+                  selectedOrder.status === 'pronto'
+                    ? 'bg-green-600 text-white ring-2 ring-offset-2 ring-green-600/30'
+                    : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 dark:bg-neutral-950'
+                "
+                class="px-2 py-2 rounded-lg text-xs font-medium transition-all shadow-sm dark:shadow-none"
+              >
+                Pronto
+              </button>
+              <button
+                @click="updateStatusForOrder(selectedOrder, 'entregue')"
+                :class="
+                  selectedOrder.status === 'entregue'
+                    ? 'bg-neutral-800 text-white ring-2 ring-offset-2 ring-neutral-800/30'
+                    : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 dark:bg-neutral-950'
+                "
+                class="px-2 py-2 rounded-lg text-xs font-medium transition-all shadow-sm dark:shadow-none"
+              >
+                Finalizado
+              </button>
+              <button
+                @click="updateStatusForOrder(selectedOrder, 'cancelado')"
+                :class="
+                  selectedOrder.status === 'cancelado'
+                    ? 'bg-red-600 text-white ring-2 ring-offset-2 ring-red-600/30'
+                    : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 dark:bg-neutral-950'
+                "
+                class="px-2 py-2 rounded-lg text-xs font-medium transition-all shadow-sm dark:shadow-none"
+              >
+                Cancelar
+              </button>
+            </div>
+          </template>
+
+          <!-- Cancelamento restrito: apenas CASHIER -->
+          <template v-else-if="userRole === 'CASHIER'">
+            <label
+              class="text-xs font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider mt-2"
+              >Ações:</label
             >
-              Preparo
-            </button>
             <button
-              @click="updateStatusForOrder(selectedOrder, 'pronto')"
-              :class="
-                selectedOrder.status === 'pronto'
-                  ? 'bg-green-600 text-white ring-2 ring-offset-2 ring-green-600/30'
-                  : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 dark:bg-neutral-950'
-              "
-              class="px-2 py-2 rounded-lg text-xs font-medium transition-all shadow-sm dark:shadow-none"
-            >
-              Pronto
-            </button>
-            <button
-              @click="updateStatusForOrder(selectedOrder, 'entregue')"
-              :class="
-                selectedOrder.status === 'entregue'
-                  ? 'bg-neutral-800 text-white ring-2 ring-offset-2 ring-neutral-800/30'
-                  : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 dark:bg-neutral-950'
-              "
-              class="px-2 py-2 rounded-lg text-xs font-medium transition-all shadow-sm dark:shadow-none"
-            >
-              Finalizado
-            </button>
-            <button
-              @click="updateStatusForOrder(selectedOrder, 'cancelado')"
+              @click="cancelOrderFromModal(selectedOrder)"
+              :disabled="selectedOrder.status === 'cancelado' || selectedOrder.status === 'finalizado' || selectedOrder.status === 'entregue'"
+              class="w-full py-2.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               :class="
                 selectedOrder.status === 'cancelado'
-                  ? 'bg-red-600 text-white ring-2 ring-offset-2 ring-red-600/30'
-                  : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 dark:bg-neutral-950'
+                  ? 'bg-red-600 text-white'
+                  : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/40'
               "
-              class="px-2 py-2 rounded-lg text-xs font-medium transition-all shadow-sm dark:shadow-none"
             >
-              Cancelar
+              {{ selectedOrder.status === 'cancelado' ? 'Pedido Cancelado' : 'Cancelar Pedido' }}
             </button>
-          </div>
+          </template>
         </div>
       </div>
     </div>
@@ -483,10 +506,12 @@
 <script setup>
 import { ref, shallowRef, onMounted, computed, onUnmounted } from "vue";
 import { Printer, CheckCircle2, Package, Check, RefreshCw, X } from "lucide-vue-next";
-import { OrderService } from "@/services/http";
+import { OrderService, AuthService } from "@/services/http";
 import { useToastStore } from "@/stores/toast";
 import socket from "@/services/socket";
 import { printReceipt } from "@/utils/printReceipt";
+
+const userRole = AuthService.getRole();
 
 const toast = useToastStore();
 const orders = shallowRef([]);
@@ -638,6 +663,27 @@ const confirmPaymentModal = async () => {
     }
   } catch (err) {
     console.error(err);
+  }
+};
+
+const cancelOrderFromModal = async (order) => {
+  if (!order || order.status === 'cancelado') return;
+  try {
+    await OrderService.cancelOrder(order.id);
+    toast.success(`Pedido #${order.trackingCode || order.id.slice(0, 8)} cancelado.`);
+
+    const idx = orders.value.findIndex((o) => o.id === order.id);
+    if (idx !== -1) {
+      const newOrders = [...orders.value];
+      newOrders[idx] = { ...newOrders[idx], status: 'cancelado' };
+      orders.value = newOrders;
+    }
+    if (selectedOrder.value && selectedOrder.value.id === order.id) {
+      selectedOrder.value.status = 'cancelado';
+    }
+  } catch (error) {
+    toast.error("Erro ao cancelar pedido");
+    console.error(error);
   }
 };
 

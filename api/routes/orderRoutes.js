@@ -25,4 +25,7 @@ router.post('/', auth, checkPermission('orders.create'), orderController.create)
 // Alterar status do pedido, ex: de novo para em_preparo (Permissão: orders.change_status)
 router.patch('/:id/status', auth, checkPermission('orders.change_status'), orderController.updateStatus);
 
+// Cancelar pedido (Permissão: orders.cancel — disponível também para CASHIER)
+router.patch('/:id/cancel', auth, checkPermission('orders.cancel'), orderController.cancelOrder);
+
 module.exports = router;

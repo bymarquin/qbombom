@@ -250,6 +250,9 @@ export const OrderService = {
 
     return api.patch(`/orders/${id}/status`, payload)
   },
+  cancelOrder(id) {
+    return api.patch(`/orders/${id}/cancel`)
+  },
 }
 
 export const DashboardService = {
