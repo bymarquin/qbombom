@@ -3,10 +3,11 @@ const whatsappService = require('../services/whatsappService')
 exports.getStatus = async (req, res) => {
   try {
     const instances = await whatsappService.getInstance()
+    const instanceName = process.env.EVOLUTION_INSTANCE || 'qbombom'
     const instance = Array.isArray(instances)
-      ? instances.find((i) => i.instance?.instanceName === process.env.EVOLUTION_INSTANCE || 'qbombom')
+      ? instances.find((i) => i.name === instanceName)
       : null
-    res.json({ status: instance?.instance?.connectionStatus || 'disconnected', instance })
+    res.json({ status: instance?.connectionStatus || 'disconnected', instance })
   } catch (error) {
     res.json({ status: 'disconnected', error: error.message })
   }
