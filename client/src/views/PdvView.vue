@@ -110,10 +110,19 @@
               class="bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800/50 rounded-2xl p-4 flex flex-col text-left hover:border-red-600 shadow-sm dark:shadow-none shadow-neutral-200/50 hover:shadow-md dark:shadow-none hover:shadow-red-900/5 transition-all duration-200 group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-red-600/15"
               @click="abrirModalProduto(produto)"
             >
-              <div
-                class="w-full h-24 bg-red-50 rounded-lg mb-3 flex items-center justify-center text-red-300 group-hover:bg-red-100 transition-colors"
-              >
-                <Coffee class="w-8 h-8" />
+              <div class="w-full h-24 rounded-lg mb-3 overflow-hidden">
+                <img
+                  v-if="produto.imageUrl"
+                  :src="produto.imageUrl"
+                  :alt="produto.name"
+                  class="w-full h-full object-cover"
+                />
+                <div
+                  v-else
+                  class="w-full h-full bg-red-50 flex items-center justify-center text-red-300 group-hover:bg-red-100 transition-colors"
+                >
+                  <Coffee class="w-8 h-8" />
+                </div>
               </div>
 
               <h3
@@ -378,6 +387,11 @@
 
         <!-- Corpo do Modal (Scroll) -->
         <div class="flex-1 overflow-y-auto p-5 sm:p-6 space-y-8 bg-neutral-50 dark:bg-neutral-950">
+          <!-- Imagem do produto -->
+          <div v-if="produtoDetalhado.imageUrl" class="w-full h-48 rounded-xl overflow-hidden bg-neutral-100 dark:bg-neutral-900 -mt-1">
+            <img :src="produtoDetalhado.imageUrl" :alt="produtoDetalhado.name" class="w-full h-full object-cover" />
+          </div>
+
           <!-- Tamanhos/Variações (Se existirem) -->
           <section v-if="produtoDetalhado.variations && produtoDetalhado.variations.length > 0">
             <h3
@@ -417,6 +431,20 @@
             <p v-if="!tamanhoSelecionado" class="text-xs text-red-500 mt-2 font-medium">
               Selecione uma opção para continuar.
             </p>
+
+            <!-- Contador global de complementos -->
+            <div
+              v-if="tamanhoSelecionado && limiteGlobal"
+              class="mt-4 flex items-center justify-between px-3 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700"
+            >
+              <span class="text-xs text-neutral-500 dark:text-neutral-400">Complementos selecionados</span>
+              <span
+                class="text-xs font-bold"
+                :class="atingiuLimite ? 'text-red-600 dark:text-red-400' : 'text-neutral-700 dark:text-neutral-300'"
+              >
+                {{ totalSelecionado }} / {{ limiteGlobal }}
+              </span>
+            </div>
           </section>
 
           <!-- Preço base do produto caso não tenha variações -->
@@ -467,9 +495,7 @@
                   isAdicionalSelecionado(add)
                     ? 'border-red-600 ring-1 ring-red-600 bg-red-50/30 dark:bg-red-900/20'
                     : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 hover:border-neutral-300 dark:hover:border-neutral-700',
-                  !isAdicionalSelecionado(add) && atingiuMaximo(grupo)
-                    ? 'opacity-50 cursor-not-allowed bg-neutral-50 dark:bg-neutral-900/50'
-                    : '',
+                  estaBloqueado(add, grupo) ? 'opacity-50 cursor-not-allowed' : '',
                 ]"
               >
                 <div class="flex items-center gap-3">
@@ -478,7 +504,7 @@
                     :value="{ ...add, grupoId: grupo.id }"
                     v-model="adicionaisSelecionados"
                     class="w-4 h-4 text-red-600 border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 rounded focus:ring-red-600 cursor-pointer accent-red-600"
-                    :disabled="!isAdicionalSelecionado(add) && atingiuMaximo(grupo)"
+                    :disabled="estaBloqueado(add, grupo)"
                   />
                   <span
                     class="text-sm font-medium"
@@ -652,7 +678,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Search,
@@ -860,6 +886,26 @@ const isAdicionalSelecionado = (adicional) => {
 const atingiuMaximo = (grupo) => {
   return qtdSelecionadaNoGrupo(grupo.id) >= grupo.maxChoices
 }
+
+const limiteGlobal = computed(() => tamanhoSelecionado.value?.maxAdditionals ?? null)
+const totalSelecionado = computed(() => adicionaisSelecionados.value.length)
+const atingiuLimite = computed(() => limiteGlobal.value !== null && totalSelecionado.value >= limiteGlobal.value)
+
+const estaBloqueado = (adicional, grupo) =>
+  !isAdicionalSelecionado(adicional) && (atingiuLimite.value || atingiuMaximo(grupo))
+
+watch(tamanhoSelecionado, () => {
+  const max = limiteGlobal.value
+  if (max !== null && adicionaisSelecionados.value.length > max) {
+    adicionaisSelecionados.value = adicionaisSelecionados.value.slice(0, max)
+  }
+})
+
+watch(() => adicionaisSelecionados.value.length, (novo, anterior) => {
+  if (limiteGlobal.value !== null && novo === limiteGlobal.value && novo > anterior) {
+    toast.info('Máximo de complementos atingido!')
+  }
+})
 
 // Validação dos mínimos obrigatórios
 const podeConfirmarProduto = computed(() => {
