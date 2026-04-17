@@ -51,18 +51,6 @@ export default defineConfig({
             urlPattern: /\/api\/.*/i,
             handler: 'NetworkOnly',
           },
-          {
-            // Imagens do R2 (Cloudflare) — cacheia por 7 dias
-            urlPattern: /^https:\/\/pub-.*\.r2\.dev\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'r2-images',
-              expiration: {
-                maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24 * 7,
-              },
-            },
-          },
         ],
       },
     }),
