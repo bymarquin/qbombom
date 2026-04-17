@@ -551,12 +551,6 @@ function onOrderUpdated(updated) {
   }
 }
 
-useOrderSocket({ onCreated: onOrderCreated, onUpdated: onOrderUpdated });
-
-const { statusLabel, statusClass } = useOrderStatus();
-
-onMounted(loadData);
-
 const loadData = async () => {
   loadingData.value = true;
   try {
@@ -576,6 +570,12 @@ const loadData = async () => {
     loadingData.value = false;
   }
 };
+
+useOrderSocket({ onCreated: onOrderCreated, onUpdated: onOrderUpdated });
+
+const { statusLabel, statusClass } = useOrderStatus();
+
+onMounted(loadData);
 
 // Columns Computed Properties
 const colNovos = computed(() => {
