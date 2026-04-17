@@ -1,0 +1,28 @@
+const express = require('express');
+const router = express.Router();
+const orderController = require('../controllers/orderController');
+const auth = require('../middlewares/auth');
+const checkPermission = require('../middlewares/checkPermission');
+const checkStoreOpen = require('../middlewares/checkStoreOpen');
+
+// ---- ROTAS PÚBLICAS (CLIENTES) ----
+// Permite que um cliente final faça um pedido pelo Cardápio Digital (sem precisar de token)
+router.post('/public', checkStoreOpen, orderController.create);
+
+// Permite o cliente consultar o andamento do pedido com base no código secreto
+router.get('/track/:code', orderController.track);
+router.post('/track/:code/receipt', orderController.uploadReceipt);
+router.patch('/track/:code/cancel', orderController.cancelByTracking);
+
+// ---- ROTAS PRIVADAS (FUNCIONÁRIOS) ----
+// Listar pedidos e ver detalhes (Permissão: orders.view)
+router.get('/', auth, checkPermission('orders.view'), orderController.index);
+router.get('/:id', auth, checkPermission('orders.view'), orderController.show);
+
+// Criar pedido pelo PDV (Permissão: orders.create)
+router.post('/', auth, checkPermission('orders.create'), orderController.create);
+
+// Alterar status do pedido, ex: de novo para em_preparo (Permissão: orders.change_status)
+router.patch('/:id/status', auth, checkPermission('orders.change_status'), orderController.updateStatus);
+
+module.exports = router;
