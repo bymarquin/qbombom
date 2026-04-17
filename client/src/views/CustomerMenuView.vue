@@ -586,12 +586,7 @@ const enviarPedido = async () => {
 
   enviando.value = true;
   try {
-    let finalCustomerName = checkout.value.nome;
-    if (checkout.value.tipo === "Mesa" && checkout.value.mesa) {
-      finalCustomerName += ` (${checkout.value.mesa})`;
-    } else if (checkout.value.tipo === "Entrega") {
-      finalCustomerName += ` (Entrega)`;
-    }
+    const finalCustomerName = checkout.value.nome;
 
     let obsAdicional = "";
     let endEntrega = "";
