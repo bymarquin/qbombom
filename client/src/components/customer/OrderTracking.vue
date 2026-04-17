@@ -406,7 +406,6 @@ const confirmarRecebimento = async () => {
   confirmingDelivery.value = true;
   try {
     await OrderService.confirmDelivery(props.pedidoRastreado.trackingCode);
-    toast.success("Obrigado! Bom apetite 😋");
   } catch (error) {
     const msg = error?.response?.data?.error || "Não foi possível confirmar o recebimento.";
     toast.error(msg);
