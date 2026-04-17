@@ -211,6 +211,12 @@ watch(tamanhoSelecionado, () => {
   }
 });
 
+watch(totalSelecionado, (novo, anterior) => {
+  if (limiteGlobal.value !== null && novo === limiteGlobal.value && novo > anterior) {
+    toast.info('Máximo de complementos atingido!');
+  }
+});
+
 const fechar = () => { modelValue.value = false; };
 
 // --- Limite global de complementos (definido pela variação escolhida) ---
