@@ -37,7 +37,7 @@
           </svg>
           <div class="flex flex-col leading-none">
             <span class="font-bold text-lg text-neutral-900 dark:text-neutral-100 tracking-tight">Qbombom</span>
-            <span class="text-xs font-semibold tracking-widest text-neutral-500 dark:text-neutral-400 uppercase">Sorvetes</span>
+            <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400 -mt-0.5">Sorvetes</span>
           </div>
         </div>
         <button
