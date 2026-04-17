@@ -533,54 +533,28 @@
             class="bg-neutral-50 dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 mb-4"
           >
             <h4 class="text-sm font-bold text-neutral-900 dark:text-neutral-100 mb-3">
-              {{ groupForm.id ? 'Editar Grupo' : 'Novo Grupo' }}
+              {{ groupForm.id ? 'Editar Grupo' : 'Novo Grupo de Complementos' }}
             </h4>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-              <div class="sm:col-span-2">
-                <label class="text-xs font-medium text-neutral-700 dark:text-neutral-300"
-                  >Nome do Grupo</label
-                >
+            <div class="flex flex-col gap-3 mb-4">
+              <div>
+                <label class="text-xs font-medium text-neutral-700 dark:text-neutral-300">Nome do Grupo</label>
                 <input
                   v-model="groupForm.name"
                   type="text"
                   required
                   class="w-full mt-1 px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded focus:outline-none focus:border-red-500"
-                  placeholder="Ex: Escolha a Carne"
+                  placeholder="Ex: Complementos Pagos"
                 />
               </div>
               <div>
-                <label class="text-xs font-medium text-neutral-700 dark:text-neutral-300"
-                  >Mínimo de Escolhas</label
-                >
-                <input
-                  v-model="groupForm.minChoices"
-                  type="number"
-                  min="0"
-                  required
-                  class="w-full mt-1 px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded focus:outline-none focus:border-red-500"
-                />
-              </div>
-              <div>
-                <label class="text-xs font-medium text-neutral-700 dark:text-neutral-300"
-                  >Máximo de Escolhas</label
-                >
+                <label class="text-xs font-medium text-neutral-700 dark:text-neutral-300">Quantos itens o cliente pode escolher?</label>
                 <input
                   v-model="groupForm.maxChoices"
                   type="number"
                   min="1"
                   required
                   class="w-full mt-1 px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded focus:outline-none focus:border-red-500"
-                />
-              </div>
-              <div class="sm:col-span-2">
-                <label class="text-xs font-medium text-neutral-700 dark:text-neutral-300"
-                  >Quantidade Grátis</label
-                >
-                <input
-                  v-model="groupForm.freeChoices"
-                  type="number"
-                  min="0"
-                  class="w-full mt-1 px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded focus:outline-none focus:border-red-500"
+                  placeholder="Ex: 5"
                 />
               </div>
             </div>
@@ -799,7 +773,7 @@ const loadGroups = async (productId) => {
 }
 
 const openNewGroupForm = () => {
-  groupForm.value = { id: null, name: '', minChoices: 0, maxChoices: 1, freeChoices: 0 }
+  groupForm.value = { id: null, name: '', minChoices: 0, maxChoices: 5, freeChoices: 0 }
   isCreatingGroup.value = true
 }
 
@@ -808,7 +782,7 @@ const cancelGroupForm = () => {
 }
 
 const editGroup = (group) => {
-  groupForm.value = { ...group }
+  groupForm.value = { ...group, minChoices: 0, freeChoices: 0 }
   isCreatingGroup.value = true
 }
 
