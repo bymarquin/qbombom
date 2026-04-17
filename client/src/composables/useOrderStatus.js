@@ -5,7 +5,7 @@ const STATUS_LABELS = {
   pronto: 'Pronto',
   em_rota: 'Em Rota de Entrega',
   entregue: 'Entregue',
-  finalizado: 'Finalizado',
+  finalizado: 'Concluído',
   cancelado: 'Cancelado',
 }
 
