@@ -1,4 +1,5 @@
 const axios = require('axios')
+const { Setting } = require('../models')
 
 const BASE_URL = process.env.EVOLUTION_API_URL || 'http://localhost:8080'
 const API_KEY = process.env.EVOLUTION_API_KEY || 'qbombom_evolution_key'
@@ -10,7 +11,7 @@ const client = axios.create({
   timeout: 8000,
 })
 
-const STATUS_MESSAGES = {
+const DEFAULT_MESSAGES = {
   em_preparo: '🍧 Seu pedido está sendo preparado! Em breve ficará pronto.',
   pronto: '✅ Seu pedido está pronto! Pode retirar ou aguardar a entrega.',
   finalizado: '🎉 Pedido finalizado. Obrigado pela preferência! Volte sempre 😊',
@@ -18,15 +19,19 @@ const STATUS_MESSAGES = {
 }
 
 const formatPhone = (phone) => {
-  // Remove tudo que não é dígito
   const digits = phone.replace(/\D/g, '')
-  // Garante código do país (55 para Brasil)
   return digits.startsWith('55') ? digits : `55${digits}`
 }
 
 exports.sendStatusMessage = async (phone, status, orderNumber) => {
-  const message = STATUS_MESSAGES[status]
-  if (!message || !phone) return
+  if (!phone) return
+  let messages = DEFAULT_MESSAGES
+  try {
+    const setting = await Setting.findOne({ where: { key: 'whatsapp_messages' } })
+    if (setting?.value) messages = { ...DEFAULT_MESSAGES, ...setting.value }
+  } catch {}
+  const message = messages[status]
+  if (!message) return
 
   try {
     await client.post(`/message/sendText/${INSTANCE}`, {

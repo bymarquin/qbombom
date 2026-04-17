@@ -280,6 +280,8 @@ export const WhatsAppService = {
   getStatus() { return api.get('/whatsapp/status') },
   getQRCode() { return api.get('/whatsapp/qrcode') },
   createInstance() { return api.post('/whatsapp/instance') },
+  getMessages() { return api.get('/whatsapp/messages') },
+  updateMessages(data) { return api.put('/whatsapp/messages', data) },
 }
 
 export const SettingService = {

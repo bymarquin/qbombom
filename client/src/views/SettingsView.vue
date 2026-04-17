@@ -583,15 +583,28 @@
             </div>
           </div>
 
-          <!-- Conectado -->
-          <div v-if="waStatus === 'open'" class="p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/30 space-y-2">
-            <h3 class="font-semibold text-neutral-900 dark:text-neutral-100">Mensagens enviadas automaticamente:</h3>
-            <ul class="text-sm text-neutral-600 dark:text-neutral-400 space-y-1.5 mt-2">
-              <li class="flex items-start gap-2"><span>🍧</span> <span><strong>Em preparo</strong> — quando a cozinha aceitar o pedido</span></li>
-              <li class="flex items-start gap-2"><span>✅</span> <span><strong>Pronto</strong> — quando o pedido estiver pronto para retirada/entrega</span></li>
-              <li class="flex items-start gap-2"><span>🎉</span> <span><strong>Finalizado</strong> — quando o pedido for concluído</span></li>
-              <li class="flex items-start gap-2"><span>❌</span> <span><strong>Cancelado</strong> — se o pedido for cancelado</span></li>
-            </ul>
+          <!-- Mensagens editáveis (sempre visível) -->
+          <div class="p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/30 space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold text-neutral-900 dark:text-neutral-100">Mensagens automáticas</h3>
+              <button
+                @click="salvarMensagens"
+                :disabled="waSavingMessages"
+                class="text-sm px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-medium transition-colors"
+              >
+                {{ waSavingMessages ? 'Salvando...' : 'Salvar' }}
+              </button>
+            </div>
+            <div v-for="msg in waMessageFields" :key="msg.key" class="space-y-1">
+              <label class="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                <span>{{ msg.emoji }}</span> {{ msg.label }}
+              </label>
+              <textarea
+                v-model="waMessages[msg.key]"
+                rows="2"
+                class="w-full px-3 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all resize-none"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -649,8 +662,46 @@ const criarInstancia = async () => {
   }
 }
 
+const waMessages = reactive({
+  em_preparo: '🍧 Seu pedido está sendo preparado! Em breve ficará pronto.',
+  pronto: '✅ Seu pedido está pronto! Pode retirar ou aguardar a entrega.',
+  finalizado: '🎉 Pedido finalizado. Obrigado pela preferência! Volte sempre 😊',
+  cancelado: '❌ Seu pedido foi cancelado. Entre em contato se tiver dúvidas.',
+})
+
+const waSavingMessages = ref(false)
+
+const waMessageFields = [
+  { key: 'em_preparo', emoji: '🍧', label: 'Em preparo' },
+  { key: 'pronto',     emoji: '✅', label: 'Pronto' },
+  { key: 'finalizado', emoji: '🎉', label: 'Finalizado' },
+  { key: 'cancelado',  emoji: '❌', label: 'Cancelado' },
+]
+
+const carregarMensagens = async () => {
+  try {
+    const { data } = await WhatsAppService.getMessages()
+    Object.assign(waMessages, data)
+  } catch {}
+}
+
+const salvarMensagens = async () => {
+  waSavingMessages.value = true
+  try {
+    await WhatsAppService.updateMessages({ ...waMessages })
+    toast.success('Mensagens salvas!')
+  } catch {
+    toast.error('Erro ao salvar mensagens')
+  } finally {
+    waSavingMessages.value = false
+  }
+}
+
 watch(currentTab, (tab) => {
-  if (tab === 'whatsapp') recarregarStatus()
+  if (tab === 'whatsapp') {
+    recarregarStatus()
+    carregarMensagens()
+  }
 })
 
 // Abas de Configuração

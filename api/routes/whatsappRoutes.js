@@ -10,5 +10,7 @@ router.use(requireRoles(['SUPER_ADMIN', 'MANAGER']))
 router.get('/status', whatsappController.getStatus)
 router.get('/qrcode', whatsappController.getQRCode)
 router.post('/instance', whatsappController.createInstance)
+router.get('/messages', whatsappController.getMessages)
+router.put('/messages', whatsappController.updateMessages)
 
 module.exports = router
