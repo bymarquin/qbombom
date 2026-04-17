@@ -25,13 +25,30 @@ module.exports = {
         type: Sequelize.INTEGER,
         defaultValue: 0
       },
+      createdAt: {
+        allowNull: false,
+        type: Sequelize.DATE
+      },
+      updatedAt: {
+        allowNull: false,
+        type: Sequelize.DATE
+      }
+    });
+
+    await queryInterface.createTable('ProductAdditionalGroups', {
       productId: {
         type: Sequelize.UUID,
         allowNull: false,
-        references: {
-          model: 'Products',
-          key: 'id'
-        },
+        primaryKey: true,
+        references: { model: 'Products', key: 'id' },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
+      },
+      additionalGroupId: {
+        type: Sequelize.UUID,
+        allowNull: false,
+        primaryKey: true,
+        references: { model: 'AdditionalGroups', key: 'id' },
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
@@ -45,7 +62,9 @@ module.exports = {
       }
     });
   },
+
   async down(queryInterface, Sequelize) {
+    await queryInterface.dropTable('ProductAdditionalGroups');
     await queryInterface.dropTable('AdditionalGroups');
   }
 };
