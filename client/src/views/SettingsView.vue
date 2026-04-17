@@ -575,7 +575,7 @@
                 Abra o WhatsApp no celular → <strong>Dispositivos conectados</strong> → <strong>Conectar dispositivo</strong> e escaneie:
               </p>
               <div class="p-4 bg-white rounded-2xl border border-neutral-200 shadow-sm inline-block">
-                <img :src="'data:image/png;base64,' + waQrCode" alt="QR Code WhatsApp" class="w-56 h-56" />
+                <img :src="waQrCode" alt="QR Code WhatsApp" class="w-56 h-56" />
               </div>
               <button @click="buscarQRCode" class="text-sm text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 underline">
                 Atualizar QR Code
