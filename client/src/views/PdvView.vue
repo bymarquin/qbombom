@@ -785,24 +785,12 @@
           class="p-5 border-t border-neutral-100 dark:border-neutral-800/50 bg-white dark:bg-neutral-900 flex justify-between gap-3 shrink-0"
         >
           <button
-            v-if="!confirmandoCancelamento"
-            @click="confirmandoCancelamento = true"
+            @click="cancelarPedido"
             class="px-4 py-2.5 font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg transition-colors flex items-center gap-2 text-sm"
           >
             <Trash2 class="w-4 h-4" />
             Cancelar Pedido
           </button>
-          <div v-else class="flex items-center gap-2">
-            <span class="text-sm text-red-700 dark:text-red-400 font-medium">Cancelar pedido?</span>
-            <button
-              @click="cancelarPedido"
-              class="px-3 py-1.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
-            >Sim</button>
-            <button
-              @click="confirmandoCancelamento = false"
-              class="px-3 py-1.5 text-sm font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors"
-            >Não</button>
-          </div>
           <div class="flex gap-3">
           <button
             @click="fecharModalPagamento"
@@ -853,11 +841,13 @@ import {
 } from 'lucide-vue-next'
 import { CatalogService, OrderService, AuthService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
+import { useDialogStore } from '@/stores/dialog'
 import { printReceipt } from '@/utils/printReceipt'
 import { formatarMoeda, mascararTelefone, limparTelefone } from '@/utils/formatters'
 
 const router = useRouter()
 const toast = useToastStore()
+const dialog = useDialogStore()
 const inputBusca = ref(null)
 
 // --- ESTADOS DO USUÁRIO E UI ---
@@ -990,15 +980,19 @@ const abrirModalPagamento = () => {
   modalPagamentoAberto.value = true
 }
 
-const confirmandoCancelamento = ref(false)
-
 const fecharModalPagamento = () => {
   modalPagamentoAberto.value = false
   metodoPagamentoSelecionado.value = 'PIX'
-  confirmandoCancelamento.value = false
 }
 
-const cancelarPedido = () => {
+const cancelarPedido = async () => {
+  const confirmado = await dialog.confirm({
+    title: 'Cancelar pedido?',
+    message: 'Todos os itens do carrinho serão removidos. Essa ação não pode ser desfeita.',
+    confirmLabel: 'Cancelar Pedido',
+    cancelLabel: 'Voltar',
+  })
+  if (!confirmado) return
   limparPedido()
   fecharModalPagamento()
   toast.info('Pedido cancelado.')
