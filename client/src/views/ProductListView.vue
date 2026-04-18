@@ -440,6 +440,20 @@
               <form @submit.prevent="saveGroup" class="flex flex-col gap-3">
                 <p class="text-xs font-semibold text-neutral-700 dark:text-neutral-300">{{ groupForm.id ? 'Editar Grupo' : 'Novo Grupo' }}</p>
                 <input v-model="groupForm.name" type="text" required placeholder="Nome do grupo" class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-red-500" />
+                <div class="grid grid-cols-3 gap-2">
+                  <div class="flex flex-col gap-1">
+                    <label class="text-xs text-neutral-500 dark:text-neutral-400">Mín. escolhas</label>
+                    <input v-model.number="groupForm.minChoices" type="number" min="0" class="w-full px-2 py-1.5 text-xs border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-500" />
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <label class="text-xs text-neutral-500 dark:text-neutral-400">Máx. escolhas</label>
+                    <input v-model.number="groupForm.maxChoices" type="number" min="0" class="w-full px-2 py-1.5 text-xs border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-500" />
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <label class="text-xs text-neutral-500 dark:text-neutral-400">Grátis</label>
+                    <input v-model.number="groupForm.freeChoices" type="number" min="0" class="w-full px-2 py-1.5 text-xs border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-500" />
+                  </div>
+                </div>
                 <div class="flex justify-end gap-2">
                   <button type="button" @click="cancelGroupForm" class="px-3 py-1.5 text-xs text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 rounded hover:bg-neutral-200 transition-colors">Cancelar</button>
                   <button type="submit" class="px-3 py-1.5 text-xs text-white bg-indigo-600 rounded hover:bg-indigo-700 transition-colors">Salvar</button>
@@ -700,7 +714,13 @@ const cancelGroupForm = () => {
 }
 
 const editGroup = (group) => {
-  groupForm.value = { id: group.id, name: group.name }
+  groupForm.value = {
+    id: group.id,
+    name: group.name,
+    minChoices: group.minChoices ?? 0,
+    maxChoices: group.maxChoices ?? 5,
+    freeChoices: group.freeChoices ?? 0,
+  }
   isCreatingGroup.value = true
 }
 
