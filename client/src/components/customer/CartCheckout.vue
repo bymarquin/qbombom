@@ -58,23 +58,21 @@
                 }}</span>
               </div>
 
-              <div v-if="item.selectedAdditionals.length" class="mt-2 space-y-1.5">
+              <div v-if="item.selectedAdditionals.length" class="mt-2 space-y-2">
                 <div
                   v-for="(grupo, grupoNome) in agruparAdicionais(item.selectedAdditionals)"
                   :key="grupoNome"
                 >
-                  <p class="text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mt-2 mb-0.5">
-                    {{ grupoNome }}
+                  <p class="text-xs font-semibold text-neutral-700 dark:text-neutral-300 flex items-center gap-1">
+                    <span class="text-red-500">•</span> {{ grupoNome }}:
                   </p>
-                  <ul class="space-y-0.5">
+                  <ul class="mt-0.5 pl-3.5 space-y-0.5">
                     <li
                       v-for="(add, i) in grupo"
                       :key="i"
-                      class="text-xs text-neutral-600 dark:text-neutral-400 flex items-center gap-1.5"
+                      class="text-xs text-neutral-500 dark:text-neutral-400"
                     >
-                      <span class="text-neutral-300 dark:text-neutral-600">—</span>
-                      {{ add.name }}
-                      <span v-if="add.price > 0" class="text-red-500 dark:text-red-400 font-medium">+{{ formatarMoeda(add.price) }}</span>
+                      {{ add.name }}<span v-if="add.price > 0" class="text-red-500 dark:text-red-400 font-medium ml-1">+{{ formatarMoeda(add.price) }}</span>
                     </li>
                   </ul>
                 </div>
