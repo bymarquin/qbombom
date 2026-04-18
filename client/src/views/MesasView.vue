@@ -41,7 +41,7 @@
     </div>
 
     <!-- Grid de QR Codes -->
-    <div id="qr-grid" class="flex-1 overflow-auto">
+    <div class="flex-1 overflow-auto">
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         <div
           v-for="n in qtdMesas"
@@ -74,17 +74,27 @@
         </div>
       </div>
     </div>
+
+    <!-- Área de impressão (invisível na tela, visível apenas no print) -->
+    <div id="print-area">
+      <div v-for="item in printItems" :key="item.n" class="print-card">
+        <p class="print-label">Mesa {{ String(item.n).padStart(2, '0') }}</p>
+        <img :src="item.src" width="200" height="200" />
+        <p class="print-url">{{ baseUrl }}?mesa={{ item.n }}</p>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, nextTick } from 'vue'
 import { Printer } from 'lucide-vue-next'
 import QRCode from 'qrcode'
 
 const qtdMesas = ref(10)
 const baseUrl = ref(`${window.location.origin}/cardapio`)
 const qrUrls = ref({})
+const printItems = ref([])
 
 async function gerarQrs() {
   const urls = {}
@@ -101,59 +111,69 @@ async function gerarQrs() {
 onMounted(gerarQrs)
 watch([qtdMesas, baseUrl], gerarQrs)
 
-function abrirJanelaImpressao(itens) {
-  const win = window.open('', '_blank')
-  if (!win) return
-
-  const cards = itens
-    .map(({ n, src }) => `
-      <div class="card">
-        <p class="label">Mesa ${String(n).padStart(2, '0')}</p>
-        <img src="${src}" width="160" height="160" />
-        <p class="url">${baseUrl.value}?mesa=${n}</p>
-      </div>
-    `)
-    .join('')
-
-  win.document.write(`<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>QR Codes das Mesas</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: sans-serif; background: white; padding: 16px; }
-    .toolbar { display: flex; justify-content: center; margin-bottom: 16px; }
-    .btn { display: flex; align-items: center; gap: 8px; background: #dc2626; color: white; border: none; border-radius: 8px; padding: 10px 24px; font-size: 14px; font-weight: 600; cursor: pointer; }
-    .btn:hover { background: #b91c1c; }
-    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; break-inside: avoid; }
-    .label { font-size: 14px; font-weight: 700; color: #1f2937; }
-    .url { font-size: 9px; color: #9ca3af; font-family: monospace; text-align: center; word-break: break-all; }
-    @media print { .toolbar { display: none; } @page { margin: 10mm; } }
-  </style>
-</head>
-<body>
-  <div class="toolbar">
-    <button id="btnPrint" class="btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>Imprimir / Salvar PDF</button>
-  </div>
-  <div class="grid">${cards}</div>
-</body>
-</html>`)
-  win.document.close()
-
-  win.document.getElementById('btnPrint').addEventListener('click', () => win.print())
-  win.setTimeout(() => win.print(), 500)
-  win.onafterprint = () => win.close()
+async function disparaImpressao(itens) {
+  printItems.value = itens
+  await nextTick()
+  window.print()
+  printItems.value = []
 }
 
 function imprimir() {
-  const itens = Object.entries(qrUrls.value).map(([n, src]) => ({ n: Number(n), src }))
-  abrirJanelaImpressao(itens)
+  disparaImpressao(
+    Object.entries(qrUrls.value).map(([n, src]) => ({ n: Number(n), src }))
+  )
 }
 
 function imprimirMesa(n) {
   const src = qrUrls.value[n]
-  if (src) abrirJanelaImpressao([{ n, src }])
+  if (src) disparaImpressao([{ n, src }])
 }
 </script>
+
+<style>
+#print-area {
+  display: none;
+}
+
+@media print {
+  #app {
+    visibility: hidden;
+  }
+  #print-area {
+    display: grid !important;
+    visibility: visible;
+    position: fixed;
+    inset: 0;
+    background: white;
+    padding: 16px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    align-content: start;
+  }
+  .print-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    break-inside: avoid;
+    background: white;
+  }
+  .print-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1f2937;
+    font-family: sans-serif;
+  }
+  .print-url {
+    font-size: 9px;
+    color: #9ca3af;
+    font-family: monospace;
+    text-align: center;
+    word-break: break-all;
+  }
+  @page { margin: 10mm; }
+}
+</style>
