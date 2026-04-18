@@ -1176,7 +1176,7 @@ const adicionaisComPrecoCalculado = computed(() => {
 
 const totalItemAtual = computed(() => {
   if (!produtoDetalhado.value) return 0
-  if (isWeightBased.value) return pesoGramas.value || 0
+  if (isWeightBased.value) return (pesoGramas.value || 0) + adicionaisComPrecoCalculado.value.reduce((acc, curr) => acc + curr.price, 0)
   const base = isSorvete.value ? bolaPrice.value : (tamanhoSelecionado.value ? Number(tamanhoSelecionado.value.price) : 0)
   return base + casquinhaTotal.value + adicionaisComPrecoCalculado.value.reduce((acc, curr) => acc + curr.price, 0)
 })
