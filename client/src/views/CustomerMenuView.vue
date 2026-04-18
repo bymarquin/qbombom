@@ -131,6 +131,36 @@
     <!-- Lista de Produtos -->
     <main class="flex-1 overflow-y-auto bg-neutral-50 dark:bg-neutral-950">
       <div class="max-w-5xl mx-auto p-4 pb-24">
+      <!-- Seção Pedir Novamente -->
+      <div v-if="historico.length > 0 && consentimento === 'aceito'" class="mb-4">
+        <p class="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2">Pedir Novamente</p>
+        <div class="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+          <div
+            v-for="pedido in historico"
+            :key="pedido.id"
+            class="shrink-0 w-56 bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-100 dark:border-neutral-800 p-3 flex flex-col gap-2 shadow-sm"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-neutral-400">{{ formatarDataCurta(pedido.date) }}</span>
+              <span class="text-xs font-bold text-red-600">{{ formatarMoeda(pedido.total) }}</span>
+            </div>
+            <ul class="text-xs text-neutral-600 dark:text-neutral-400 space-y-0.5 flex-1">
+              <li v-for="(item, i) in pedido.items.slice(0, 3)" :key="i" class="truncate">
+                {{ item.quantity }}x {{ item.productName }}
+                <span v-if="item.variationName" class="text-neutral-400">({{ item.variationName }})</span>
+              </li>
+              <li v-if="pedido.items.length > 3" class="text-neutral-400">+ {{ pedido.items.length - 3 }} item(s)...</li>
+            </ul>
+            <button
+              @click="repetirPedido(pedido)"
+              class="w-full py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors"
+            >
+              Repetir Pedido
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div
         v-if="loadingCatalog"
         class="h-40 flex flex-col items-center justify-center text-neutral-500 dark:text-neutral-500 gap-3"
@@ -197,6 +227,29 @@
       </div>
       </div>
     </main>
+
+    <!-- Banner de Consentimento de Cookies -->
+    <Transition name="slide-up">
+      <div
+        v-if="consentimento === null"
+        class="absolute bottom-0 left-0 w-full z-50 p-4 pointer-events-none"
+      >
+        <div class="bg-neutral-900 dark:bg-neutral-800 text-white rounded-2xl p-4 shadow-2xl pointer-events-auto border border-neutral-700">
+          <p class="text-sm font-medium mb-1">Guardar seus pedidos? 🍨</p>
+          <p class="text-xs text-neutral-400 mb-3">Salvamos seus últimos 3 pedidos neste dispositivo para você repetir com um toque.</p>
+          <div class="flex gap-2">
+            <button
+              @click="recusarCookies"
+              class="flex-1 py-2 rounded-lg text-xs font-semibold bg-neutral-700 hover:bg-neutral-600 transition-colors"
+            >Não, obrigado</button>
+            <button
+              @click="aceitarCookies"
+              class="flex-1 py-2 rounded-lg text-xs font-semibold bg-red-600 hover:bg-red-700 transition-colors"
+            >Aceitar</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
 
     <!-- Botão Flutuante (Sacola) -->
     <div
@@ -282,6 +335,7 @@
 
 <script setup>
 import { ref, shallowRef, computed, onMounted, onUnmounted } from "vue";
+import { useOrderHistory } from "@/composables/useOrderHistory";
 import { useDark, useToggle } from "@vueuse/core";
 import { useToastStore } from "@/stores/toast";
 import { CatalogService, OrderService, SettingService } from "@/services/http";
@@ -301,6 +355,26 @@ const isDark = useDark();
 const toggleDark = useToggle(isDark);
 
 const toast = useToastStore();
+
+const { consentimento, aceitarCookies, recusarCookies, getHistorico, salvarPedido } = useOrderHistory()
+const historico = ref(getHistorico())
+
+const formatarDataCurta = (iso) => {
+  const d = new Date(iso)
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) +
+    ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+}
+
+const repetirPedido = (pedido) => {
+  carrinho.value = pedido.items.map((item) => ({ ...item }))
+  checkout.value.nome = pedido.checkout.nome || checkout.value.nome
+  checkout.value.telefone = pedido.checkout.telefone || checkout.value.telefone
+  checkout.value.tipo = pedido.checkout.tipo || 'Mesa'
+  checkout.value.pagamento = pedido.checkout.pagamento || 'PIX'
+  if (pedido.checkout.endereco) checkout.value.endereco = { ...pedido.checkout.endereco }
+  sacolaAberta.value = true
+  toast.success('Pedido anterior restaurado na sacola!')
+}
 
 // Estados
 const categorias = shallowRef([]);
@@ -723,6 +797,9 @@ const enviarPedido = async () => {
     checkoutEnviado.value = { ...checkout.value };
     subtotalEnviado.value = subtotal.value;
     pedidoCriado.value = response.data;
+
+    salvarPedido(response.data, carrinho.value, checkout.value, subtotal.value)
+    historico.value = getHistorico()
 
     sacolaAberta.value = false;
     telaSucesso.value = true;
