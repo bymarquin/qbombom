@@ -115,7 +115,8 @@
     </header>
 
     <!-- Lista de Produtos -->
-    <main class="flex-1 overflow-y-auto p-4 pb-24 bg-neutral-50 dark:bg-neutral-950">
+    <main class="flex-1 overflow-y-auto bg-neutral-50 dark:bg-neutral-950">
+      <div class="max-w-5xl mx-auto p-4 pb-24">
       <div
         v-if="loadingCatalog"
         class="h-40 flex flex-col items-center justify-center text-neutral-500 dark:text-neutral-500 gap-3"
@@ -133,7 +134,7 @@
         <p>Nenhum produto nesta categoria.</p>
       </div>
 
-      <div v-else class="grid grid-cols-2 gap-3">
+      <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         <button
           v-for="produto in produtosFiltrados"
           :key="produto.id"
@@ -179,6 +180,7 @@
             </div>
           </div>
         </button>
+      </div>
       </div>
     </main>
 
