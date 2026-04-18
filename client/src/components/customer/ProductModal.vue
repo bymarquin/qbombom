@@ -437,7 +437,8 @@ const adicionaisComPreco = computed(() => {
       return itens.map((item, index) => ({
         id: item.id,
         name: item.name,
-        price: index < grupo.freeChoices ? 0 : Number(item.price)
+        price: index < grupo.freeChoices ? 0 : Number(item.price),
+        grupoName: grupo.name,
       }));
     });
 });

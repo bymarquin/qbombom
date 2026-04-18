@@ -49,7 +49,7 @@
                     <span class="text-red-600 mr-1">{{ item.quantity }}x</span>
                     {{ item.productName }}
                   </h4>
-                  <p class="text-xs text-neutral-500 dark:text-neutral-500 mt-0.5">
+                  <p v-if="item.variationName" class="text-xs text-neutral-500 dark:text-neutral-500 mt-0.5">
                     {{ item.variationName }}
                   </p>
                 </div>
@@ -58,15 +58,27 @@
                 }}</span>
               </div>
 
-              <ul
-                v-if="item.selectedAdditionals.length"
-                class="text-xs text-neutral-500 dark:text-neutral-500 mt-2 pl-3 list-disc marker:text-neutral-300"
-              >
-                <li v-for="(add, i) in item.selectedAdditionals" :key="i">
-                  {{ add.name }}
-                  <span v-if="add.price > 0">(+{{ formatarMoeda(add.price) }})</span>
-                </li>
-              </ul>
+              <div v-if="item.selectedAdditionals.length" class="mt-2 space-y-1.5">
+                <div
+                  v-for="(grupo, grupoNome) in agruparAdicionais(item.selectedAdditionals)"
+                  :key="grupoNome"
+                >
+                  <p class="text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mt-2 mb-0.5">
+                    {{ grupoNome }}
+                  </p>
+                  <ul class="space-y-0.5">
+                    <li
+                      v-for="(add, i) in grupo"
+                      :key="i"
+                      class="text-xs text-neutral-600 dark:text-neutral-400 flex items-center gap-1.5"
+                    >
+                      <span class="text-neutral-300 dark:text-neutral-600">—</span>
+                      {{ add.name }}
+                      <span v-if="add.price > 0" class="text-red-500 dark:text-red-400 font-medium">+{{ formatarMoeda(add.price) }}</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
 
               <p
                 v-if="item.observation"
@@ -372,6 +384,15 @@ const emit = defineEmits(["remover-item", "enviar-pedido"]);
 
 const fechar = () => {
   isOpen.value = false;
+};
+
+const agruparAdicionais = (adicionais) => {
+  return adicionais.reduce((acc, add) => {
+    const grupo = add.grupoName || 'Adicionais';
+    if (!acc[grupo]) acc[grupo] = [];
+    acc[grupo].push(add);
+    return acc;
+  }, {});
 };
 
 const decrementarItem = (index) => {
