@@ -107,7 +107,8 @@
             <button
               v-for="produto in produtosFiltrados"
               :key="produto.id"
-              class="bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800/50 rounded-2xl p-4 flex flex-col text-left hover:border-red-600 shadow-sm dark:shadow-none shadow-neutral-200/50 hover:shadow-md dark:shadow-none hover:shadow-red-900/5 transition-all duration-200 group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-red-600/15"
+              class="bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800/50 rounded-2xl p-4 flex flex-col text-left hover:border-red-600 shadow-sm dark:shadow-none shadow-neutral-200/50 hover:shadow-md dark:shadow-none hover:shadow-red-900/5 transition-all duration-200 group relative overflow-hidden focus:outline-none focus:ring-4 focus:ring-red-600/15 disabled:opacity-60 disabled:cursor-wait"
+              :disabled="loadingProduto"
               @click="abrirModalProduto(produto)"
             >
               <div class="w-full h-24 rounded-lg mb-3 overflow-hidden">
@@ -698,6 +699,7 @@ import {
 import { CatalogService, OrderService, AuthService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 import { printReceipt } from '@/utils/printReceipt'
+import { formatarMoeda, mascararTelefone, limparTelefone } from '@/utils/formatters'
 
 const router = useRouter()
 const toast = useToastStore()
@@ -768,8 +770,6 @@ const produtosFiltrados = computed(() => {
   }
   return filtrados
 })
-
-import { formatarMoeda, mascararTelefone, limparTelefone } from "@/utils/formatters"
 
 const precoMinimoPdv = (produto) => {
   const prices = (produto.variations || []).map((v) => Number(v.price)).filter((p) => p > 0)
@@ -851,14 +851,15 @@ const finalizarPedido = async () => {
 
 // --- LÓGICA DO MODAL DE MONTAGEM (COM DADOS DA API) ---
 const modalAberto = ref(false)
+const loadingProduto = ref(false)
 const produtoDetalhado = ref(null) // Recebe o produto completo da API (com grupos e itens)
 const tamanhoSelecionado = ref(null)
 const adicionaisSelecionados = ref([])
 const observacaoProduto = ref('')
 
 const abrirModalProduto = async (produtoSimples) => {
+  loadingProduto.value = true
   try {
-    // Busca detalhes (Variações e Adicionais completos) na API
     const { data } = await CatalogService.getProduct(produtoSimples.id)
     produtoDetalhado.value = data
     tamanhoSelecionado.value = null
@@ -867,6 +868,9 @@ const abrirModalProduto = async (produtoSimples) => {
     modalAberto.value = true
   } catch (err) {
     console.error('Erro ao carregar detalhes do produto:', err)
+    toast.error('Não foi possível carregar o produto. Tente novamente.')
+  } finally {
+    loadingProduto.value = false
   }
 }
 
