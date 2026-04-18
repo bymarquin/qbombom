@@ -492,7 +492,7 @@
                 </p>
               </div>
               <span
-                v-if="grupo.minChoices > 0 && grupo.maxChoices === 1"
+                v-if="grupo.maxChoices === 1 && grupo.minChoices >= 1"
                 class="text-xs font-semibold px-2 py-0.5 rounded border bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700"
               >
                 Obrigatório
@@ -509,7 +509,7 @@
             </div>
 
             <!-- Seleção única (radio style) -->
-            <div v-if="grupo.maxChoices === 1" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div v-if="grupo.maxChoices === 1 && grupo.minChoices >= 1" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <label
                 v-for="add in grupo.items"
                 :key="add.id"

@@ -97,7 +97,7 @@
                   {{ grupo.name }}
                 </h3>
                 <span
-                  v-if="grupo.minChoices > 0 && grupo.maxChoices === 1"
+                  v-if="grupo.maxChoices === 1 && grupo.minChoices >= 1"
                   class="bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-[10px] uppercase px-2 py-0.5 rounded font-bold border border-neutral-200 dark:border-neutral-800"
                 >
                   Obrigatório
@@ -114,7 +114,7 @@
               </div>
 
               <!-- Seleção única (radio style) -->
-              <div v-if="grupo.maxChoices === 1" class="flex flex-col gap-3">
+              <div v-if="grupo.maxChoices === 1 && grupo.minChoices >= 1" class="flex flex-col gap-3">
                 <label
                   v-for="add in grupo.items"
                   :key="add.id"
