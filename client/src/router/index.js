@@ -35,6 +35,11 @@ const router = createRouter({
           component: () => import('../views/HistoricoView.vue'),
         },
         {
+          path: 'mesas',
+          name: 'mesas',
+          component: () => import('../views/MesasView.vue'),
+        },
+        {
           path: 'clientes',
           name: 'clientes',
           component: () => import('../views/CustomerListView.vue'),

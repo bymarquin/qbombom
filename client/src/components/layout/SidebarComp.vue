@@ -209,6 +209,7 @@ import {
   PanelLeftOpen,
   ChevronsUpDown,
   History,
+  QrCode,
 } from "lucide-vue-next";
 
 const vClickOutside = {
@@ -279,6 +280,12 @@ const menuGroups = [
         path: "/app/historico",
         icon: History,
         roles: ["SUPER_ADMIN", "MANAGER", "CASHIER"],
+      },
+      {
+        name: "Mesas / QR Code",
+        path: "/app/mesas",
+        icon: QrCode,
+        roles: ["SUPER_ADMIN", "MANAGER"],
       },
     ],
   },

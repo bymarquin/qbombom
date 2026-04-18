@@ -63,14 +63,23 @@
             </div>
           </div>
 
-          <button
-            @click="toggleDark()"
-            class="flex items-center justify-center w-10 h-10 text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 rounded-xl transition-all hover:bg-neutral-200 dark:hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-red-600/30"
-            aria-label="Alternar tema"
-          >
-            <Sun v-if="isDark" class="w-5 h-5 text-red-500" />
-            <Moon v-else class="w-5 h-5 text-red-600" />
-          </button>
+          <div class="flex items-center gap-2">
+            <div
+              v-if="mesaDoQr"
+              class="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl"
+            >
+              <MapPin class="w-3.5 h-3.5 text-red-600 dark:text-red-400 shrink-0" />
+              <span class="text-xs font-bold text-red-700 dark:text-red-400">{{ mesaDoQr }}</span>
+            </div>
+            <button
+              @click="toggleDark()"
+              class="flex items-center justify-center w-10 h-10 text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 rounded-xl transition-all hover:bg-neutral-200 dark:hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-red-600/30"
+              aria-label="Alternar tema"
+            >
+              <Sun v-if="isDark" class="w-5 h-5 text-red-500" />
+              <Moon v-else class="w-5 h-5 text-red-600" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -349,7 +358,7 @@ import ProductModal from "@/components/customer/ProductModal.vue";
 import CartCheckout from "@/components/customer/CartCheckout.vue";
 import OrderSuccess from "@/components/customer/OrderSuccess.vue";
 import OrderTracking from "@/components/customer/OrderTracking.vue";
-import { Coffee, Sun, Moon } from "lucide-vue-next";
+import { Coffee, Sun, Moon, MapPin } from "lucide-vue-next";
 
 const isDark = useDark();
 const toggleDark = useToggle(isDark);
@@ -357,6 +366,7 @@ const toggleDark = useToggle(isDark);
 const toast = useToastStore();
 
 const { consentimento, aceitarCookies, recusarCookies, getHistorico, salvarPedido } = useOrderHistory()
+const mesaDoQr = ref(null)
 const historico = ref(getHistorico())
 
 const formatarDataCurta = (iso) => {
@@ -592,6 +602,15 @@ onMounted(() => {
     } catch {
       // ignore
     }
+  }
+
+  // Lê parâmetro ?mesa= do QR Code da mesa
+  const mesaParam = params.get('mesa')
+  if (mesaParam) {
+    checkout.value.tipo = 'Mesa'
+    checkout.value.mesa = `Mesa ${mesaParam.padStart(2, '0')}`
+    mesaDoQr.value = checkout.value.mesa
+    window.history.replaceState({}, '', window.location.pathname)
   }
 
   // Checa se há um pedido sendo rastreado (via URL ?track= ou localStorage)
