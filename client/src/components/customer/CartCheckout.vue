@@ -220,9 +220,18 @@
             </div>
 
             <div v-if="checkout.tipo === 'Entrega'" class="flex flex-col gap-3">
-              <label class="text-sm font-bold text-neutral-900 dark:text-neutral-100"
-                >Endereço de Entrega</label
-              >
+              <div class="flex items-center justify-between">
+                <label class="text-sm font-bold text-neutral-900 dark:text-neutral-100">Endereço de Entrega</label>
+                <button
+                  type="button"
+                  @click="usarLocalizacao"
+                  :disabled="buscandoLocalizacao"
+                  class="flex items-center gap-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 disabled:opacity-50 transition-colors"
+                >
+                  <Crosshair class="w-3.5 h-3.5" :class="buscandoLocalizacao ? 'animate-spin' : ''" />
+                  {{ buscandoLocalizacao ? 'Buscando...' : 'Usar minha localização' }}
+                </button>
+              </div>
               <input
                 v-model="checkout.endereco.rua"
                 type="text"
@@ -352,7 +361,9 @@
 </template>
 
 <script setup>
-import { ShoppingBag, Trash2 } from "lucide-vue-next";
+import { ref } from "vue";
+import { ShoppingBag, Trash2, Crosshair } from "lucide-vue-next";
+import { useToastStore } from "@/stores/toast";
 import { formatarMoeda, mascararTelefone } from "@/utils/formatters";
 
 const isOpen = defineModel("isOpen", { type: Boolean, required: true });
@@ -380,8 +391,45 @@ defineProps({
 
 const emit = defineEmits(["remover-item", "enviar-pedido"]);
 
+const toast = useToastStore();
+const buscandoLocalizacao = ref(false);
+
 const fechar = () => {
   isOpen.value = false;
+};
+
+const usarLocalizacao = () => {
+  if (!navigator.geolocation) {
+    toast.error('Geolocalização não suportada pelo navegador.');
+    return;
+  }
+  buscandoLocalizacao.value = true;
+  navigator.geolocation.getCurrentPosition(
+    async ({ coords }) => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json&addressdetails=1`,
+          { headers: { 'Accept-Language': 'pt-BR' } }
+        );
+        const data = await res.json();
+        const a = data.address || {};
+        checkout.value.endereco.rua = a.road || a.pedestrian || a.footway || '';
+        checkout.value.endereco.numero = a.house_number || '';
+        checkout.value.endereco.bairro = a.suburb || a.neighbourhood || a.city_district || a.quarter || '';
+        checkout.value.endereco.complemento = '';
+        toast.success('Endereço preenchido com sua localização.');
+      } catch {
+        toast.error('Não foi possível obter o endereço.');
+      } finally {
+        buscandoLocalizacao.value = false;
+      }
+    },
+    () => {
+      toast.error('Permissão de localização negada.');
+      buscandoLocalizacao.value = false;
+    },
+    { timeout: 10000 }
+  );
 };
 
 const agruparAdicionais = (adicionais) => {
