@@ -76,6 +76,20 @@
 
       <!-- Abas de Categoria (Scroll Horizontal) -->
       <div class="px-5 pb-0 flex overflow-x-auto no-scrollbar gap-4">
+        <!-- Aba "Todas" -->
+        <button
+          @click="categoriaAtiva = null"
+          class="pb-3 pt-2 text-sm font-medium whitespace-nowrap transition-all relative flex items-center gap-1.5"
+          :class="categoriaAtiva === null ? 'text-red-600 font-bold' : 'text-neutral-500 dark:text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100'"
+        >
+          Todas
+          <span
+            class="text-xs px-1.5 py-0.5 rounded-full font-semibold leading-none"
+            :class="categoriaAtiva === null ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400'"
+          >{{ totalProdutos }}</span>
+          <div v-if="categoriaAtiva === null" class="absolute bottom-0 left-0 w-full h-1 bg-red-600 rounded-t-md"></div>
+        </button>
+
         <button
           v-for="categoria in categorias"
           :key="categoria.id"
@@ -480,7 +494,6 @@ const carregarCatalogo = async () => {
     const { data } = await CatalogService.getCategories();
     const categoriasNormalizadas = Array.isArray(data) ? data : [];
     categorias.value = categoriasNormalizadas;
-    if (categoriasNormalizadas.length > 0) categoriaAtiva.value = categoriasNormalizadas[0].id;
   } catch (err) {
     console.error(err);
     toast.error("Erro ao carregar o cardápio. Recarregue a página.");
@@ -579,10 +592,18 @@ onUnmounted(() => {
 // Computeds Básicos
 const termoBusca = ref("");
 
+const todosProdutos = computed(() => {
+  if (!Array.isArray(categorias.value)) return [];
+  return categorias.value.flatMap((c) => c.products || []);
+});
+
+const totalProdutos = computed(() => todosProdutos.value.length);
+
 const produtosFiltrados = computed(() => {
   if (!Array.isArray(categorias.value)) return [];
-  const cat = categorias.value.find((c) => c.id === categoriaAtiva.value);
-  const produtos = cat?.products || [];
+  const produtos = categoriaAtiva.value === null
+    ? todosProdutos.value
+    : (categorias.value.find((c) => c.id === categoriaAtiva.value)?.products || []);
   const termo = termoBusca.value.trim().toLowerCase();
   if (!termo) return produtos;
   return produtos.filter((p) => p.name.toLowerCase().includes(termo) || p.description?.toLowerCase().includes(termo));
