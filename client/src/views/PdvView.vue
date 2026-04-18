@@ -358,7 +358,7 @@
 
     <!-- MODAL DE CONSTRUÇÃO DO PRODUTO -->
     <div
-      v-if="modalAberto && produtoDetalhado"
+      v-if="modalAberto"
       class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 sm:p-6 backdrop-blur-sm animate-in fade-in duration-200"
     >
       <div
@@ -370,10 +370,10 @@
         >
           <div>
             <h2 class="text-xl font-bold text-neutral-900 dark:text-neutral-100">
-              Montar: {{ produtoDetalhado.name }}
+              {{ produtoDetalhado ? `Montar: ${produtoDetalhado.name}` : 'Montar produto' }}
             </h2>
             <p class="text-sm text-neutral-500 dark:text-neutral-500">
-              Selecione as opções desejadas
+              {{ loadingProduto ? 'Carregando detalhes...' : 'Selecione as opções desejadas' }}
             </p>
           </div>
           <button
@@ -386,6 +386,25 @@
 
         <!-- Corpo do Modal (Scroll) -->
         <div class="flex-1 overflow-y-auto p-5 sm:p-6 space-y-8 bg-neutral-50 dark:bg-neutral-950">
+          <div v-if="loadingProduto" class="h-56 flex items-center justify-center text-sm text-neutral-500 dark:text-neutral-400">
+            Carregando produto...
+          </div>
+
+          <div
+            v-else-if="erroProdutoDetalhe"
+            class="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl"
+          >
+            <p class="text-sm font-semibold text-red-700 dark:text-red-400">Não foi possível carregar os detalhes.</p>
+            <p class="text-xs text-red-600 dark:text-red-500 mt-1">{{ erroProdutoDetalhe }}</p>
+            <button
+              @click="recarregarProdutoDetalhado"
+              class="mt-3 px-3 py-2 text-xs font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+            >
+              Tentar novamente
+            </button>
+          </div>
+
+          <template v-else-if="produtoDetalhado">
           <!-- Imagem do produto -->
           <div v-if="produtoDetalhado.imageUrl" class="w-full h-48 rounded-xl overflow-hidden bg-neutral-100 dark:bg-neutral-900 -mt-1">
             <img :src="produtoDetalhado.imageUrl" :alt="produtoDetalhado.name" class="w-full h-full object-cover" />
@@ -540,6 +559,7 @@
               class="w-full p-3.5 border border-neutral-300 dark:border-neutral-700 rounded-lg text-sm bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-all duration-200 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 resize-none placeholder-neutral-400"
             ></textarea>
           </section>
+          </template>
         </div>
 
         <!-- Footer do Modal -->
@@ -559,7 +579,7 @@
             </button>
             <button
               @click="confirmarItem"
-              :disabled="podeConfirmarProduto === false"
+              :disabled="podeConfirmarProduto === false || loadingProduto || !produtoDetalhado || !!erroProdutoDetalhe"
               class="px-8 py-2.5 font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-70 disabled:cursor-not-allowed rounded-lg shadow-sm dark:shadow-none hover:shadow-md dark:shadow-none transition-all duration-200 active:scale-[0.98] flex items-center gap-2"
             >
               <Check class="w-5 h-5" />
@@ -853,30 +873,48 @@ const finalizarPedido = async () => {
 const modalAberto = ref(false)
 const loadingProduto = ref(false)
 const produtoDetalhado = ref(null) // Recebe o produto completo da API (com grupos e itens)
+const produtoSelecionadoId = ref(null)
+const erroProdutoDetalhe = ref('')
 const tamanhoSelecionado = ref(null)
 const adicionaisSelecionados = ref([])
 const observacaoProduto = ref('')
 
-const abrirModalProduto = async (produtoSimples) => {
+const carregarDetalhesProduto = async (produtoId) => {
   loadingProduto.value = true
+  erroProdutoDetalhe.value = ''
+
   try {
-    const { data } = await CatalogService.getProduct(produtoSimples.id)
+    const { data } = await CatalogService.getProduct(produtoId)
     produtoDetalhado.value = data
     tamanhoSelecionado.value = null
     adicionaisSelecionados.value = []
     observacaoProduto.value = ''
-    modalAberto.value = true
   } catch (err) {
     console.error('Erro ao carregar detalhes do produto:', err)
-    toast.error('Não foi possível carregar o produto. Tente novamente.')
+    erroProdutoDetalhe.value = err?.response?.data?.error || 'Tente novamente em instantes.'
+    toast.error('Não foi possível carregar o produto.')
   } finally {
     loadingProduto.value = false
   }
 }
 
+const abrirModalProduto = async (produtoSimples) => {
+  produtoSelecionadoId.value = produtoSimples.id
+  produtoDetalhado.value = null
+  modalAberto.value = true
+  await carregarDetalhesProduto(produtoSimples.id)
+}
+
+const recarregarProdutoDetalhado = async () => {
+  if (!produtoSelecionadoId.value) return
+  await carregarDetalhesProduto(produtoSelecionadoId.value)
+}
+
 const fecharModalProduto = () => {
   modalAberto.value = false
   produtoDetalhado.value = null
+  produtoSelecionadoId.value = null
+  erroProdutoDetalhe.value = ''
 }
 
 const itensSelecionadosNoGrupo = (grupoId) => {
