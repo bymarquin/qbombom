@@ -220,18 +220,7 @@
             </div>
 
             <div v-if="checkout.tipo === 'Entrega'" class="flex flex-col gap-3">
-              <div class="flex items-center justify-between">
-                <label class="text-sm font-bold text-neutral-900 dark:text-neutral-100">Endereço de Entrega</label>
-                <button
-                  type="button"
-                  @click="usarLocalizacao"
-                  :disabled="buscandoLocalizacao"
-                  class="flex items-center gap-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 disabled:opacity-50 transition-colors"
-                >
-                  <Crosshair class="w-3.5 h-3.5" :class="buscandoLocalizacao ? 'animate-spin' : ''" />
-                  {{ buscandoLocalizacao ? 'Buscando...' : 'Usar minha localização' }}
-                </button>
-              </div>
+              <label class="text-sm font-bold text-neutral-900 dark:text-neutral-100">Endereço de Entrega</label>
               <input
                 v-model="checkout.endereco.rua"
                 type="text"
@@ -362,10 +351,9 @@
 
 <script setup>
 import { ref } from "vue";
-import { ShoppingBag, Trash2, Crosshair } from "lucide-vue-next";
+import { ShoppingBag, Trash2 } from "lucide-vue-next";
 import { useToastStore } from "@/stores/toast";
 import { formatarMoeda, mascararTelefone } from "@/utils/formatters";
-import api from "@/services/http";
 
 const isOpen = defineModel("isOpen", { type: Boolean, required: true });
 const carrinho = defineModel("carrinho", { type: Array, required: true });
@@ -393,77 +381,9 @@ defineProps({
 const emit = defineEmits(["remover-item", "enviar-pedido"]);
 
 const toast = useToastStore();
-const buscandoLocalizacao = ref(false);
 
 const fechar = () => {
   isOpen.value = false;
-};
-
-const usarLocalizacao = async () => {
-  if (!navigator.geolocation) {
-    toast.error('Geolocalização não suportada pelo navegador.');
-    return;
-  }
-
-  if (!window.isSecureContext) {
-    toast.error('A localização só funciona em HTTPS (ou localhost).');
-    return;
-  }
-
-  const policy = document.permissionsPolicy || document.featurePolicy;
-  if (policy?.allowsFeature && !policy.allowsFeature('geolocation')) {
-    toast.error('Geolocalização bloqueada pela configuração do site (Permissions-Policy).');
-    return;
-  }
-
-  try {
-    if (navigator.permissions?.query) {
-      const status = await navigator.permissions.query({ name: 'geolocation' });
-      if (status.state === 'denied') {
-        toast.error('Permissão de localização está bloqueada no navegador. Libere nas configurações do site.');
-        return;
-      }
-    }
-  } catch {
-    // alguns navegadores não suportam query('geolocation')
-  }
-
-  buscandoLocalizacao.value = true;
-  navigator.geolocation.getCurrentPosition(
-    async ({ coords }) => {
-      try {
-        const { data } = await api.get('/geocode/reverse', {
-          params: { lat: coords.latitude, lon: coords.longitude },
-          timeout: 8000,
-        });
-        const a = data.address || {};
-        checkout.value.endereco.rua = a.road || a.pedestrian || a.footway || '';
-        checkout.value.endereco.numero = a.house_number || '';
-        checkout.value.endereco.bairro = a.suburb || a.neighbourhood || a.city_district || a.quarter || '';
-        checkout.value.endereco.complemento = checkout.value.endereco.complemento || '';
-        toast.success('Endereço preenchido com sua localização.');
-      } catch (error) {
-        const lat = Number(coords.latitude).toFixed(6)
-        const lon = Number(coords.longitude).toFixed(6)
-
-        checkout.value.endereco.rua = checkout.value.endereco.rua || `GPS ${lat}, ${lon}`
-        toast.error('Localização obtida, mas não foi possível traduzir o endereço. Coordenadas foram inseridas em Rua.');
-      } finally {
-        buscandoLocalizacao.value = false;
-      }
-    },
-    (err) => {
-      if (err.code === err.PERMISSION_DENIED) {
-        toast.error('Localização bloqueada. Permita acesso nas configurações do navegador/PWA.');
-      } else if (err.code === err.TIMEOUT) {
-        toast.error('Tempo esgotado ao buscar localização. Tente novamente.');
-      } else {
-        toast.error('Não foi possível obter sua localização.');
-      }
-      buscandoLocalizacao.value = false;
-    },
-    { timeout: 12000, enableHighAccuracy: true, maximumAge: 0 }
-  );
 };
 
 const agruparAdicionais = (adicionais) => {
