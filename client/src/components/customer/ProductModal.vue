@@ -18,7 +18,7 @@
             </button>
           </header>
 
-          <main class="flex-1 overflow-y-auto p-4 space-y-6 pb-32">
+          <main class="flex-1 overflow-y-auto p-4 space-y-6 pb-4">
             <div v-if="produtoDetalhado.imageUrl" class="w-full h-72 rounded-xl overflow-hidden bg-neutral-100 dark:bg-neutral-900">
               <img :src="produtoDetalhado.imageUrl" :alt="produtoDetalhado.name" class="w-full h-full object-cover" />
             </div>
@@ -159,7 +159,7 @@
             </section>
           </main>
 
-          <footer class="bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800 p-4 shrink-0 shadow-sm dark:shadow-none z-20 absolute bottom-0 w-full">
+          <footer class="bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800 p-4 shrink-0 shadow-sm dark:shadow-none">
             <div class="flex justify-between items-center mb-3">
               <div class="flex items-center gap-3">
                 <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Qtd.</span>
