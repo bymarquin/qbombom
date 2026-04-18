@@ -27,9 +27,43 @@
               {{ produtoDetalhado.description }}
             </p>
 
-            <!-- Tamanhos -->
+            <!-- Stepper de bolas (sorvete) -->
             <section
-              v-if="produtoDetalhado.variations?.length > 0"
+              v-if="isSorvete"
+              class="bg-white dark:bg-neutral-900 p-5 rounded-2xl shadow-xl dark:shadow-none shadow-red-900/5 border border-neutral-100 dark:border-neutral-800/50"
+            >
+              <h3 class="font-bold text-neutral-900 dark:text-neutral-100 mb-4 flex justify-between items-center text-sm tracking-tight">
+                Bolas de Sorvete
+                <span class="bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-[10px] uppercase px-2 py-0.5 rounded font-bold border border-neutral-200 dark:border-neutral-800">
+                  Obrigatório
+                </span>
+              </h3>
+              <div class="flex items-center justify-between p-3 rounded-lg border border-red-600 ring-1 ring-red-600 bg-red-50/30 dark:bg-red-900/20">
+                <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  {{ bolaCount }} {{ bolaCount === 1 ? 'Bola' : 'Bolas' }}
+                </span>
+                <div class="flex items-center border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden">
+                  <button
+                    @click="bolaCount > 1 && bolaCount--"
+                    :disabled="bolaCount <= 1"
+                    class="px-3 py-1.5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-lg leading-none font-medium disabled:opacity-40"
+                  >−</button>
+                  <span class="px-3 text-sm font-bold text-neutral-900 dark:text-neutral-100 min-w-[2rem] text-center">{{ bolaCount }}</span>
+                  <button
+                    @click="bolaCount++"
+                    class="px-3 py-1.5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-lg leading-none font-medium"
+                  >+</button>
+                </div>
+                <span class="text-sm font-bold text-red-600 dark:text-red-400">{{ formatarMoeda(bolaPrice) }}</span>
+              </div>
+              <p class="text-xs text-neutral-400 mt-2 ml-1">
+                1ª bola R$4,00 • a partir da 2ª R$3,50/bola
+              </p>
+            </section>
+
+            <!-- Tamanhos normais -->
+            <section
+              v-else-if="produtoDetalhado.variations?.length > 0"
               class="bg-white dark:bg-neutral-900 p-5 rounded-2xl shadow-xl dark:shadow-none shadow-red-900/5 border border-neutral-100 dark:border-neutral-800/50"
             >
               <h3 class="font-bold text-neutral-900 dark:text-neutral-100 mb-4 flex justify-between items-center text-sm tracking-tight">
@@ -71,16 +105,12 @@
                 Selecione uma opção para continuar.
               </p>
 
-              <!-- Contador global de complementos (vinculado ao tamanho escolhido) -->
               <div
                 v-if="tamanhoSelecionado && limiteGlobal"
                 class="mt-4 flex items-center justify-between px-3 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700"
               >
                 <span class="text-xs text-neutral-500 dark:text-neutral-400">Complementos selecionados</span>
-                <span
-                  class="text-xs font-bold"
-                  :class="atingiuLimite ? 'text-red-600 dark:text-red-400' : 'text-neutral-700 dark:text-neutral-300'"
-                >
+                <span class="text-xs font-bold" :class="atingiuLimite ? 'text-red-600 dark:text-red-400' : 'text-neutral-700 dark:text-neutral-300'">
                   {{ totalSelecionado }} / {{ limiteGlobal }}
                 </span>
               </div>
@@ -97,7 +127,13 @@
                   {{ grupo.name }}
                 </h3>
                 <span
-                  v-if="grupo.maxChoices === 1 && grupo.minChoices >= 1"
+                  v-if="grupo.name === 'Casquinha'"
+                  class="bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-[10px] uppercase px-2 py-0.5 rounded font-bold border border-neutral-200 dark:border-neutral-800"
+                >
+                  Opcional
+                </span>
+                <span
+                  v-else-if="grupo.maxChoices === 1 && grupo.minChoices >= 1"
                   class="bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-[10px] uppercase px-2 py-0.5 rounded font-bold border border-neutral-200 dark:border-neutral-800"
                 >
                   Obrigatório
@@ -113,8 +149,40 @@
                 </span>
               </div>
 
+              <!-- Stepper de casquinha -->
+              <div v-if="grupo.name === 'Casquinha'" class="flex flex-col gap-3">
+                <div
+                  v-for="add in grupo.items"
+                  :key="add.id"
+                  class="flex items-center justify-between p-3 rounded-lg border transition-all"
+                  :class="(itemQuantidades[add.id] || 0) > 0
+                    ? 'border-red-600 bg-red-50/30 dark:bg-red-900/20 ring-1 ring-red-600'
+                    : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900'"
+                >
+                  <div>
+                    <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">{{ add.name }}</span>
+                    <span class="text-xs text-neutral-400 ml-1.5">{{ formatarMoeda(add.price) }}/un</span>
+                  </div>
+                  <div class="flex items-center border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden">
+                    <button
+                      @click="decrementarItem(add.id)"
+                      :disabled="(itemQuantidades[add.id] || 0) === 0"
+                      class="px-3 py-1.5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-lg leading-none font-medium disabled:opacity-40"
+                    >−</button>
+                    <span class="px-3 text-sm font-bold text-neutral-900 dark:text-neutral-100 min-w-[2rem] text-center">{{ itemQuantidades[add.id] || 0 }}</span>
+                    <button
+                      @click="incrementarItem(add.id)"
+                      class="px-3 py-1.5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-lg leading-none font-medium"
+                    >+</button>
+                  </div>
+                  <span class="text-sm font-bold w-14 text-right" :class="(itemQuantidades[add.id] || 0) > 0 ? 'text-red-600 dark:text-red-400' : 'text-neutral-300 dark:text-neutral-600'">
+                    {{ (itemQuantidades[add.id] || 0) > 0 ? formatarMoeda(add.price * (itemQuantidades[add.id] || 0)) : '—' }}
+                  </span>
+                </div>
+              </div>
+
               <!-- Seleção única (radio style) -->
-              <div v-if="grupo.maxChoices === 1 && grupo.minChoices >= 1" class="flex flex-col gap-3">
+              <div v-else-if="grupo.maxChoices === 1 && grupo.minChoices >= 1" class="flex flex-col gap-3">
                 <label
                   v-for="add in grupo.items"
                   :key="add.id"
@@ -125,19 +193,10 @@
                   @click="selecionarUnico(add, grupo)"
                 >
                   <div class="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      :checked="isAdicionalSelecionado(add)"
-                      class="w-4 h-4 accent-red-600 dark:accent-red-500 cursor-pointer pointer-events-none"
-                      readonly
-                    />
+                    <input type="radio" :checked="isAdicionalSelecionado(add)" class="w-4 h-4 accent-red-600 dark:accent-red-500 cursor-pointer pointer-events-none" readonly />
                     <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">{{ add.name }}</span>
                   </div>
-                  <span
-                    v-if="add.price > 0"
-                    class="text-sm font-semibold"
-                    :class="isAdicionalSelecionado(add) ? 'text-red-600 dark:text-red-400' : 'text-neutral-900 dark:text-neutral-100'"
-                  >
+                  <span v-if="add.price > 0" class="text-sm font-semibold" :class="isAdicionalSelecionado(add) ? 'text-red-600 dark:text-red-400' : 'text-neutral-900 dark:text-neutral-100'">
                     + {{ formatarMoeda(add.price) }}
                   </span>
                 </label>
@@ -146,7 +205,7 @@
                 </p>
               </div>
 
-              <!-- Múltipla escolha (checkbox style) -->
+              <!-- Múltipla escolha (checkbox) -->
               <div v-else class="flex flex-col gap-3">
                 <label
                   v-for="add in grupo.items"
@@ -169,11 +228,7 @@
                     />
                     <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">{{ add.name }}</span>
                   </div>
-                  <span
-                    v-if="add.price > 0"
-                    class="text-sm font-semibold"
-                    :class="isAdicionalSelecionado(add) ? 'text-red-600 dark:text-red-400' : 'text-neutral-900 dark:text-neutral-100'"
-                  >
+                  <span v-if="add.price > 0" class="text-sm font-semibold" :class="isAdicionalSelecionado(add) ? 'text-red-600 dark:text-red-400' : 'text-neutral-900 dark:text-neutral-100'">
                     + {{ formatarMoeda(add.price) }}
                   </span>
                 </label>
@@ -246,12 +301,39 @@ const tamanhoSelecionado = ref(null);
 const adicionaisSelecionados = ref([]);
 const observacaoProduto = ref("");
 const quantidade = ref(1);
+const bolaCount = ref(1);
+const itemQuantidades = ref({});
 
 watch(() => props.produtoDetalhado, () => {
   tamanhoSelecionado.value = null;
   adicionaisSelecionados.value = [];
   observacaoProduto.value = "";
   quantidade.value = 1;
+  bolaCount.value = 1;
+  itemQuantidades.value = {};
+});
+
+// --- Detecção de sorvete (tem grupo Casquinha) ---
+const isSorvete = computed(() =>
+  props.produtoDetalhado?.additionalGroups?.some(g => g.name === 'Casquinha') ?? false
+);
+
+const bolaPrice = computed(() =>
+  bolaCount.value === 1 ? 4.00 : bolaCount.value * 3.50
+);
+
+const incrementarItem = (itemId) => {
+  itemQuantidades.value = { ...itemQuantidades.value, [itemId]: (itemQuantidades.value[itemId] || 0) + 1 };
+};
+const decrementarItem = (itemId) => {
+  const atual = itemQuantidades.value[itemId] || 0;
+  if (atual > 0) itemQuantidades.value = { ...itemQuantidades.value, [itemId]: atual - 1 };
+};
+
+const casquinhaTotal = computed(() => {
+  const grupo = props.produtoDetalhado?.additionalGroups?.find(g => g.name === 'Casquinha');
+  if (!grupo) return 0;
+  return grupo.items.reduce((acc, item) => acc + Number(item.price) * (itemQuantidades.value[item.id] || 0), 0);
 });
 
 watch(tamanhoSelecionado, () => {
@@ -269,12 +351,10 @@ watch(() => adicionaisSelecionados.value.length, (novo, anterior) => {
 
 const fechar = () => { modelValue.value = false; };
 
-// --- Limite global de complementos (definido pela variação escolhida) ---
 const limiteGlobal = computed(() => tamanhoSelecionado.value?.maxAdditionals ?? null);
 const totalSelecionado = computed(() => adicionaisSelecionados.value.length);
 const atingiuLimite = computed(() => limiteGlobal.value !== null && totalSelecionado.value >= limiteGlobal.value);
 
-// --- Helpers por grupo ---
 const itensSelecionadosNoGrupo = (grupoId) =>
   adicionaisSelecionados.value.filter((a) => a.grupoId === grupoId);
 const qtdSelecionadaNoGrupo = (grupoId) => itensSelecionadosNoGrupo(grupoId).length;
@@ -285,49 +365,61 @@ const estaBloqueado = (adicional, grupo) =>
   !isAdicionalSelecionado(adicional) && (atingiuLimite.value || qtdSelecionadaNoGrupo(grupo.id) >= grupo.maxChoices);
 
 const selecionarUnico = (add, grupo) => {
-  adicionaisSelecionados.value = adicionaisSelecionados.value.filter((a) => a.grupoId !== grupo.id)
-  adicionaisSelecionados.value.push({ ...add, grupoId: grupo.id })
+  adicionaisSelecionados.value = adicionaisSelecionados.value.filter((a) => a.grupoId !== grupo.id);
+  adicionaisSelecionados.value.push({ ...add, grupoId: grupo.id });
 };
 
-// --- Validação para liberar o botão ---
 const podeProsseguir = computed(() => {
   if (!props.produtoDetalhado) return false;
-  if (props.produtoDetalhado.variations?.length > 0 && !tamanhoSelecionado.value) return false;
+  if (!isSorvete.value && props.produtoDetalhado.variations?.length > 0 && !tamanhoSelecionado.value) return false;
   return props.produtoDetalhado.additionalGroups?.every(
-    (grupo) => grupo.minChoices === 0 || qtdSelecionadaNoGrupo(grupo.id) >= grupo.minChoices
+    (grupo) => grupo.name === 'Casquinha' || grupo.minChoices === 0 || qtdSelecionadaNoGrupo(grupo.id) >= grupo.minChoices
   ) ?? true;
 });
 
-// --- Cálculo de preço (itens grátis por ordem de menor preço) ---
 const adicionaisComPreco = computed(() => {
   if (!props.produtoDetalhado?.additionalGroups) return [];
-
-  return props.produtoDetalhado.additionalGroups.flatMap((grupo) => {
-    const itens = [...itensSelecionadosNoGrupo(grupo.id)].sort((a, b) => Number(a.price) - Number(b.price));
-    return itens.map((item, index) => ({
-      id: item.id,
-      name: item.name,
-      price: index < grupo.freeChoices ? 0 : Number(item.price)
-    }));
-  });
+  return props.produtoDetalhado.additionalGroups
+    .filter(grupo => grupo.name !== 'Casquinha')
+    .flatMap((grupo) => {
+      const itens = [...itensSelecionadosNoGrupo(grupo.id)].sort((a, b) => Number(a.price) - Number(b.price));
+      return itens.map((item, index) => ({
+        id: item.id,
+        name: item.name,
+        price: index < grupo.freeChoices ? 0 : Number(item.price)
+      }));
+    });
 });
 
 const totalItemAtual = computed(() => {
   if (!props.produtoDetalhado) return 0;
-  const base = tamanhoSelecionado.value ? Number(tamanhoSelecionado.value.price) : 0;
-  return base + adicionaisComPreco.value.reduce((acc, item) => acc + item.price, 0);
+  const base = isSorvete.value
+    ? bolaPrice.value
+    : (tamanhoSelecionado.value ? Number(tamanhoSelecionado.value.price) : 0);
+  return base + casquinhaTotal.value + adicionaisComPreco.value.reduce((acc, item) => acc + item.price, 0);
 });
 
 const confirmarItem = () => {
   if (!podeProsseguir.value) return;
 
+  const casquinhaAdds = [];
+  if (isSorvete.value) {
+    const grupo = props.produtoDetalhado.additionalGroups?.find(g => g.name === 'Casquinha');
+    grupo?.items.forEach(item => {
+      const qty = itemQuantidades.value[item.id] || 0;
+      if (qty > 0) casquinhaAdds.push({ id: item.id, name: `${item.name} ×${qty}`, price: Number(item.price) * qty });
+    });
+  }
+
   emit('add-item', {
     productId: props.produtoDetalhado.id,
     productName: props.produtoDetalhado.name,
-    variationId: tamanhoSelecionado.value?.id || null,
-    variationName: tamanhoSelecionado.value?.name || "",
+    variationId: isSorvete.value ? null : (tamanhoSelecionado.value?.id || null),
+    variationName: isSorvete.value
+      ? `${bolaCount.value} ${bolaCount.value === 1 ? 'Bola' : 'Bolas'}`
+      : (tamanhoSelecionado.value?.name || ''),
     quantity: quantidade.value,
-    selectedAdditionals: [...adicionaisComPreco.value],
+    selectedAdditionals: [...adicionaisComPreco.value, ...casquinhaAdds],
     observation: observacaoProduto.value,
     totalPrice: totalItemAtual.value,
   });

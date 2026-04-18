@@ -1,0 +1,315 @@
+{
+  "categories": [
+    {
+      "name": "Sorvetes",
+      "products": [
+        {
+          "name": "Sorvete",
+          "description": "Escolha a quantidade de bolas e monte do seu jeito.",
+          "variations": [],
+          "additionalGroups": [
+            {
+              "name": "Casquinha",
+              "minChoices": 0,
+              "maxChoices": 1,
+              "freeChoices": 0,
+              "items": [
+                { "name": "Cone",     "price": 0.75 },
+                { "name": "Cestinha", "price": 1.00 }
+              ]
+            },
+            {
+              "name": "Sabores",
+              "minChoices": 0,
+              "maxChoices": 31,
+              "freeChoices": 31,
+              "items": [
+                { "name": "Abacaxi",               "price": 0 },
+                { "name": "Abacaxi ao Vinho",       "price": 0 },
+                { "name": "Baunilha",               "price": 0 },
+                { "name": "Blue Ice",               "price": 0 },
+                { "name": "Brigadeiro",             "price": 0 },
+                { "name": "Chocolate Branco",       "price": 0 },
+                { "name": "Chocolate",              "price": 0 },
+                { "name": "Chocoleite",             "price": 0 },
+                { "name": "Creme",                  "price": 0 },
+                { "name": "Crocante",               "price": 0 },
+                { "name": "Flocos",                 "price": 0 },
+                { "name": "Frutas Tropicais",       "price": 0 },
+                { "name": "Iorgute Grego",          "price": 0 },
+                { "name": "Ovomaltine",             "price": 0 },
+                { "name": "Leite Condensado",       "price": 0 },
+                { "name": "Passas",                 "price": 0 },
+                { "name": "Prestígio",              "price": 0 },
+                { "name": "Menta",                  "price": 0 },
+                { "name": "A Moda da Casa",         "price": 0 },
+                { "name": "Morango",                "price": 0 },
+                { "name": "Napolitano",             "price": 0 },
+                { "name": "Nata Goiaba",            "price": 0 },
+                { "name": "Nata Uva",               "price": 0 },
+                { "name": "Ninho com Creme de Avelã","price": 0 },
+                { "name": "Pavê",                   "price": 0 },
+                { "name": "Toffe",                  "price": 0 },
+                { "name": "Trio",                   "price": 0 },
+                { "name": "Unicórnio",              "price": 0 },
+                { "name": "Sensação",               "price": 0 },
+                { "name": "Sonho de Valsa",         "price": 0 },
+                { "name": "Maracujá",               "price": 0 }
+              ]
+            },
+            {
+              "name": "Coberturas",
+              "minChoices": 0,
+              "maxChoices": 16,
+              "freeChoices": 16,
+              "items": [
+                { "name": "Açaí",             "price": 0 },
+                { "name": "Abacaxi",          "price": 0 },
+                { "name": "Blue",             "price": 0 },
+                { "name": "Caramelo",         "price": 0 },
+                { "name": "Chocolate",        "price": 0 },
+                { "name": "Chocolate Branco", "price": 0 },
+                { "name": "Cereja",           "price": 0 },
+                { "name": "Doce de Leite",    "price": 0 },
+                { "name": "Leite Condensado", "price": 0 },
+                { "name": "Maracujá",         "price": 0 },
+                { "name": "Morango",          "price": 0 },
+                { "name": "Menta",            "price": 0 },
+                { "name": "Kiwi",             "price": 0 },
+                { "name": "Sabor Pistache",   "price": 0 },
+                { "name": "Uva",              "price": 0 },
+                { "name": "Limão",            "price": 0 }
+              ]
+            },
+            {
+              "name": "Complementos",
+              "minChoices": 0,
+              "maxChoices": 15,
+              "freeChoices": 0,
+              "items": [
+                { "name": "Amendoim",              "price": 0.50 },
+                { "name": "Castanha",              "price": 0.50 },
+                { "name": "Choco Boll",            "price": 0.50 },
+                { "name": "Choco Pawer",           "price": 0.50 },
+                { "name": "Granola",               "price": 0.50 },
+                { "name": "Pó de Ovomaltine",      "price": 0.50 },
+                { "name": "Granulado de Chocolate","price": 0.50 },
+                { "name": "Granulado Colorido",    "price": 0.50 },
+                { "name": "Gotas de Chocolate",    "price": 0.50 },
+                { "name": "Jujubas",               "price": 0.50 },
+                { "name": "Leite em Pó",           "price": 0.50 },
+                { "name": "MM",                    "price": 0.50 },
+                { "name": "Óreo",                  "price": 0.50 },
+                { "name": "Uva Passas",            "price": 0.50 },
+                { "name": "Sucrilhos",             "price": 0.50 }
+              ]
+            },
+            {
+              "name": "Adicionais",
+              "minChoices": 0,
+              "maxChoices": 5,
+              "freeChoices": 0,
+              "items": [
+                { "name": "Canudinhos",          "price": 1.00 },
+                { "name": "Marshmallows",        "price": 1.00 },
+                { "name": "Paçocas",             "price": 1.00 },
+                { "name": "Nutela",              "price": 2.00 },
+                { "name": "Creme de Wafer Branco","price": 2.00 }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Milkshakes",
+      "products": [
+        {
+          "name": "Milkshake na Taça",
+          "description": "Servido na taça para consumo no local.",
+          "variations": [
+            { "name": "200ml", "price": 8.00  },
+            { "name": "250ml", "price": 10.00 },
+            { "name": "300ml", "price": 12.00 },
+            { "name": "350ml", "price": 15.00 },
+            { "name": "400ml", "price": 20.00 },
+            { "name": "700ml", "price": 30.00 }
+          ],
+          "additionalGroups": [
+            {
+              "name": "Sabor",
+              "minChoices": 1,
+              "maxChoices": 1,
+              "freeChoices": 1,
+              "items": [
+                { "name": "Abacaxi",               "price": 0 },
+                { "name": "Abacaxi ao Vinho",       "price": 0 },
+                { "name": "Baunilha",               "price": 0 },
+                { "name": "Blue Ice",               "price": 0 },
+                { "name": "Brigadeiro",             "price": 0 },
+                { "name": "Chocolate Branco",       "price": 0 },
+                { "name": "Chocolate",              "price": 0 },
+                { "name": "Chocoleite",             "price": 0 },
+                { "name": "Creme",                  "price": 0 },
+                { "name": "Crocante",               "price": 0 },
+                { "name": "Flocos",                 "price": 0 },
+                { "name": "Frutas Tropicais",       "price": 0 },
+                { "name": "Iorgute Grego",          "price": 0 },
+                { "name": "Ovomaltine",             "price": 0 },
+                { "name": "Leite Condensado",       "price": 0 },
+                { "name": "Passas",                 "price": 0 },
+                { "name": "Prestígio",              "price": 0 },
+                { "name": "Menta",                  "price": 0 },
+                { "name": "A Moda da Casa",         "price": 0 },
+                { "name": "Morango",                "price": 0 },
+                { "name": "Napolitano",             "price": 0 },
+                { "name": "Nata Goiaba",            "price": 0 },
+                { "name": "Nata Uva",               "price": 0 },
+                { "name": "Ninho com Creme de Avelã","price": 0 },
+                { "name": "Pavê",                   "price": 0 },
+                { "name": "Toffe",                  "price": 0 },
+                { "name": "Trio",                   "price": 0 },
+                { "name": "Unicórnio",              "price": 0 },
+                { "name": "Sensação",               "price": 0 },
+                { "name": "Sonho de Valsa",         "price": 0 },
+                { "name": "Maracujá",               "price": 0 }
+              ]
+            },
+            {
+              "name": "Cobertura",
+              "minChoices": 0,
+              "maxChoices": 1,
+              "freeChoices": 1,
+              "items": [
+                { "name": "Açaí",             "price": 0 },
+                { "name": "Abacaxi",          "price": 0 },
+                { "name": "Blue",             "price": 0 },
+                { "name": "Caramelo",         "price": 0 },
+                { "name": "Chocolate",        "price": 0 },
+                { "name": "Chocolate Branco", "price": 0 },
+                { "name": "Cereja",           "price": 0 },
+                { "name": "Doce de Leite",    "price": 0 },
+                { "name": "Leite Condensado", "price": 0 },
+                { "name": "Maracujá",         "price": 0 },
+                { "name": "Morango",          "price": 0 },
+                { "name": "Menta",            "price": 0 },
+                { "name": "Kiwi",             "price": 0 },
+                { "name": "Sabor Pistache",   "price": 0 },
+                { "name": "Uva",              "price": 0 },
+                { "name": "Limão",            "price": 0 }
+              ]
+            },
+            {
+              "name": "Borda",
+              "minChoices": 0,
+              "maxChoices": 1,
+              "freeChoices": 0,
+              "items": [
+                { "name": "Borda de Nutela", "price": 2.00 }
+              ]
+            },
+            {
+              "name": "Adicionais",
+              "minChoices": 0,
+              "maxChoices": 5,
+              "freeChoices": 0,
+              "items": [
+                { "name": "Canudinhos",           "price": 1.00 },
+                { "name": "Marshmallows",         "price": 1.00 },
+                { "name": "Paçocas",              "price": 1.00 },
+                { "name": "Creme de Wafer Branco","price": 2.00 }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Milkshake Para Levar",
+          "description": "Em copo fechado, ideal para viagem e delivery.",
+          "variations": [
+            { "name": "Copo 300ml", "price": 12.00 },
+            { "name": "Copo 400ml", "price": 15.00 },
+            { "name": "Copo 500ml", "price": 20.00 },
+            { "name": "Copo 700ml", "price": 30.00 }
+          ],
+          "additionalGroups": [
+            {
+              "name": "Sabor",
+              "minChoices": 1,
+              "maxChoices": 1,
+              "freeChoices": 1,
+              "items": [
+                { "name": "Abacaxi",               "price": 0 },
+                { "name": "Abacaxi ao Vinho",       "price": 0 },
+                { "name": "Baunilha",               "price": 0 },
+                { "name": "Blue Ice",               "price": 0 },
+                { "name": "Brigadeiro",             "price": 0 },
+                { "name": "Chocolate Branco",       "price": 0 },
+                { "name": "Chocolate",              "price": 0 },
+                { "name": "Chocoleite",             "price": 0 },
+                { "name": "Creme",                  "price": 0 },
+                { "name": "Crocante",               "price": 0 },
+                { "name": "Flocos",                 "price": 0 },
+                { "name": "Frutas Tropicais",       "price": 0 },
+                { "name": "Iorgute Grego",          "price": 0 },
+                { "name": "Ovomaltine",             "price": 0 },
+                { "name": "Leite Condensado",       "price": 0 },
+                { "name": "Passas",                 "price": 0 },
+                { "name": "Prestígio",              "price": 0 },
+                { "name": "Menta",                  "price": 0 },
+                { "name": "A Moda da Casa",         "price": 0 },
+                { "name": "Morango",                "price": 0 },
+                { "name": "Napolitano",             "price": 0 },
+                { "name": "Nata Goiaba",            "price": 0 },
+                { "name": "Nata Uva",               "price": 0 },
+                { "name": "Ninho com Creme de Avelã","price": 0 },
+                { "name": "Pavê",                   "price": 0 },
+                { "name": "Toffe",                  "price": 0 },
+                { "name": "Trio",                   "price": 0 },
+                { "name": "Unicórnio",              "price": 0 },
+                { "name": "Sensação",               "price": 0 },
+                { "name": "Sonho de Valsa",         "price": 0 },
+                { "name": "Maracujá",               "price": 0 }
+              ]
+            },
+            {
+              "name": "Cobertura",
+              "minChoices": 0,
+              "maxChoices": 1,
+              "freeChoices": 1,
+              "items": [
+                { "name": "Açaí",             "price": 0 },
+                { "name": "Abacaxi",          "price": 0 },
+                { "name": "Blue",             "price": 0 },
+                { "name": "Caramelo",         "price": 0 },
+                { "name": "Chocolate",        "price": 0 },
+                { "name": "Chocolate Branco", "price": 0 },
+                { "name": "Cereja",           "price": 0 },
+                { "name": "Doce de Leite",    "price": 0 },
+                { "name": "Leite Condensado", "price": 0 },
+                { "name": "Maracujá",         "price": 0 },
+                { "name": "Morango",          "price": 0 },
+                { "name": "Menta",            "price": 0 },
+                { "name": "Kiwi",             "price": 0 },
+                { "name": "Sabor Pistache",   "price": 0 },
+                { "name": "Uva",              "price": 0 },
+                { "name": "Limão",            "price": 0 }
+              ]
+            },
+            {
+              "name": "Adicionais",
+              "minChoices": 0,
+              "maxChoices": 5,
+              "freeChoices": 0,
+              "items": [
+                { "name": "Canudinhos",           "price": 1.00 },
+                { "name": "Marshmallows",         "price": 1.00 },
+                { "name": "Paçocas",              "price": 1.00 },
+                { "name": "Creme de Wafer Branco","price": 2.00 }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

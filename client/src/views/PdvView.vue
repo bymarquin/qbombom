@@ -414,8 +414,31 @@
             <img :src="produtoDetalhado.imageUrl" :alt="produtoDetalhado.name" class="w-full h-full object-cover" />
           </div>
 
-          <!-- Tamanhos/Variações (Se existirem) -->
-          <section v-if="produtoDetalhado.variations && produtoDetalhado.variations.length > 0">
+          <!-- Stepper de bolas (sorvete) -->
+          <section v-if="isSorvete">
+            <h3 class="font-semibold text-neutral-900 dark:text-neutral-100 mb-3 flex items-center gap-2">
+              <ArrowRightCircle class="w-4 h-4 text-red-600" />
+              Bolas de Sorvete
+              <span class="text-xs font-normal text-neutral-500 dark:text-neutral-400">(Obrigatório)</span>
+            </h3>
+            <div class="flex items-center justify-between p-4 rounded-xl border border-red-600 ring-1 ring-red-600 bg-red-50 dark:bg-red-900/20">
+              <span class="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+                {{ bolaCount }} {{ bolaCount === 1 ? 'Bola' : 'Bolas' }}
+              </span>
+              <div class="flex items-center bg-neutral-100 dark:bg-neutral-800 rounded-md">
+                <button class="px-2 py-1 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-l-md disabled:opacity-40"
+                  :disabled="bolaCount <= 1" @click="bolaCount > 1 && bolaCount--">−</button>
+                <span class="px-2 text-xs font-semibold w-6 text-center">{{ bolaCount }}</span>
+                <button class="px-2 py-1 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-r-md"
+                  @click="bolaCount++">+</button>
+              </div>
+              <span class="font-bold text-red-600">{{ formatarMoeda(bolaPrice) }}</span>
+            </div>
+            <p class="text-xs text-neutral-400 mt-2">1ª bola R$4,00 • a partir da 2ª R$3,50/bola</p>
+          </section>
+
+          <!-- Tamanhos/Variações normais -->
+          <section v-else-if="produtoDetalhado.variations && produtoDetalhado.variations.length > 0">
             <h3
               class="font-semibold text-neutral-900 dark:text-neutral-100 mb-3 flex items-center gap-2"
             >
@@ -492,7 +515,13 @@
                 </p>
               </div>
               <span
-                v-if="grupo.maxChoices === 1 && grupo.minChoices >= 1"
+                v-if="grupo.name === 'Casquinha'"
+                class="text-xs font-semibold px-2 py-0.5 rounded border bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700"
+              >
+                Opcional
+              </span>
+              <span
+                v-else-if="grupo.maxChoices === 1 && grupo.minChoices >= 1"
                 class="text-xs font-semibold px-2 py-0.5 rounded border bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700"
               >
                 Obrigatório
@@ -508,8 +537,35 @@
               </span>
             </div>
 
+            <!-- Stepper de casquinha -->
+            <div v-if="grupo.name === 'Casquinha'" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div
+                v-for="add in grupo.items"
+                :key="add.id"
+                class="flex items-center justify-between p-3.5 rounded-lg border transition-all duration-200"
+                :class="(itemQuantidades[add.id] || 0) > 0
+                  ? 'border-red-600 ring-1 ring-red-600 bg-red-50/30 dark:bg-red-900/20'
+                  : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900'"
+              >
+                <div>
+                  <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">{{ add.name }}</span>
+                  <span class="text-xs text-neutral-400 ml-1">{{ formatarMoeda(add.price) }}/un</span>
+                </div>
+                <div class="flex items-center bg-neutral-100 dark:bg-neutral-800 rounded-md">
+                  <button class="px-2 py-1 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-l-md disabled:opacity-40"
+                    :disabled="(itemQuantidades[add.id] || 0) === 0" @click="decrementarItem(add.id)">−</button>
+                  <span class="px-2 text-xs font-semibold w-6 text-center">{{ itemQuantidades[add.id] || 0 }}</span>
+                  <button class="px-2 py-1 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-r-md"
+                    @click="incrementarItem(add.id)">+</button>
+                </div>
+                <span class="text-xs font-bold w-12 text-right" :class="(itemQuantidades[add.id] || 0) > 0 ? 'text-red-600 dark:text-red-500' : 'text-neutral-300'">
+                  {{ (itemQuantidades[add.id] || 0) > 0 ? formatarMoeda(add.price * (itemQuantidades[add.id] || 0)) : '—' }}
+                </span>
+              </div>
+            </div>
+
             <!-- Seleção única (radio style) -->
-            <div v-if="grupo.maxChoices === 1 && grupo.minChoices >= 1" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div v-else-if="grupo.maxChoices === 1 && grupo.minChoices >= 1" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <label
                 v-for="add in grupo.items"
                 :key="add.id"
@@ -938,12 +994,33 @@ const finalizarPedido = async () => {
 // --- LÓGICA DO MODAL DE MONTAGEM (COM DADOS DA API) ---
 const modalAberto = ref(false)
 const loadingProduto = ref(false)
-const produtoDetalhado = ref(null) // Recebe o produto completo da API (com grupos e itens)
+const produtoDetalhado = ref(null)
 const produtoSelecionadoId = ref(null)
 const erroProdutoDetalhe = ref('')
 const tamanhoSelecionado = ref(null)
 const adicionaisSelecionados = ref([])
 const observacaoProduto = ref('')
+const bolaCount = ref(1)
+const itemQuantidades = ref({})
+
+const isSorvete = computed(() =>
+  produtoDetalhado.value?.additionalGroups?.some(g => g.name === 'Casquinha') ?? false
+)
+const bolaPrice = computed(() =>
+  bolaCount.value === 1 ? 4.00 : bolaCount.value * 3.50
+)
+const incrementarItem = (itemId) => {
+  itemQuantidades.value = { ...itemQuantidades.value, [itemId]: (itemQuantidades.value[itemId] || 0) + 1 }
+}
+const decrementarItem = (itemId) => {
+  const atual = itemQuantidades.value[itemId] || 0
+  if (atual > 0) itemQuantidades.value = { ...itemQuantidades.value, [itemId]: atual - 1 }
+}
+const casquinhaTotal = computed(() => {
+  const grupo = produtoDetalhado.value?.additionalGroups?.find(g => g.name === 'Casquinha')
+  if (!grupo) return 0
+  return grupo.items.reduce((acc, item) => acc + Number(item.price) * (itemQuantidades.value[item.id] || 0), 0)
+})
 
 const carregarDetalhesProduto = async (produtoId) => {
   loadingProduto.value = true
@@ -955,6 +1032,8 @@ const carregarDetalhesProduto = async (produtoId) => {
     tamanhoSelecionado.value = null
     adicionaisSelecionados.value = []
     observacaoProduto.value = ''
+    bolaCount.value = 1
+    itemQuantidades.value = {}
   } catch (err) {
     console.error('Erro ao carregar detalhes do produto:', err)
     if (err?.code === 'ECONNABORTED') {
@@ -1029,70 +1108,58 @@ watch(() => adicionaisSelecionados.value.length, (novo, anterior) => {
   }
 })
 
-// Validação dos mínimos obrigatórios
 const podeConfirmarProduto = computed(() => {
   if (!produtoDetalhado.value) return false
-
-  // Se tem variação, obriga a selecionar uma
-  if (produtoDetalhado.value.variations && produtoDetalhado.value.variations.length > 0) {
-    if (!tamanhoSelecionado.value) return false
-  }
-
-  // Verifica mínimos dos grupos
+  if (!isSorvete.value && produtoDetalhado.value.variations?.length > 0 && !tamanhoSelecionado.value) return false
   if (produtoDetalhado.value.additionalGroups) {
     for (const grupo of produtoDetalhado.value.additionalGroups) {
-      if (grupo.minChoices > 0 && qtdSelecionadaNoGrupo(grupo.id) < grupo.minChoices) {
-        return false
-      }
+      if (grupo.name === 'Casquinha') continue
+      if (grupo.minChoices > 0 && qtdSelecionadaNoGrupo(grupo.id) < grupo.minChoices) return false
     }
   }
-
   return true
 })
 
 const adicionaisComPrecoCalculado = computed(() => {
-  if (!produtoDetalhado.value || !produtoDetalhado.value.additionalGroups) return []
+  if (!produtoDetalhado.value?.additionalGroups) return []
   const processados = []
-
   for (const grupo of produtoDetalhado.value.additionalGroups) {
-    const itensDoGrupo = itensSelecionadosNoGrupo(grupo.id)
-
-    // Regra: ordena do mais barato pro mais caro. Os gratuitos serão os mais baratos, pagando os caros (lucro da loja)
-    const itensOrdenados = [...itensDoGrupo].sort((a, b) => Number(a.price) - Number(b.price))
-
+    if (grupo.name === 'Casquinha') continue
+    const itensOrdenados = [...itensSelecionadosNoGrupo(grupo.id)].sort((a, b) => Number(a.price) - Number(b.price))
     itensOrdenados.forEach((item, index) => {
-      // Se index < quantidade grátis -> preço é 0
-      const precoCalculado = index < grupo.freeChoices ? 0 : Number(item.price)
-      processados.push({
-        id: item.id,
-        name: item.name,
-        price: precoCalculado, // Preço final que o cliente pagou (0 ou valor cheio)
-      })
+      processados.push({ id: item.id, name: item.name, price: index < grupo.freeChoices ? 0 : Number(item.price) })
     })
   }
-
   return processados
 })
 
 const totalItemAtual = computed(() => {
   if (!produtoDetalhado.value) return 0
-
-  let base = tamanhoSelecionado.value ? Number(tamanhoSelecionado.value.price) : 0
-
-  const extras = adicionaisComPrecoCalculado.value.reduce((acc, curr) => acc + curr.price, 0)
-  return base + extras
+  const base = isSorvete.value ? bolaPrice.value : (tamanhoSelecionado.value ? Number(tamanhoSelecionado.value.price) : 0)
+  return base + casquinhaTotal.value + adicionaisComPrecoCalculado.value.reduce((acc, curr) => acc + curr.price, 0)
 })
 
 const confirmarItem = () => {
   if (!podeConfirmarProduto.value) return
 
+  const casquinhaAdds = []
+  if (isSorvete.value) {
+    const grupo = produtoDetalhado.value.additionalGroups?.find(g => g.name === 'Casquinha')
+    grupo?.items.forEach(item => {
+      const qty = itemQuantidades.value[item.id] || 0
+      if (qty > 0) casquinhaAdds.push({ id: item.id, name: `${item.name} ×${qty}`, price: Number(item.price) * qty })
+    })
+  }
+
   carrinho.value.push({
     productId: produtoDetalhado.value.id,
     productName: produtoDetalhado.value.name,
-    variationId: tamanhoSelecionado.value ? tamanhoSelecionado.value.id : null,
-    variationName: tamanhoSelecionado.value ? tamanhoSelecionado.value.name : '',
+    variationId: isSorvete.value ? null : (tamanhoSelecionado.value?.id ?? null),
+    variationName: isSorvete.value
+      ? `${bolaCount.value} ${bolaCount.value === 1 ? 'Bola' : 'Bolas'}`
+      : (tamanhoSelecionado.value?.name ?? ''),
     quantity: 1,
-    selectedAdditionals: [...adicionaisComPrecoCalculado.value],
+    selectedAdditionals: [...adicionaisComPrecoCalculado.value, ...casquinhaAdds],
     observation: observacaoProduto.value,
     totalPrice: totalItemAtual.value,
   })
