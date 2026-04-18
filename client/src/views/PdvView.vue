@@ -45,11 +45,13 @@
         <div class="relative">
           <Search class="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
           <input
+            ref="inputBusca"
             type="text"
             v-model="termoBusca"
             placeholder="Buscar produto..."
-            class="pl-10 pr-3.5 py-2.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-all duration-200 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 placeholder-neutral-400 w-64"
+            class="pl-10 pr-16 py-2.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-all duration-200 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 placeholder-neutral-400 w-64"
           />
+          <kbd class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono bg-neutral-100 dark:bg-neutral-800 text-neutral-400 px-1.5 py-0.5 rounded border border-neutral-200 dark:border-neutral-700 pointer-events-none">F2</kbd>
         </div>
 
         <button
@@ -343,13 +345,15 @@
                 class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"
               ></div>
               {{ salvandoPedido ? 'Enviando...' : 'Cobrar e Produzir' }}
+              <kbd v-if="!salvandoPedido" class="ml-1 text-[10px] font-mono bg-red-700/50 text-red-100 px-1.5 py-0.5 rounded border border-red-500/50">F9</kbd>
             </button>
             <button
-              @click="carrinho = []; nomeCliente = ''; telefoneCliente = ''; enderecoEntrega = ''"
+              @click="limparPedido"
               class="py-2.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2"
             >
               <XCircle class="w-4 h-4" />
               Limpar
+              <kbd class="text-[10px] font-mono bg-red-100 text-red-400 px-1.5 py-0.5 rounded border border-red-200">F3</kbd>
             </button>
           </div>
         </div>
@@ -584,6 +588,7 @@
             >
               <Check class="w-5 h-5" />
               Adicionar
+              <kbd class="text-[10px] font-mono bg-red-700/50 text-red-100 px-1.5 py-0.5 rounded border border-red-500/50">Enter</kbd>
             </button>
           </div>
         </div>
@@ -687,6 +692,7 @@
               class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
             ></div>
             {{ salvandoPedido ? 'Finalizando...' : 'Confirmar e Enviar' }}
+            <kbd v-if="!salvandoPedido" class="text-[10px] font-mono bg-red-700/50 text-red-100 px-1.5 py-0.5 rounded border border-red-500/50">Enter</kbd>
           </button>
         </div>
       </div>
@@ -695,7 +701,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Search,
@@ -723,6 +729,7 @@ import { formatarMoeda, mascararTelefone, limparTelefone } from '@/utils/formatt
 
 const router = useRouter()
 const toast = useToastStore()
+const inputBusca = ref(null)
 
 // --- ESTADOS DO USUÁRIO E UI ---
 const operadorNome = ref('Caixa')
@@ -772,6 +779,7 @@ onMounted(() => {
   }
   buscarUsuario()
   carregarCatalogo()
+  window.addEventListener('keydown', atalhosTeclado)
 })
 
 const fazerLogout = () => {
@@ -807,6 +815,41 @@ const subtotal = computed(() => {
 const removerItem = (index) => {
   carrinho.value.splice(index, 1)
 }
+
+const limparPedido = () => {
+  carrinho.value = []
+  nomeCliente.value = ''
+  telefoneCliente.value = ''
+  enderecoEntrega.value = ''
+}
+
+const atalhosTeclado = (e) => {
+  switch (e.key) {
+    case 'F2':
+      e.preventDefault()
+      inputBusca.value?.focus()
+      break
+    case 'F9':
+      e.preventDefault()
+      if (!modalAberto.value && !modalPagamentoAberto.value) abrirModalPagamento()
+      break
+    case 'F3':
+      e.preventDefault()
+      if (!modalAberto.value && !modalPagamentoAberto.value) limparPedido()
+      break
+    case 'Escape':
+      if (modalAberto.value) fecharModalProduto()
+      else if (modalPagamentoAberto.value) fecharModalPagamento()
+      break
+    case 'Enter':
+      if (e.target.tagName === 'TEXTAREA') break
+      if (modalAberto.value && podeConfirmarProduto.value && !loadingProduto.value) confirmarItem()
+      else if (modalPagamentoAberto.value && !salvandoPedido.value) finalizarPedido()
+      break
+  }
+}
+
+onUnmounted(() => window.removeEventListener('keydown', atalhosTeclado))
 
 // --- PAGAMENTO E FECHAMENTO ---
 const modalPagamentoAberto = ref(false)
