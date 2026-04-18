@@ -227,6 +227,12 @@ export const AdditionalService = {
   },
 }
 
+export const ImportService = {
+  importCatalog(data) {
+    return api.post('/import', data)
+  },
+}
+
 export const OrderService = {
   getOrders(status = '') {
     const params = status ? { status } : {}

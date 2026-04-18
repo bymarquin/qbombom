@@ -9,20 +9,24 @@
           Gerencie as categorias do cardápio.
         </p>
       </div>
-      <button
-        @click="openModal()"
-        class="bg-red-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-red-700 active:scale-[0.98] shadow-sm dark:shadow-none hover:shadow-md dark:shadow-none flex items-center justify-center gap-2"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 4v16m8-8H4"
-          ></path>
-        </svg>
-        Nova Categoria
-      </button>
+      <div class="flex gap-2">
+        <button
+          @click="showImportModal = true"
+          class="bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 flex items-center justify-center gap-2"
+        >
+          <Upload class="w-4 h-4" />
+          Importar JSON
+        </button>
+        <button
+          @click="openModal()"
+          class="bg-red-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-red-700 active:scale-[0.98] shadow-sm dark:shadow-none hover:shadow-md dark:shadow-none flex items-center justify-center gap-2"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+          Nova Categoria
+        </button>
+      </div>
     </header>
 
     <div
@@ -164,13 +168,81 @@
         </form>
       </div>
     </div>
+    <!-- MODAL IMPORTAR JSON -->
+    <div
+      v-if="showImportModal"
+      class="fixed inset-0 bg-neutral-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    >
+      <div class="bg-white dark:bg-neutral-900 rounded-2xl w-full max-w-2xl shadow-2xl border border-neutral-100 dark:border-neutral-800/50 overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="px-6 py-5 border-b border-neutral-100 dark:border-neutral-800/50 flex justify-between items-center bg-neutral-50 dark:bg-neutral-950/50 shrink-0">
+          <div>
+            <h3 class="text-lg font-bold text-neutral-900 dark:text-neutral-100">Importar Catálogo via JSON</h3>
+            <p class="text-xs text-neutral-500 mt-0.5">Cole ou carregue um arquivo JSON com categorias e produtos.</p>
+          </div>
+          <button @click="closeImportModal" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 rounded-full p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <div class="p-6 flex flex-col gap-4 overflow-y-auto flex-1">
+          <!-- Upload de arquivo -->
+          <div>
+            <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">Carregar arquivo .json</label>
+            <input type="file" accept=".json,application/json" @change="onFileChange" class="text-sm text-neutral-600 dark:text-neutral-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-neutral-100 dark:file:bg-neutral-800 file:text-neutral-700 dark:file:text-neutral-300 hover:file:bg-neutral-200 cursor-pointer" />
+          </div>
+
+          <div class="flex items-center gap-2 text-xs text-neutral-400">
+            <div class="flex-1 h-px bg-neutral-200 dark:bg-neutral-700" />
+            ou cole o JSON abaixo
+            <div class="flex-1 h-px bg-neutral-200 dark:bg-neutral-700" />
+          </div>
+
+          <!-- Textarea JSON -->
+          <textarea
+            v-model="importJson"
+            rows="12"
+            placeholder='{ "categories": [ { "name": "Sorvetes", "products": [...] } ] }'
+            class="w-full px-3.5 py-3 text-xs font-mono border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 resize-none placeholder-neutral-400"
+          />
+
+          <!-- Erro de parse -->
+          <p v-if="jsonError" class="text-xs text-red-600 dark:text-red-400 font-medium">{{ jsonError }}</p>
+
+          <!-- Resultado -->
+          <div v-if="importResult" class="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-sm text-green-800 dark:text-green-300">
+            <p class="font-bold mb-1">Importação concluída!</p>
+            <ul class="text-xs space-y-0.5">
+              <li>{{ importResult.categories }} categorias</li>
+              <li>{{ importResult.products }} produtos</li>
+              <li>{{ importResult.variations }} variações</li>
+              <li>{{ importResult.groups }} grupos de adicionais</li>
+              <li>{{ importResult.items }} itens de adicionais</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 border-t border-neutral-100 dark:border-neutral-800/50 flex justify-end gap-3 shrink-0 bg-white dark:bg-neutral-900">
+          <button @click="closeImportModal" class="px-4 py-2.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors">
+            Fechar
+          </button>
+          <button
+            @click="runImport"
+            :disabled="importing || !importJson.trim()"
+            class="px-6 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+          >
+            <div v-if="importing" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            {{ importing ? 'Importando...' : 'Importar' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Pencil, Trash2 } from 'lucide-vue-next'
-import { CatalogService } from '@/services/http'
+import { Pencil, Trash2, Upload, X } from 'lucide-vue-next'
+import { CatalogService, ImportService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 
 const toast = useToastStore()
@@ -230,6 +302,53 @@ const deleteCategory = async (id) => {
     await loadData()
   } catch (error) {
     console.error(error)
+  }
+}
+
+// --- IMPORTAÇÃO JSON ---
+const showImportModal = ref(false)
+const importJson = ref('')
+const jsonError = ref('')
+const importing = ref(false)
+const importResult = ref(null)
+
+const closeImportModal = () => {
+  showImportModal.value = false
+  importJson.value = ''
+  jsonError.value = ''
+  importResult.value = null
+}
+
+const onFileChange = (e) => {
+  const file = e.target.files[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = (ev) => { importJson.value = ev.target.result }
+  reader.readAsText(file)
+}
+
+const runImport = async () => {
+  jsonError.value = ''
+  importResult.value = null
+  let parsed
+  try {
+    parsed = JSON.parse(importJson.value)
+  } catch {
+    jsonError.value = 'JSON inválido. Verifique a sintaxe.'
+    return
+  }
+
+  importing.value = true
+  try {
+    const { data } = await ImportService.importCatalog(parsed)
+    importResult.value = data.summary
+    toast.success('Catálogo importado com sucesso!')
+    await loadData()
+  } catch (err) {
+    jsonError.value = err.response?.data?.error || 'Erro ao importar.'
+    toast.error('Falha na importação.')
+  } finally {
+    importing.value = false
   }
 }
 </script>
