@@ -94,13 +94,40 @@ async function gerarQrs() {
 onMounted(gerarQrs)
 watch([qtdMesas, baseUrl], gerarQrs)
 
-const imprimir = () => window.print()
-</script>
+function imprimir() {
+  const win = window.open('', '_blank')
+  if (!win) return
 
-<style>
-@media print {
-  body > * { display: none !important; }
-  #app > * { display: none !important; }
-  #qr-grid { display: block !important; position: fixed; inset: 0; background: white; padding: 16px; }
+  const cards = Object.entries(qrUrls.value)
+    .map(([n, src]) => `
+      <div class="card">
+        <p class="label">Mesa ${String(n).padStart(2, '0')}</p>
+        <img src="${src}" width="160" height="160" />
+        <p class="url">${baseUrl.value}?mesa=${n}</p>
+      </div>
+    `)
+    .join('')
+
+  win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>QR Codes das Mesas</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: white; padding: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; break-inside: avoid; }
+    .label { font-size: 14px; font-weight: 700; color: #1f2937; }
+    .url { font-size: 9px; color: #9ca3af; font-family: monospace; text-align: center; word-break: break-all; }
+    @media print { @page { margin: 10mm; } }
+  </style>
+</head>
+<body>
+  <div class="grid">${cards}</div>
+  <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }<\/script>
+</body>
+</html>`)
+  win.document.close()
 }
-</style>
+</script>
