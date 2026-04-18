@@ -441,23 +441,26 @@
           <section v-else-if="produtoDetalhado.weightBased">
             <h3 class="font-semibold text-neutral-900 dark:text-neutral-100 mb-3 flex items-center gap-2">
               <ArrowRightCircle class="w-4 h-4 text-red-600" />
-              Quantidade
+              Valor (R$)
               <span class="text-xs font-normal text-neutral-500 dark:text-neutral-400">(Obrigatório)</span>
             </h3>
-            <div class="flex items-center gap-3">
+            <div class="relative">
+              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-neutral-400">R$</span>
               <input
                 v-model.number="pesoGramas"
                 type="number"
-                min="1"
-                placeholder="Ex: 350"
-                class="flex-1 px-3.5 py-2.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-all duration-200 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 placeholder-neutral-400"
+                :min="produtoDetalhado.minPrice || 0"
+                step="0.01"
+                placeholder="0,00"
+                class="w-full pl-10 pr-3.5 py-2.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-all duration-200 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 placeholder-neutral-400"
               />
-              <span class="text-sm font-medium text-neutral-500 dark:text-neutral-400 shrink-0">gramas</span>
             </div>
-            <p v-if="pesoGramas > 0" class="text-sm font-bold text-red-600 mt-2">
-              {{ pesoGramas }}g = {{ formatarMoeda(pesoGramas / 1000 * produtoDetalhado.pricePerKg) }}
+            <p v-if="produtoDetalhado.minPrice > 0" class="text-xs text-neutral-400 mt-2">
+              Valor mínimo: {{ formatarMoeda(produtoDetalhado.minPrice) }}
             </p>
-            <p v-else class="text-xs text-red-500 mt-2 font-medium">Digite o peso para continuar.</p>
+            <p v-if="pesoGramas > 0 && pesoGramas < produtoDetalhado.minPrice" class="text-xs text-red-500 mt-1 font-medium">
+              Valor mínimo é {{ formatarMoeda(produtoDetalhado.minPrice) }}.
+            </p>
           </section>
 
           <!-- Tamanhos/Variações normais -->
@@ -1136,7 +1139,10 @@ watch(() => adicionaisSelecionados.value.length, (novo, anterior) => {
 
 const podeConfirmarProduto = computed(() => {
   if (!produtoDetalhado.value) return false
-  if (isWeightBased.value) return pesoGramas.value > 0
+  if (isWeightBased.value) {
+    const min = Number(produtoDetalhado.value.minPrice) || 0
+    return pesoGramas.value > 0 && pesoGramas.value >= min
+  }
   if (!isSorvete.value && produtoDetalhado.value.variations?.length > 0 && !tamanhoSelecionado.value) return false
   if (produtoDetalhado.value.additionalGroups) {
     for (const grupo of produtoDetalhado.value.additionalGroups) {
@@ -1162,7 +1168,7 @@ const adicionaisComPrecoCalculado = computed(() => {
 
 const totalItemAtual = computed(() => {
   if (!produtoDetalhado.value) return 0
-  if (isWeightBased.value) return (pesoGramas.value || 0) / 1000 * Number(produtoDetalhado.value.pricePerKg)
+  if (isWeightBased.value) return pesoGramas.value || 0
   const base = isSorvete.value ? bolaPrice.value : (tamanhoSelecionado.value ? Number(tamanhoSelecionado.value.price) : 0)
   return base + casquinhaTotal.value + adicionaisComPrecoCalculado.value.reduce((acc, curr) => acc + curr.price, 0)
 })

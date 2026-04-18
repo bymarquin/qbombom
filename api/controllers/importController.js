@@ -31,6 +31,7 @@ exports.importCatalog = async (req, res) => {
             status: true,
             weightBased: prodData.weightBased ?? false,
             pricePerKg: prodData.pricePerKg ?? 0,
+            minPrice: prodData.minPrice ?? 0,
             categoryId: category.id,
           }, { transaction: t });
           summary.products++;

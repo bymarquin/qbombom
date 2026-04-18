@@ -60,6 +60,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DECIMAL(10, 2),
       defaultValue: 0
     },
+    minPrice: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0
+    },
     categoryId: {
       type: DataTypes.UUID,
       allowNull: false,
