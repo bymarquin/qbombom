@@ -208,6 +208,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   ChevronsUpDown,
+  History,
 } from "lucide-vue-next";
 
 const vClickOutside = {
@@ -272,6 +273,12 @@ const menuGroups = [
         path: "/delivery",
         icon: Bike,
         roles: ["SUPER_ADMIN", "MANAGER", "CASHIER", "DELIVERY"],
+      },
+      {
+        name: "Histórico",
+        path: "/app/historico",
+        icon: History,
+        roles: ["SUPER_ADMIN", "MANAGER", "CASHIER"],
       },
     ],
   },

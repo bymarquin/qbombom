@@ -30,6 +30,11 @@ const router = createRouter({
           component: () => import('../views/OrderListView.vue'),
         },
         {
+          path: 'historico',
+          name: 'historico',
+          component: () => import('../views/HistoricoView.vue'),
+        },
+        {
           path: 'clientes',
           name: 'clientes',
           component: () => import('../views/CustomerListView.vue'),
