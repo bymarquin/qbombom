@@ -61,8 +61,8 @@
             {
               "name": "Coberturas",
               "minChoices": 0,
-              "maxChoices": 16,
-              "freeChoices": 16,
+              "maxChoices": 1,
+              "freeChoices": 1,
               "items": [
                 { "name": "Açaí",             "price": 0 },
                 { "name": "Abacaxi",          "price": 0 },
