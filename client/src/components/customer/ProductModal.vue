@@ -12,9 +12,9 @@
             </h2>
             <button
               @click="fechar"
-              class="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-500 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+              class="text-sm font-medium text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors"
             >
-              <X class="w-4 h-4" />
+              Fechar
             </button>
           </header>
 
@@ -316,7 +316,6 @@
 
 <script setup>
 import { ref, computed, watch } from "vue";
-import { X } from "lucide-vue-next";
 import { formatarMoeda } from "@/utils/formatters";
 import { useToastStore } from "@/stores/toast";
 

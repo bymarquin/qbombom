@@ -271,9 +271,9 @@
           </h3>
           <button
             @click="closeModal"
-            class="text-neutral-400 hover:text-neutral-600 dark:text-neutral-400 transition-colors rounded-full p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+            class="text-sm font-medium text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors"
           >
-            <X class="w-5 h-5" />
+            Fechar
           </button>
         </div>
 
@@ -508,7 +508,7 @@
 
 <script setup>
 import { ref, shallowRef, onMounted, computed } from "vue";
-import { Printer, CheckCircle2, Package, Check, RefreshCw, X, Inbox, ChefHat, Truck } from "lucide-vue-next";
+import { Printer, CheckCircle2, Package, Check, RefreshCw, Inbox, ChefHat, Truck } from "lucide-vue-next";
 import { OrderService, AuthService } from "@/services/http";
 import { useToastStore } from "@/stores/toast";
 import { useOrderSocket } from "@/composables/useOrderSocket";

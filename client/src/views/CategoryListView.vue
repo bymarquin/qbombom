@@ -179,8 +179,8 @@
             <h3 class="text-lg font-bold text-neutral-900 dark:text-neutral-100">Importar Catálogo via JSON</h3>
             <p class="text-xs text-neutral-500 mt-0.5">Cole ou carregue um arquivo JSON com categorias e produtos.</p>
           </div>
-          <button @click="closeImportModal" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 rounded-full p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
-            <X class="w-5 h-5" />
+          <button @click="closeImportModal" class="text-sm font-medium text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors">
+            Fechar
           </button>
         </div>
 
@@ -241,11 +241,13 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Pencil, Trash2, Upload, X } from 'lucide-vue-next'
+import { Pencil, Trash2, Upload } from 'lucide-vue-next'
 import { CatalogService, ImportService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
+import { useDialogStore } from '@/stores/dialog'
 
 const toast = useToastStore()
+const dialog = useDialogStore()
 const categories = ref([])
 const showModal = ref(false)
 const editingItem = ref(null)
@@ -295,7 +297,14 @@ const saveCategory = async () => {
 }
 
 const deleteCategory = async (id) => {
-  if (!confirm('Tem certeza? Isso pode afetar produtos.')) return
+  const confirmed = await dialog.confirm({
+    title: 'Excluir categoria?',
+    message: 'Isso pode afetar produtos vinculados a ela.',
+    confirmLabel: 'Excluir',
+    cancelLabel: 'Cancelar',
+  })
+  if (!confirmed) return
+
   try {
     await CatalogService.deleteCategory(id)
     toast.success('Removida.')

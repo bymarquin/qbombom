@@ -382,9 +382,9 @@
           </div>
           <button
             @click="fecharModalProduto"
-            class="p-2 text-neutral-400 hover:text-neutral-700 dark:text-neutral-500 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-colors"
+            class="text-sm font-medium text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors"
           >
-            <X class="w-6 h-6" />
+            Fechar
           </button>
         </div>
 
@@ -723,9 +723,9 @@
           </div>
           <button
             @click="fecharModalPagamento"
-            class="p-2 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 dark:bg-neutral-800 rounded-full transition-colors"
+            class="text-sm font-medium text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors"
           >
-            <X class="w-6 h-6" />
+            Fechar
           </button>
         </div>
 
@@ -831,7 +831,6 @@ import {
   Plus,
   Coffee,
   LogOut,
-  X,
   ArrowRightCircle,
   PlusCircle,
   MessageSquare,
