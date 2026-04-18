@@ -604,6 +604,9 @@ onMounted(() => {
     }
   }
 
+  // Lê parâmetros da URL
+  const params = new URLSearchParams(window.location.search);
+
   // Lê parâmetro ?mesa= do QR Code da mesa
   const mesaParam = params.get('mesa')
   if (mesaParam) {
@@ -614,7 +617,6 @@ onMounted(() => {
   }
 
   // Checa se há um pedido sendo rastreado (via URL ?track= ou localStorage)
-  const params = new URLSearchParams(window.location.search);
   const trackParam = params.get("track");
   if (trackParam) {
     localStorage.setItem("qbombom_tracking", trackParam);
