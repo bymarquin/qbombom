@@ -884,14 +884,18 @@ const carregarDetalhesProduto = async (produtoId) => {
   erroProdutoDetalhe.value = ''
 
   try {
-    const { data } = await CatalogService.getProduct(produtoId)
+    const { data } = await CatalogService.getProduct(produtoId, {}, { timeout: 12000 })
     produtoDetalhado.value = data
     tamanhoSelecionado.value = null
     adicionaisSelecionados.value = []
     observacaoProduto.value = ''
   } catch (err) {
     console.error('Erro ao carregar detalhes do produto:', err)
-    erroProdutoDetalhe.value = err?.response?.data?.error || 'Tente novamente em instantes.'
+    if (err?.code === 'ECONNABORTED') {
+      erroProdutoDetalhe.value = 'A API demorou para responder. Verifique conexão/API e tente novamente.'
+    } else {
+      erroProdutoDetalhe.value = err?.response?.data?.error || 'Tente novamente em instantes.'
+    }
     toast.error('Não foi possível carregar o produto.')
   } finally {
     loadingProduto.value = false
@@ -900,7 +904,11 @@ const carregarDetalhesProduto = async (produtoId) => {
 
 const abrirModalProduto = async (produtoSimples) => {
   produtoSelecionadoId.value = produtoSimples.id
-  produtoDetalhado.value = null
+  produtoDetalhado.value = {
+    ...produtoSimples,
+    variations: Array.isArray(produtoSimples.variations) ? produtoSimples.variations : [],
+    additionalGroups: [],
+  }
   modalAberto.value = true
   await carregarDetalhesProduto(produtoSimples.id)
 }

@@ -182,8 +182,8 @@ export const CatalogService = {
   getProducts(params = {}) {
     return api.get('/products', { params })
   },
-  getProduct(id, params = {}) {
-    return api.get(`/products/${id}`, { params })
+  getProduct(id, params = {}, config = {}) {
+    return api.get(`/products/${id}`, { params, ...config })
   },
   createProduct(data) {
     return api.post('/products', data)
