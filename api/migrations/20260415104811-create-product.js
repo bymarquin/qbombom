@@ -32,6 +32,16 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: true
       },
+      weightBased: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+      },
+      pricePerKg: {
+        type: Sequelize.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0
+      },
       categoryId: {
         type: Sequelize.UUID,
         allowNull: false,

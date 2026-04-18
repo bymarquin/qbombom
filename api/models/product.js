@@ -52,6 +52,14 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true
     },
+    weightBased: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    },
+    pricePerKg: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0
+    },
     categoryId: {
       type: DataTypes.UUID,
       allowNull: false,

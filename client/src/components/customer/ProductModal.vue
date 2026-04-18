@@ -61,6 +61,33 @@
               </p>
             </section>
 
+            <!-- Produto por peso -->
+            <section
+              v-else-if="produtoDetalhado.weightBased"
+              class="bg-white dark:bg-neutral-900 p-5 rounded-2xl shadow-xl dark:shadow-none shadow-red-900/5 border border-neutral-100 dark:border-neutral-800/50"
+            >
+              <h3 class="font-bold text-neutral-900 dark:text-neutral-100 mb-4 flex justify-between items-center text-sm tracking-tight">
+                Quantidade
+                <span class="bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-[10px] uppercase px-2 py-0.5 rounded font-bold border border-neutral-200 dark:border-neutral-800">
+                  Obrigatório
+                </span>
+              </h3>
+              <div class="flex items-center gap-3">
+                <input
+                  v-model.number="pesoGramas"
+                  type="number"
+                  min="1"
+                  placeholder="Ex: 350"
+                  class="flex-1 px-3.5 py-2.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15"
+                />
+                <span class="text-sm font-medium text-neutral-500 dark:text-neutral-400">gramas</span>
+              </div>
+              <p v-if="pesoGramas > 0" class="text-sm font-bold text-red-600 dark:text-red-400 mt-3">
+                {{ pesoGramas }}g = {{ formatarMoeda(pesoGramas / 1000 * produtoDetalhado.pricePerKg) }}
+              </p>
+              <p v-else class="text-xs text-red-500 mt-2 font-medium">Digite o peso para continuar.</p>
+            </section>
+
             <!-- Tamanhos normais -->
             <section
               v-else-if="produtoDetalhado.variations?.length > 0"
@@ -303,6 +330,7 @@ const observacaoProduto = ref("");
 const quantidade = ref(1);
 const bolaCount = ref(1);
 const itemQuantidades = ref({});
+const pesoGramas = ref(null);
 
 watch(() => props.produtoDetalhado, () => {
   tamanhoSelecionado.value = null;
@@ -311,9 +339,10 @@ watch(() => props.produtoDetalhado, () => {
   quantidade.value = 1;
   bolaCount.value = 1;
   itemQuantidades.value = {};
+  pesoGramas.value = null;
 });
 
-// --- Detecção de sorvete (tem grupo Casquinha) ---
+const isWeightBased = computed(() => props.produtoDetalhado?.weightBased ?? false);
 const isSorvete = computed(() =>
   props.produtoDetalhado?.additionalGroups?.some(g => g.stepperMode) ?? false
 );
@@ -371,6 +400,7 @@ const selecionarUnico = (add, grupo) => {
 
 const podeProsseguir = computed(() => {
   if (!props.produtoDetalhado) return false;
+  if (isWeightBased.value) return pesoGramas.value > 0;
   if (!isSorvete.value && props.produtoDetalhado.variations?.length > 0 && !tamanhoSelecionado.value) return false;
   return props.produtoDetalhado.additionalGroups?.every(
     (grupo) => grupo.stepperMode || grupo.minChoices === 0 || qtdSelecionadaNoGrupo(grupo.id) >= grupo.minChoices
@@ -393,6 +423,9 @@ const adicionaisComPreco = computed(() => {
 
 const totalItemAtual = computed(() => {
   if (!props.produtoDetalhado) return 0;
+  if (isWeightBased.value) {
+    return (pesoGramas.value || 0) / 1000 * Number(props.produtoDetalhado.pricePerKg);
+  }
   const base = isSorvete.value
     ? bolaPrice.value
     : (tamanhoSelecionado.value ? Number(tamanhoSelecionado.value.price) : 0);
@@ -414,10 +447,12 @@ const confirmarItem = () => {
   emit('add-item', {
     productId: props.produtoDetalhado.id,
     productName: props.produtoDetalhado.name,
-    variationId: isSorvete.value ? null : (tamanhoSelecionado.value?.id || null),
-    variationName: isSorvete.value
-      ? `${bolaCount.value} ${bolaCount.value === 1 ? 'Bola' : 'Bolas'}`
-      : (tamanhoSelecionado.value?.name || ''),
+    variationId: (isSorvete.value || isWeightBased.value) ? null : (tamanhoSelecionado.value?.id || null),
+    variationName: isWeightBased.value
+      ? `${pesoGramas.value}g`
+      : isSorvete.value
+        ? `${bolaCount.value} ${bolaCount.value === 1 ? 'Bola' : 'Bolas'}`
+        : (tamanhoSelecionado.value?.name || ''),
     quantity: quantidade.value,
     selectedAdditionals: [...adicionaisComPreco.value, ...casquinhaAdds],
     observation: observacaoProduto.value,

@@ -29,6 +29,8 @@ exports.importCatalog = async (req, res) => {
             description: prodData.description || null,
             imageUrl: prodData.imageUrl || null,
             status: true,
+            weightBased: prodData.weightBased ?? false,
+            pricePerKg: prodData.pricePerKg ?? 0,
             categoryId: category.id,
           }, { transaction: t });
           summary.products++;

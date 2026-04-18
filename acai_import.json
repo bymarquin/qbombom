@@ -95,9 +95,9 @@
         {
           "name": "Açaí no Peso",
           "description": "Açaí vendido no peso. R$ 50,00 o KG. Para delivery a partir de R$ 12,00, fora a Nutela.",
-          "variations": [
-            { "name": "1 KG", "price": 50.00, "maxAdditionals": 17 }
-          ],
+          "weightBased": true,
+          "pricePerKg": 50.00,
+          "variations": [],
           "additionalGroups": [
             {
               "name": "Sabor do Açaí",

@@ -66,9 +66,9 @@ async function extractAndUploadImage(imageBase64) {
 // MÉTODOS CRUD ADMIN
 exports.create = async (req, res) => {
   try {
-    const { name, description, status, categoryId, manageStock, stock, imageBase64, variations } = req.body;
+    const { name, description, status, categoryId, manageStock, stock, imageBase64, variations, weightBased, pricePerKg } = req.body;
     const imageUrl = await extractAndUploadImage(imageBase64);
-    const product = await Product.create({ name, description, status, categoryId, manageStock, stock, imageUrl });
+    const product = await Product.create({ name, description, status, categoryId, manageStock, stock, imageUrl, weightBased: weightBased ?? false, pricePerKg: pricePerKg ?? 0 });
 
     if (Array.isArray(variations) && variations.length > 0) {
       await ProductVariation.bulkCreate(
@@ -88,7 +88,9 @@ exports.update = async (req, res) => {
     const product = await Product.findByPk(req.params.id);
     if (!product) return res.status(404).json({ error: 'Product not found' });
 
-    const { imageBase64, variations, basePrice: _ignored, ...rest } = req.body;
+    const { imageBase64, variations, basePrice: _ignored, weightBased, pricePerKg, ...rest } = req.body;
+    if (weightBased !== undefined) rest.weightBased = weightBased;
+    if (pricePerKg !== undefined) rest.pricePerKg = pricePerKg;
 
     if (imageBase64) {
       if (product.imageUrl) {
