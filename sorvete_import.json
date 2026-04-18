@@ -59,16 +59,27 @@
               ]
             },
             {
-              "name": "Adicionais",
+              "name": "Coberturas",
               "minChoices": 0,
-              "maxChoices": 5,
-              "freeChoices": 0,
+              "maxChoices": 16,
+              "freeChoices": 16,
               "items": [
-                { "name": "Canudinhos",           "price": 1.00 },
-                { "name": "Marshmallows",         "price": 1.00 },
-                { "name": "Paçocas",              "price": 1.00 },
-                { "name": "Nutela",               "price": 2.00 },
-                { "name": "Creme de Wafer Branco","price": 2.00 }
+                { "name": "Açaí",             "price": 0 },
+                { "name": "Abacaxi",          "price": 0 },
+                { "name": "Blue",             "price": 0 },
+                { "name": "Caramelo",         "price": 0 },
+                { "name": "Chocolate",        "price": 0 },
+                { "name": "Chocolate Branco", "price": 0 },
+                { "name": "Cereja",           "price": 0 },
+                { "name": "Doce de Leite",    "price": 0 },
+                { "name": "Leite Condensado", "price": 0 },
+                { "name": "Maracujá",         "price": 0 },
+                { "name": "Morango",          "price": 0 },
+                { "name": "Menta",            "price": 0 },
+                { "name": "Kiwi",             "price": 0 },
+                { "name": "Sabor Pistache",   "price": 0 },
+                { "name": "Uva",              "price": 0 },
+                { "name": "Limão",            "price": 0 }
               ]
             },
             {
@@ -95,27 +106,16 @@
               ]
             },
             {
-              "name": "Coberturas",
+              "name": "Adicionais",
               "minChoices": 0,
-              "maxChoices": 16,
-              "freeChoices": 16,
+              "maxChoices": 5,
+              "freeChoices": 0,
               "items": [
-                { "name": "Açaí",             "price": 0 },
-                { "name": "Abacaxi",          "price": 0 },
-                { "name": "Blue",             "price": 0 },
-                { "name": "Caramelo",         "price": 0 },
-                { "name": "Chocolate",        "price": 0 },
-                { "name": "Chocolate Branco", "price": 0 },
-                { "name": "Cereja",           "price": 0 },
-                { "name": "Doce de Leite",    "price": 0 },
-                { "name": "Leite Condensado", "price": 0 },
-                { "name": "Maracujá",         "price": 0 },
-                { "name": "Morango",          "price": 0 },
-                { "name": "Menta",            "price": 0 },
-                { "name": "Kiwi",             "price": 0 },
-                { "name": "Sabor Pistache",   "price": 0 },
-                { "name": "Uva",              "price": 0 },
-                { "name": "Limão",            "price": 0 }
+                { "name": "Canudinhos",           "price": 1.00 },
+                { "name": "Marshmallows",         "price": 1.00 },
+                { "name": "Paçocas",              "price": 1.00 },
+                { "name": "Nutela",               "price": 2.00 },
+                { "name": "Creme de Wafer Branco","price": 2.00 }
               ]
             }
           ]
