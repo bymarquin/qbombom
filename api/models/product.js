@@ -36,11 +36,6 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false
     },
     description: DataTypes.TEXT,
-    basePrice: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
-      defaultValue: null,
-    },
     manageStock: {
       type: DataTypes.BOOLEAN,
       defaultValue: false
