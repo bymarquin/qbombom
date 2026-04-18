@@ -431,19 +431,43 @@ const usarLocalizacao = async () => {
   navigator.geolocation.getCurrentPosition(
     async ({ coords }) => {
       try {
+        const lat = Number(coords.latitude).toFixed(6)
+        const lon = Number(coords.longitude).toFixed(6)
+
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 8000)
+
         const res = await fetch(
           `https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json&addressdetails=1`,
-          { headers: { 'Accept-Language': 'pt-BR' } }
+          {
+            headers: { 'Accept-Language': 'pt-BR' },
+            signal: controller.signal,
+          }
         );
+        clearTimeout(timeoutId)
+
+        if (!res.ok) {
+          throw new Error(`reverse-geocode-failed:${res.status}`)
+        }
+
         const data = await res.json();
         const a = data.address || {};
         checkout.value.endereco.rua = a.road || a.pedestrian || a.footway || '';
         checkout.value.endereco.numero = a.house_number || '';
         checkout.value.endereco.bairro = a.suburb || a.neighbourhood || a.city_district || a.quarter || '';
-        checkout.value.endereco.complemento = '';
+        checkout.value.endereco.complemento = checkout.value.endereco.complemento || `GPS ${lat}, ${lon}`;
         toast.success('Endereço preenchido com sua localização.');
-      } catch {
-        toast.error('Não foi possível obter o endereço.');
+      } catch (error) {
+        const lat = Number(coords.latitude).toFixed(6)
+        const lon = Number(coords.longitude).toFixed(6)
+
+        checkout.value.endereco.complemento = checkout.value.endereco.complemento || `GPS ${lat}, ${lon}`
+
+        if (String(error?.message || '').includes('reverse-geocode-failed')) {
+          toast.error('Localização obtida, mas o serviço de endereço respondeu com erro.');
+        } else {
+          toast.error('Localização obtida, mas não foi possível traduzir para endereço automático.');
+        }
       } finally {
         buscandoLocalizacao.value = false;
       }
