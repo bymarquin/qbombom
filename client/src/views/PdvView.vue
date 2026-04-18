@@ -111,7 +111,7 @@
               :disabled="loadingProduto"
               @click="abrirModalProduto(produto)"
             >
-              <div class="w-full h-24 rounded-lg mb-3 overflow-hidden">
+              <div class="w-full aspect-square rounded-xl mb-3 overflow-hidden">
                 <img
                   v-if="produto.imageUrl"
                   :src="produto.imageUrl"
