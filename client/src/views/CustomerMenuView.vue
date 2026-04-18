@@ -530,6 +530,10 @@ const carregarRastreio = async () => {
   if (!rastreioAtual.value) return;
   try {
     const { data } = await OrderService.trackPublicOrder(rastreioAtual.value);
+    if (data.status === 'cancelado' || data.status === 'finalizado') {
+      limparRastreio();
+      return;
+    }
     pedidoRastreado.value = data;
   } catch (error) {
     if (error?.response?.status === 404) {
@@ -661,6 +665,7 @@ onMounted(() => {
         } else if (updatedOrder.status === "cancelado") {
           toast.info("Seu pedido foi cancelado.");
           showNotification("Pedido Cancelado", { body: "Seu pedido foi cancelado com sucesso." });
+          limparRastreio();
         } else if (updatedOrder.status === "entregue") {
           toast.success("Pedido entregue! Bom apetite 😋");
           showNotification("Pedido Entregue! 😋", { body: "Bom apetite! Agradecemos a preferência." });
