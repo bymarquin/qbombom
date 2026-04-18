@@ -462,55 +462,7 @@
           </h2>
 
           <div class="space-y-4">
-            <div
-              class="flex items-center justify-between p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/30"
-            >
-              <div>
-                <h3 class="font-bold text-neutral-900 dark:text-neutral-100">
-                  Impressão Automática de Pedidos
-                </h3>
-                <p class="text-sm text-neutral-500 dark:text-neutral-400">
-                  Imprimir via de produção assim que um novo pedido for confirmado
-                </p>
-              </div>
-              <button
-                @click="form.print.autoPrint = !form.print.autoPrint"
-                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                :class="form.print.autoPrint ? 'bg-red-600' : 'bg-neutral-300 dark:bg-neutral-700'"
-              >
-                <span
-                  class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                  :class="form.print.autoPrint ? 'translate-x-5' : 'translate-x-0'"
-                ></span>
-              </button>
-            </div>
-
-            <div
-              class="flex items-center justify-between p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/30"
-            >
-              <div>
-                <h3 class="font-bold text-neutral-900 dark:text-neutral-100">
-                  Imprimir Via do Motoboy
-                </h3>
-                <p class="text-sm text-neutral-500 dark:text-neutral-400">
-                  Emissão de comprovante compacto para pedidos delivery
-                </p>
-              </div>
-              <button
-                @click="form.print.deliverySlip = !form.print.deliverySlip"
-                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                :class="
-                  form.print.deliverySlip ? 'bg-red-600' : 'bg-neutral-300 dark:bg-neutral-700'
-                "
-              >
-                <span
-                  class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                  :class="form.print.deliverySlip ? 'translate-x-5' : 'translate-x-0'"
-                ></span>
-              </button>
-            </div>
-
-            <div class="space-y-1 mt-6 max-w-sm">
+            <div class="space-y-1 max-w-sm">
               <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 >Tamanho da Bobina</label
               >
