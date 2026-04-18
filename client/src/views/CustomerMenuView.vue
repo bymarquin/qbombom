@@ -80,7 +80,7 @@
           v-for="categoria in categorias"
           :key="categoria.id"
           @click="categoriaAtiva = categoria.id"
-          class="pb-3 pt-2 text-sm font-medium whitespace-nowrap transition-all relative"
+          class="pb-3 pt-2 text-sm font-medium whitespace-nowrap transition-all relative flex items-center gap-1.5"
           :class="
             categoriaAtiva === categoria.id
               ? 'text-red-600 font-bold'
@@ -88,11 +88,29 @@
           "
         >
           {{ categoria.name }}
+          <span
+            v-if="categoria.products?.length"
+            class="text-xs px-1.5 py-0.5 rounded-full font-semibold leading-none"
+            :class="categoriaAtiva === categoria.id ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400'"
+          >{{ categoria.products.length }}</span>
           <div
             v-if="categoriaAtiva === categoria.id"
             class="absolute bottom-0 left-0 w-full h-1 bg-red-600 rounded-t-md"
           ></div>
         </button>
+      </div>
+
+      <!-- Busca -->
+      <div class="px-5 py-3 border-t border-neutral-100 dark:border-neutral-800">
+        <div class="relative">
+          <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input
+            v-model="termoBusca"
+            type="text"
+            placeholder="Buscar no cardápio..."
+            class="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:border-red-400 focus:ring-2 focus:ring-red-600/15 transition-all"
+          />
+        </div>
       </div>
     </header>
 
@@ -115,36 +133,50 @@
         <p>Nenhum produto nesta categoria.</p>
       </div>
 
-      <div v-else class="flex flex-col gap-4">
+      <div v-else class="grid grid-cols-2 gap-3">
         <button
           v-for="produto in produtosFiltrados"
           :key="produto.id"
           @click="abrirModalProduto(produto)"
-          class="w-full bg-white dark:bg-neutral-900 p-5 rounded-2xl shadow-xl dark:shadow-none shadow-red-900/5 border border-neutral-100 dark:border-neutral-800/50 flex gap-4 text-left transition-all hover:shadow-md dark:shadow-none active:scale-[0.98]"
+          :disabled="loadingProdutoId === produto.id"
+          class="bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden border border-neutral-100 dark:border-neutral-800/50 shadow-sm dark:shadow-none text-left transition-all active:scale-[0.97] disabled:opacity-70 flex flex-col"
         >
-          <div class="flex-1 flex flex-col justify-between">
-            <div>
-              <h3
-                class="font-bold text-neutral-900 dark:text-neutral-100 text-base tracking-tight mb-1"
-              >
-                {{ produto.name }}
-              </h3>
-              <p class="text-sm text-neutral-500 dark:text-neutral-500 line-clamp-2">
-                {{ produto.description }}
-              </p>
-            </div>
-            <div class="mt-3 font-semibold text-red-600 dark:text-red-400 text-sm">
-              {{ precoMinimo(produto) }}
-            </div>
-          </div>
-          <div class="w-24 h-24 rounded-xl shrink-0 overflow-hidden border border-neutral-100 dark:border-neutral-800/50 bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center">
+          <!-- Imagem -->
+          <div class="w-full h-36 bg-neutral-100 dark:bg-neutral-800 relative overflow-hidden">
             <img
               v-if="produto.imageUrl"
               :src="produto.imageUrl"
               :alt="produto.name"
               class="w-full h-full object-cover"
             />
-            <Coffee v-else class="w-8 h-8 text-neutral-400" />
+            <div v-else class="w-full h-full flex items-center justify-center">
+              <Coffee class="w-10 h-10 text-neutral-300 dark:text-neutral-600" />
+            </div>
+            <!-- Spinner de loading -->
+            <div
+              v-if="loadingProdutoId === produto.id"
+              class="absolute inset-0 bg-black/30 flex items-center justify-center"
+            >
+              <div class="w-7 h-7 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+            </div>
+          </div>
+
+          <!-- Conteúdo -->
+          <div class="p-3 flex flex-col flex-1 justify-between">
+            <div>
+              <h3 class="font-bold text-neutral-900 dark:text-neutral-100 text-sm leading-tight mb-1 line-clamp-2">
+                {{ produto.name }}
+              </h3>
+              <p class="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2 leading-relaxed">
+                {{ produto.description }}
+              </p>
+            </div>
+            <div class="mt-2 flex items-center justify-between">
+              <span class="font-bold text-red-600 dark:text-red-400 text-sm">{{ precoMinimo(produto) }}</span>
+              <div class="w-6 h-6 rounded-full bg-red-600 flex items-center justify-center shrink-0">
+                <svg class="w-3.5 h-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+              </div>
+            </div>
           </div>
         </button>
       </div>
@@ -543,10 +575,15 @@ onUnmounted(() => {
 });
 
 // Computeds Básicos
+const termoBusca = ref("");
+
 const produtosFiltrados = computed(() => {
   if (!Array.isArray(categorias.value)) return [];
   const cat = categorias.value.find((c) => c.id === categoriaAtiva.value);
-  return cat?.products || [];
+  const produtos = cat?.products || [];
+  const termo = termoBusca.value.trim().toLowerCase();
+  if (!termo) return produtos;
+  return produtos.filter((p) => p.name.toLowerCase().includes(termo) || p.description?.toLowerCase().includes(termo));
 });
 
 const subtotal = computed(() => {
@@ -563,8 +600,10 @@ const precoMinimo = (produto) => {
 // --- Lógica do Produto (Modal) ---
 const modalProduto = ref(false);
 const produtoDetalhado = ref(null);
+const loadingProdutoId = ref(null);
 
 const abrirModalProduto = async (produtoSimples) => {
+  loadingProdutoId.value = produtoSimples.id;
   try {
     const { data } = await CatalogService.getProduct(produtoSimples.id);
     produtoDetalhado.value = data;
@@ -572,6 +611,8 @@ const abrirModalProduto = async (produtoSimples) => {
   } catch (err) {
     console.error(err);
     toast.error("Falha ao carregar detalhes.");
+  } finally {
+    loadingProdutoId.value = null;
   }
 };
 
