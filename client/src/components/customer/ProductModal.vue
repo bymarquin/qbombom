@@ -392,7 +392,14 @@ watch(() => adicionaisSelecionados.value.length, (novo, anterior) => {
 const fechar = () => { modelValue.value = false; };
 
 const limiteGlobal = computed(() => tamanhoSelecionado.value?.maxAdditionals ?? null);
-const totalSelecionado = computed(() => adicionaisSelecionados.value.length);
+const totalSelecionado = computed(() => {
+  const gruposOpcionais = new Set(
+    (props.produtoDetalhado?.additionalGroups ?? [])
+      .filter(g => g.minChoices === 0 && !g.stepperMode)
+      .map(g => g.id)
+  );
+  return adicionaisSelecionados.value.filter(a => gruposOpcionais.has(a.grupoId)).length;
+});
 const atingiuLimite = computed(() => limiteGlobal.value !== null && totalSelecionado.value >= limiteGlobal.value);
 
 const itensSelecionadosNoGrupo = (grupoId) =>
