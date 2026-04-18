@@ -25,6 +25,16 @@ module.exports = {
         type: Sequelize.INTEGER,
         defaultValue: 0
       },
+      stepperMode: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+      },
+      position: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE
