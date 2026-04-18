@@ -91,9 +91,17 @@
                 <template v-else>
                   <div class="py-8 flex flex-col items-center justify-center">
                     <div
+                      v-if="!pixLoadError"
                       class="w-8 h-8 border-4 border-red-200 border-t-red-600 rounded-full animate-spin mb-3"
                     ></div>
-                    <p class="text-sm text-neutral-500">Gerando código PIX...</p>
+                    <p class="text-sm text-neutral-500">{{ pixLoadError || 'Gerando código PIX...' }}</p>
+                    <button
+                      v-if="pixLoadError"
+                      @click="carregarConfiguracoes"
+                      class="mt-3 px-3 py-2 text-xs font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                    >
+                      Tentar novamente
+                    </button>
                   </div>
                 </template>
 
@@ -332,6 +340,7 @@ const uploadingReceipt = ref(false);
 const cancellingOrder = ref(false);
 const confirmingDelivery = ref(false);
 const waOptingOut = ref(false);
+const pixLoadError = ref('');
 
 // Configurações do PIX da Loja (Buscadas do backend)
 const chavePixLoja = ref("");
@@ -340,12 +349,25 @@ const nomeLoja = ref("Qbombom Sorvetes");
 const cidadeLoja = ref("Sao Paulo");
 
 const carregarConfiguracoes = async () => {
+  pixLoadError.value = '';
   try {
     const { data } = await SettingService.getSettings();
     if (data) {
-      if (data.pix && data.pix.key) {
-        chavePixLoja.value = data.pix.key; // Não aplicamos limpeza aqui, o utils/pix fará de acordo com o tipo
-        tipoChavePix.value = data.pix.type || "cpf";
+      const pixKey = data?.pix?.key || data?.payments?.pix?.key || '';
+      const pixTypeRaw = data?.pix?.type || data?.payments?.pix?.type || 'cpf';
+
+      if (pixKey) {
+        chavePixLoja.value = pixKey; // limpeza é feita em utils/pix
+        const normalizedType = String(pixTypeRaw).toLowerCase();
+        if (["cpf", "cnpj", "phone", "email", "random"].includes(normalizedType)) {
+          tipoChavePix.value = normalizedType;
+        } else if (["celular", "telefone", "phone"].includes(normalizedType)) {
+          tipoChavePix.value = "phone";
+        } else if (["aleatoria", "aleatória", "evp", "random"].includes(normalizedType)) {
+          tipoChavePix.value = "random";
+        } else {
+          tipoChavePix.value = "cpf";
+        }
       }
       if (data.profile) {
         if (data.profile.name) nomeLoja.value = data.profile.name;
@@ -355,8 +377,13 @@ const carregarConfiguracoes = async () => {
         }
       }
     }
+
+    if (!chavePixLoja.value) {
+      pixLoadError.value = "Configure a chave PIX da loja nas Configurações para gerar o QR Code.";
+    }
   } catch (error) {
     console.error("Erro ao buscar configurações PIX", error);
+    pixLoadError.value = "Não foi possível carregar os dados do PIX agora.";
   }
 };
 

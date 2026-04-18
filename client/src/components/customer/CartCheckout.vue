@@ -398,11 +398,35 @@ const fechar = () => {
   isOpen.value = false;
 };
 
-const usarLocalizacao = () => {
+const usarLocalizacao = async () => {
   if (!navigator.geolocation) {
     toast.error('Geolocalização não suportada pelo navegador.');
     return;
   }
+
+  if (!window.isSecureContext) {
+    toast.error('A localização só funciona em HTTPS (ou localhost).');
+    return;
+  }
+
+  const policy = document.permissionsPolicy || document.featurePolicy;
+  if (policy?.allowsFeature && !policy.allowsFeature('geolocation')) {
+    toast.error('Geolocalização bloqueada pela configuração do site (Permissions-Policy).');
+    return;
+  }
+
+  try {
+    if (navigator.permissions?.query) {
+      const status = await navigator.permissions.query({ name: 'geolocation' });
+      if (status.state === 'denied') {
+        toast.error('Permissão de localização está bloqueada no navegador. Libere nas configurações do site.');
+        return;
+      }
+    }
+  } catch {
+    // alguns navegadores não suportam query('geolocation')
+  }
+
   buscandoLocalizacao.value = true;
   navigator.geolocation.getCurrentPosition(
     async ({ coords }) => {
@@ -425,14 +449,16 @@ const usarLocalizacao = () => {
       }
     },
     (err) => {
-      if (err.code === 1) {
-        toast.error('Permissão negada. Libere a localização nas configurações do navegador.');
+      if (err.code === err.PERMISSION_DENIED) {
+        toast.error('Localização bloqueada. Permita acesso nas configurações do navegador/PWA.');
+      } else if (err.code === err.TIMEOUT) {
+        toast.error('Tempo esgotado ao buscar localização. Tente novamente.');
       } else {
         toast.error('Não foi possível obter sua localização.');
       }
       buscandoLocalizacao.value = false;
     },
-    { timeout: 10000 }
+    { timeout: 12000, enableHighAccuracy: true, maximumAge: 0 }
   );
 };
 

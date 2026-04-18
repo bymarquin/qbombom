@@ -237,9 +237,11 @@ import { ref, onMounted } from 'vue'
 import { Pencil, Trash2 } from 'lucide-vue-next'
 import { CustomerService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
+import { useDialogStore } from '@/stores/dialog'
 import { mascararTelefone, limparTelefone } from '@/utils/formatters'
 
 const toast = useToastStore()
+const dialog = useDialogStore()
 const customers = ref([])
 const showModal = ref(false)
 const editingItem = ref(null)
@@ -298,7 +300,14 @@ const saveCustomer = async () => {
 }
 
 const deleteCustomer = async (id) => {
-  if (!confirm('Deseja realmente excluir este cliente?')) return
+  const confirmed = await dialog.confirm({
+    title: 'Excluir cliente?',
+    message: 'Deseja realmente excluir este cliente?',
+    confirmLabel: 'Excluir',
+    cancelLabel: 'Cancelar',
+  })
+  if (!confirmed) return
+
   try {
     await CustomerService.deleteCustomer(id)
     toast.success('Cliente excluído.')

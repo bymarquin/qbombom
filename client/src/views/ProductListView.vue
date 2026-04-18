@@ -555,8 +555,10 @@ import { Cropper } from 'vue-advanced-cropper'
 import 'vue-advanced-cropper/dist/style.css'
 import { CatalogService, AdditionalService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
+import { useDialogStore } from '@/stores/dialog'
 
 const toast = useToastStore()
+const dialog = useDialogStore()
 const products = shallowRef([])
 const categories = shallowRef([])
 const showModal = ref(false)
@@ -691,7 +693,14 @@ const removeVariation = (index) => {
 }
 
 const deleteProduct = async (id) => {
-  if (!confirm('Tem certeza?')) return
+  const confirmed = await dialog.confirm({
+    title: 'Excluir produto?',
+    message: 'Tem certeza? Essa ação não poderá ser desfeita.',
+    confirmLabel: 'Excluir',
+    cancelLabel: 'Cancelar',
+  })
+  if (!confirmed) return
+
   try {
     await CatalogService.deleteProduct(id)
     toast.success('Removido.')
@@ -796,7 +805,14 @@ const saveGroup = async () => {
 }
 
 const deleteGroup = async (id) => {
-  if (!confirm('Excluir este grupo e todos os seus itens?')) return
+  const confirmed = await dialog.confirm({
+    title: 'Excluir grupo?',
+    message: 'Excluir este grupo e todos os seus itens?',
+    confirmLabel: 'Excluir grupo',
+    cancelLabel: 'Cancelar',
+  })
+  if (!confirmed) return
+
   try {
     await AdditionalService.deleteGroup(id)
     toast.success('Grupo excluído!')

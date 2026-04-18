@@ -200,8 +200,10 @@ import { ref, onMounted } from 'vue'
 import { Pencil, Trash2, Mail as MailIcon } from 'lucide-vue-next'
 import { UserService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
+import { useDialogStore } from '@/stores/dialog'
 
 const toast = useToastStore()
+const dialog = useDialogStore()
 
 const ROLE_LABELS = {
   SUPER_ADMIN: 'Super Admin',
@@ -270,7 +272,14 @@ async function resendInvite(user) {
 }
 
 async function deleteUser(id) {
-  if (!confirm('Tem certeza que deseja remover este usuário?')) return
+  const confirmed = await dialog.confirm({
+    title: 'Excluir usuário?',
+    message: 'Tem certeza que deseja remover este usuário?',
+    confirmLabel: 'Excluir',
+    cancelLabel: 'Cancelar',
+  })
+  if (!confirmed) return
+
   try {
     await UserService.deleteUser(id)
     toast.success('Usuário removido.')
