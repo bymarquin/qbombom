@@ -375,19 +375,6 @@ const casquinhaTotal = computed(() => {
   return grupo.items.reduce((acc, item) => acc + Number(item.price) * (itemQuantidades.value[item.id] || 0), 0);
 });
 
-watch(tamanhoSelecionado, () => {
-  const max = limiteGlobal.value;
-  if (max !== null && adicionaisSelecionados.value.length > max) {
-    adicionaisSelecionados.value = adicionaisSelecionados.value.slice(0, max);
-  }
-});
-
-watch(totalSelecionado, (novo, anterior) => {
-  if (limiteGlobal.value !== null && novo === limiteGlobal.value && novo > anterior) {
-    toast.info('Máximo de complementos atingido!');
-  }
-});
-
 const fechar = () => { modelValue.value = false; };
 
 const limiteGlobal = computed(() => tamanhoSelecionado.value?.maxAdditionals ?? null);
@@ -400,6 +387,19 @@ const totalSelecionado = computed(() => {
   return adicionaisSelecionados.value.filter(a => gruposOpcionais.has(a.grupoId)).length;
 });
 const atingiuLimite = computed(() => limiteGlobal.value !== null && totalSelecionado.value >= limiteGlobal.value);
+
+watch(tamanhoSelecionado, () => {
+  const max = limiteGlobal.value;
+  if (max !== null && adicionaisSelecionados.value.length > max) {
+    adicionaisSelecionados.value = adicionaisSelecionados.value.slice(0, max);
+  }
+});
+
+watch(totalSelecionado, (novo, anterior) => {
+  if (limiteGlobal.value !== null && novo === limiteGlobal.value && novo > anterior) {
+    toast.info('Máximo de complementos atingido!');
+  }
+});
 
 const itensSelecionadosNoGrupo = (grupoId) =>
   adicionaisSelecionados.value.filter((a) => a.grupoId === grupoId);
