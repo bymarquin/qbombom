@@ -161,8 +161,21 @@
 
           <footer class="bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800 p-4 shrink-0 shadow-sm dark:shadow-none z-20 absolute bottom-0 w-full">
             <div class="flex justify-between items-center mb-3">
-              <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Total do item</span>
-              <span class="text-xl font-bold text-red-600 dark:text-red-400">{{ formatarMoeda(totalItemAtual) }}</span>
+              <div class="flex items-center gap-3">
+                <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Qtd.</span>
+                <div class="flex items-center border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden">
+                  <button
+                    @click="quantidade = Math.max(1, quantidade - 1)"
+                    class="px-3 py-1.5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-lg leading-none font-medium"
+                  >−</button>
+                  <span class="px-3 text-sm font-bold text-neutral-900 dark:text-neutral-100 min-w-[2rem] text-center">{{ quantidade }}</span>
+                  <button
+                    @click="quantidade++"
+                    class="px-3 py-1.5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-lg leading-none font-medium"
+                  >+</button>
+                </div>
+              </div>
+              <span class="text-xl font-bold text-red-600 dark:text-red-400">{{ formatarMoeda(totalItemAtual * quantidade) }}</span>
             </div>
             <button
               @click="confirmarItem"
@@ -197,11 +210,13 @@ const emit = defineEmits(['add-item']);
 const tamanhoSelecionado = ref(null);
 const adicionaisSelecionados = ref([]);
 const observacaoProduto = ref("");
+const quantidade = ref(1);
 
 watch(() => props.produtoDetalhado, () => {
   tamanhoSelecionado.value = null;
   adicionaisSelecionados.value = [];
   observacaoProduto.value = "";
+  quantidade.value = 1;
 });
 
 watch(tamanhoSelecionado, () => {
@@ -271,7 +286,7 @@ const confirmarItem = () => {
     productName: props.produtoDetalhado.name,
     variationId: tamanhoSelecionado.value?.id || null,
     variationName: tamanhoSelecionado.value?.name || "",
-    quantity: 1,
+    quantity: quantidade.value,
     selectedAdditionals: [...adicionaisComPreco.value],
     observation: observacaoProduto.value,
     totalPrice: totalItemAtual.value,
