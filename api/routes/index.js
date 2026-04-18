@@ -13,6 +13,7 @@ const userRoutes = require('./userRoutes');
 const mailerRoutes = require('./mailerRoutes');
 const whatsappRoutes = require('./whatsappRoutes');
 const importRoutes = require('./importRoutes');
+const geocodeRoutes = require('./geocodeRoutes');
 
 router.use('/auth', authRoutes);
 router.use('/categories', categoryRoutes);
@@ -26,5 +27,6 @@ router.use('/users', userRoutes);
 router.use('/mailer', mailerRoutes);
 router.use('/whatsapp', whatsappRoutes);
 router.use('/import', importRoutes);
+router.use('/geocode', geocodeRoutes);
 
 module.exports = router;
