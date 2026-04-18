@@ -398,17 +398,10 @@ const fechar = () => {
   isOpen.value = false;
 };
 
-const usarLocalizacao = async () => {
+const usarLocalizacao = () => {
   if (!navigator.geolocation) {
     toast.error('Geolocalização não suportada pelo navegador.');
     return;
-  }
-  if (navigator.permissions) {
-    const permStatus = await navigator.permissions.query({ name: 'geolocation' });
-    if (permStatus.state === 'denied') {
-      toast.error('Localização bloqueada. Clique no cadeado da barra de endereço e libere a permissão.');
-      return;
-    }
   }
   buscandoLocalizacao.value = true;
   navigator.geolocation.getCurrentPosition(
