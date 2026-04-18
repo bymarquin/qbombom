@@ -481,32 +481,66 @@
 
           <!-- Grupos de Adicionais -->
           <section v-for="grupo in produtoDetalhado.additionalGroups" :key="grupo.id">
-            <div class="mb-3 flex items-end justify-between">
+            <div class="mb-3 flex items-start justify-between">
               <div>
-                <h3
-                  class="font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2"
-                >
+                <h3 class="font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
                   <PlusCircle class="w-4 h-4 text-red-600" />
                   {{ grupo.name }}
                 </h3>
-                <p v-if="grupo.freeChoices > 0" class="text-xs text-neutral-500 dark:text-neutral-400">
+                <p v-if="grupo.freeChoices > 0 && grupo.maxChoices !== 1" class="text-xs text-neutral-500 dark:text-neutral-400">
                   {{ grupo.freeChoices }} grátis
                 </p>
               </div>
               <span
-                v-if="grupo.minChoices > 0"
+                v-if="grupo.minChoices > 0 && grupo.maxChoices === 1"
+                class="text-xs font-semibold px-2 py-0.5 rounded border bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700"
+              >
+                Obrigatório
+              </span>
+              <span
+                v-else-if="grupo.minChoices > 0"
                 class="text-xs font-semibold px-2 py-1 rounded-md border"
-                :class="
-                  qtdSelecionadaNoGrupo(grupo.id) < grupo.minChoices
-                    ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-100 dark:border-red-800/50'
-                    : 'bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700'
-                "
+                :class="qtdSelecionadaNoGrupo(grupo.id) < grupo.minChoices
+                  ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-100 dark:border-red-800/50'
+                  : 'bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700'"
               >
                 {{ qtdSelecionadaNoGrupo(grupo.id) }} / {{ grupo.minChoices }}
               </span>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <!-- Seleção única (radio style) -->
+            <div v-if="grupo.maxChoices === 1" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <label
+                v-for="add in grupo.items"
+                :key="add.id"
+                class="flex items-center justify-between p-3.5 rounded-lg border transition-all duration-200 cursor-pointer"
+                :class="isAdicionalSelecionado(add)
+                  ? 'border-red-600 ring-1 ring-red-600 bg-red-50/30 dark:bg-red-900/20'
+                  : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 hover:border-neutral-300 dark:hover:border-neutral-700'"
+                @click="selecionarUnico(add, grupo)"
+              >
+                <div class="flex items-center gap-3">
+                  <input
+                    type="radio"
+                    :checked="isAdicionalSelecionado(add)"
+                    class="w-4 h-4 accent-red-600 cursor-pointer pointer-events-none"
+                    readonly
+                  />
+                  <span class="text-sm font-medium" :class="isAdicionalSelecionado(add) ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-700 dark:text-neutral-300'">
+                    {{ add.name }}
+                  </span>
+                </div>
+                <span v-if="add.price > 0" class="text-xs font-bold" :class="isAdicionalSelecionado(add) ? 'text-red-600 dark:text-red-500' : 'text-neutral-400 dark:text-neutral-500'">
+                  + {{ formatarMoeda(add.price) }}
+                </span>
+              </label>
+              <p v-if="grupo.minChoices > 0 && qtdSelecionadaNoGrupo(grupo.id) === 0" class="col-span-2 text-xs text-red-500 font-medium">
+                Selecione uma opção para continuar.
+              </p>
+            </div>
+
+            <!-- Múltipla escolha (checkbox style) -->
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <label
                 v-for="add in grupo.items"
                 :key="add.id"
@@ -523,25 +557,14 @@
                     type="checkbox"
                     :value="{ ...add, grupoId: grupo.id }"
                     v-model="adicionaisSelecionados"
-                    class="w-4 h-4 text-red-600 border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 rounded focus:ring-red-600 cursor-pointer accent-red-600"
+                    class="w-4 h-4 accent-red-600 rounded cursor-pointer"
                     :disabled="estaBloqueado(add, grupo)"
                   />
-                  <span
-                    class="text-sm font-medium"
-                    :class="
-                      isAdicionalSelecionado(add)
-                        ? 'text-neutral-900 dark:text-neutral-100'
-                        : 'text-neutral-700 dark:text-neutral-300'
-                    "
-                  >
+                  <span class="text-sm font-medium" :class="isAdicionalSelecionado(add) ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-700 dark:text-neutral-300'">
                     {{ add.name }}
                   </span>
                 </div>
-                <span
-                  v-if="add.price > 0"
-                  class="text-xs font-bold"
-                  :class="isAdicionalSelecionado(add) ? 'text-red-600 dark:text-red-500' : 'text-neutral-400 dark:text-neutral-500'"
-                >
+                <span v-if="add.price > 0" class="text-xs font-bold" :class="isAdicionalSelecionado(add) ? 'text-red-600 dark:text-red-500' : 'text-neutral-400 dark:text-neutral-500'">
                   + {{ formatarMoeda(add.price) }}
                 </span>
               </label>
@@ -987,6 +1010,11 @@ const atingiuLimite = computed(() => limiteGlobal.value !== null && totalSelecio
 
 const estaBloqueado = (adicional, grupo) =>
   !isAdicionalSelecionado(adicional) && (atingiuLimite.value || atingiuMaximo(grupo))
+
+const selecionarUnico = (add, grupo) => {
+  adicionaisSelecionados.value = adicionaisSelecionados.value.filter((a) => a.grupoId !== grupo.id)
+  adicionaisSelecionados.value.push({ ...add, grupoId: grupo.id })
+}
 
 watch(tamanhoSelecionado, () => {
   const max = limiteGlobal.value

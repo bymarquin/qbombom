@@ -93,16 +93,17 @@
               class="bg-white dark:bg-neutral-900 p-5 rounded-2xl shadow-xl dark:shadow-none shadow-red-900/5 border border-neutral-100 dark:border-neutral-800/50"
             >
               <div class="mb-4 flex justify-between items-start">
-                <div>
-                  <h3 class="font-bold text-neutral-900 dark:text-neutral-100 text-sm tracking-tight">
-                    {{ grupo.name }}
-                  </h3>
-                  <p v-if="grupo.minChoices > 0" class="text-xs text-neutral-500 dark:text-neutral-500 mt-1">
-                    Mínimo: {{ grupo.minChoices }}
-                  </p>
-                </div>
+                <h3 class="font-bold text-neutral-900 dark:text-neutral-100 text-sm tracking-tight">
+                  {{ grupo.name }}
+                </h3>
                 <span
-                  v-if="grupo.minChoices > 0"
+                  v-if="grupo.minChoices > 0 && grupo.maxChoices === 1"
+                  class="bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-[10px] uppercase px-2 py-0.5 rounded font-bold border border-neutral-200 dark:border-neutral-800"
+                >
+                  Obrigatório
+                </span>
+                <span
+                  v-else-if="grupo.minChoices > 0"
                   class="text-xs font-semibold px-2 py-1 rounded-md border"
                   :class="qtdSelecionadaNoGrupo(grupo.id) < grupo.minChoices
                     ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-100 dark:border-red-800/50'
@@ -112,7 +113,41 @@
                 </span>
               </div>
 
-              <div class="flex flex-col gap-3">
+              <!-- Seleção única (radio style) -->
+              <div v-if="grupo.maxChoices === 1" class="flex flex-col gap-3">
+                <label
+                  v-for="add in grupo.items"
+                  :key="add.id"
+                  class="flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer"
+                  :class="isAdicionalSelecionado(add)
+                    ? 'border-red-600 bg-red-50/30 dark:bg-red-900/20 ring-1 ring-red-600'
+                    : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-neutral-300 dark:hover:border-neutral-700'"
+                  @click="selecionarUnico(add, grupo)"
+                >
+                  <div class="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      :checked="isAdicionalSelecionado(add)"
+                      class="w-4 h-4 accent-red-600 dark:accent-red-500 cursor-pointer pointer-events-none"
+                      readonly
+                    />
+                    <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">{{ add.name }}</span>
+                  </div>
+                  <span
+                    v-if="add.price > 0"
+                    class="text-sm font-semibold"
+                    :class="isAdicionalSelecionado(add) ? 'text-red-600 dark:text-red-400' : 'text-neutral-900 dark:text-neutral-100'"
+                  >
+                    + {{ formatarMoeda(add.price) }}
+                  </span>
+                </label>
+                <p v-if="grupo.minChoices > 0 && qtdSelecionadaNoGrupo(grupo.id) === 0" class="text-xs text-red-600 dark:text-red-400 font-medium ml-1">
+                  Selecione uma opção para continuar.
+                </p>
+              </div>
+
+              <!-- Múltipla escolha (checkbox style) -->
+              <div v-else class="flex flex-col gap-3">
                 <label
                   v-for="add in grupo.items"
                   :key="add.id"
@@ -248,6 +283,11 @@ const isAdicionalSelecionado = (adicional) =>
 
 const estaBloqueado = (adicional, grupo) =>
   !isAdicionalSelecionado(adicional) && (atingiuLimite.value || qtdSelecionadaNoGrupo(grupo.id) >= grupo.maxChoices);
+
+const selecionarUnico = (add, grupo) => {
+  adicionaisSelecionados.value = adicionaisSelecionados.value.filter((a) => a.grupoId !== grupo.id)
+  adicionaisSelecionados.value.push({ ...add, grupoId: grupo.id })
+};
 
 // --- Validação para liberar o botão ---
 const podeProsseguir = computed(() => {
