@@ -52,11 +52,14 @@
             Mesa {{ String(n).padStart(2, '0') }}
           </p>
           <div class="bg-white p-2 rounded-xl border border-neutral-200">
-            <qrcode-vue
-              :value="`${baseUrl}?mesa=${n}`"
-              :size="120"
-              level="M"
+            <img
+              v-if="qrUrls[n]"
+              :src="qrUrls[n]"
+              width="120"
+              height="120"
+              :alt="`QR Code Mesa ${n}`"
             />
+            <div v-else class="w-[120px] h-[120px] bg-neutral-100 rounded animate-pulse" />
           </div>
           <p class="text-xs text-neutral-400 font-mono text-center break-all">
             {{ baseUrl }}?mesa={{ n }}
@@ -68,19 +71,34 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { Printer } from 'lucide-vue-next'
-import QrcodeVue from 'qrcode-vue'
+import QRCode from 'qrcode'
 
 const qtdMesas = ref(10)
 const baseUrl = ref(`${window.location.origin}/cardapio`)
+const qrUrls = ref({})
+
+async function gerarQrs() {
+  const urls = {}
+  for (let n = 1; n <= qtdMesas.value; n++) {
+    urls[n] = await QRCode.toDataURL(`${baseUrl.value}?mesa=${n}`, {
+      width: 120,
+      margin: 1,
+      errorCorrectionLevel: 'M',
+    })
+  }
+  qrUrls.value = urls
+}
+
+onMounted(gerarQrs)
+watch([qtdMesas, baseUrl], gerarQrs)
 
 const imprimir = () => window.print()
 </script>
 
 <style>
 @media print {
-  /* Esconde tudo exceto o grid */
   body > * { display: none !important; }
   #app > * { display: none !important; }
   #qr-grid { display: block !important; position: fixed; inset: 0; background: white; padding: 16px; }
