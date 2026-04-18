@@ -1,6 +1,6 @@
 <template>
   <div
-    class="h-screen flex flex-col bg-neutral-50 dark:bg-neutral-950 font-sans relative overflow-hidden text-neutral-900 dark:text-neutral-100"
+    class="h-dvh flex flex-col bg-neutral-50 dark:bg-neutral-950 font-sans relative overflow-hidden text-neutral-900 dark:text-neutral-100"
   >
     <!-- Banner Loja Fechada -->
     <div
