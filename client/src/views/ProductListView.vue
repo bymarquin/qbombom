@@ -699,7 +699,7 @@ const toggleAssign = async (group) => {
       assignedGroupIds.value.add(group.id)
     }
     assignedGroupIds.value = new Set(assignedGroupIds.value)
-  } catch (error) {
+  } catch {
     toast.error('Erro ao atualizar vínculo')
   }
 }

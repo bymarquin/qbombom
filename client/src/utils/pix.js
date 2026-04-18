@@ -1,4 +1,4 @@
-export function generatePixPayload(pixKey, pixType, merchantName, merchantCity, amount, transactionId = 'PIX') {
+export function generatePixPayload(pixKey, pixType, merchantName, merchantCity, amount, _transactionId = 'PIX') {
   function crc16(payload) {
     let crc = 0xFFFF;
     for (let i = 0; i < payload.length; i++) {

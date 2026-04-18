@@ -599,7 +599,7 @@ const buscarQRCode = async () => {
   try {
     const { data } = await WhatsAppService.getQRCode()
     waQrCode.value = data.base64 || data.qrcode || data.code || null
-  } catch (e) {
+  } catch {
     toast.error('Erro ao buscar QR Code')
   }
 }
@@ -637,7 +637,7 @@ const carregarMensagens = async () => {
   try {
     const { data } = await WhatsAppService.getMessages()
     Object.assign(waMessages, data)
-  } catch {}
+  } catch { /* silencia erro de carregamento de mensagens */ }
 }
 
 const salvarMensagens = async () => {

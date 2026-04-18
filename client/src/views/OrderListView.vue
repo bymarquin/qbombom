@@ -513,7 +513,6 @@ import { OrderService, AuthService } from "@/services/http";
 import { useToastStore } from "@/stores/toast";
 import { useOrderSocket } from "@/composables/useOrderSocket";
 import { useOrderStatus } from "@/composables/useOrderStatus";
-import { formatarMoeda } from "@/utils/formatters";
 import { printReceipt } from "@/utils/printReceipt";
 
 const userRole = AuthService.getRole();
@@ -576,7 +575,7 @@ const loadData = async () => {
 
 useOrderSocket({ onCreated: onOrderCreated, onUpdated: onOrderUpdated });
 
-const { statusLabel, statusClass } = useOrderStatus();
+const { statusLabel } = useOrderStatus();
 
 onMounted(loadData);
 
