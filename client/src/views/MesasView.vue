@@ -117,7 +117,7 @@ function imprimir() {
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: sans-serif; background: white; padding: 16px; }
     .toolbar { display: flex; justify-content: center; margin-bottom: 16px; }
-    .btn { background: #dc2626; color: white; border: none; border-radius: 8px; padding: 10px 24px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn { display: flex; align-items: center; gap: 8px; background: #dc2626; color: white; border: none; border-radius: 8px; padding: 10px 24px; font-size: 14px; font-weight: 600; cursor: pointer; }
     .btn:hover { background: #b91c1c; }
     .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
     .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; break-inside: avoid; }
@@ -128,12 +128,15 @@ function imprimir() {
 </head>
 <body>
   <div class="toolbar">
-    <button class="btn" onclick="window.print()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:6px"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>Imprimir / Salvar PDF</button>
+    <button id="btnPrint" class="btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>Imprimir / Salvar PDF</button>
   </div>
   <div class="grid">${cards}</div>
-  <script>setTimeout(() => window.print(), 500)<\/script>
 </body>
 </html>`)
   win.document.close()
+
+  win.document.getElementById('btnPrint').addEventListener('click', () => win.print())
+  win.setTimeout(() => win.print(), 500)
+  win.onafterprint = () => win.close()
 }
 </script>
