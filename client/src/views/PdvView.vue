@@ -455,8 +455,11 @@
                 class="w-full pl-10 pr-3.5 py-2.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-all duration-200 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 placeholder-neutral-400"
               />
             </div>
+            <p v-if="pesoGramas > 0 && produtoDetalhado.pricePerKg > 0" class="text-sm font-bold text-red-600 mt-2">
+              ≈ {{ calcularPeso(pesoGramas, produtoDetalhado.pricePerKg) }}
+            </p>
             <p v-if="produtoDetalhado.minPrice > 0" class="text-xs text-neutral-400 mt-2">
-              Valor mínimo: {{ formatarMoeda(produtoDetalhado.minPrice) }}
+              Valor mínimo: {{ formatarMoeda(produtoDetalhado.minPrice) }} • R${{ produtoDetalhado.pricePerKg }}/kg
             </p>
             <p v-if="pesoGramas > 0 && pesoGramas < produtoDetalhado.minPrice" class="text-xs text-red-500 mt-1 font-medium">
               Valor mínimo é {{ formatarMoeda(produtoDetalhado.minPrice) }}.
@@ -1031,6 +1034,11 @@ const itemQuantidades = ref({})
 const pesoGramas = ref(null)
 
 const isWeightBased = computed(() => produtoDetalhado.value?.weightBased ?? false)
+
+const calcularPeso = (preco, pricePerKg) => {
+  const gramas = (preco / pricePerKg) * 1000
+  return gramas >= 1000 ? `${(gramas / 1000).toFixed(2).replace('.', ',')} kg` : `${Math.round(gramas)} g`
+}
 const isSorvete = computed(() =>
   produtoDetalhado.value?.additionalGroups?.some(g => g.stepperMode) ?? false
 )
