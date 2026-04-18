@@ -35,7 +35,7 @@
               class="text-xs uppercase text-neutral-500 dark:text-neutral-400 border-b border-neutral-100 dark:border-neutral-800/50 bg-neutral-50/50 dark:bg-neutral-800/30"
             >
               <th class="py-4 px-6 font-medium">Nome</th>
-              <th class="py-4 px-6 font-medium">Preço Base</th>
+              <th class="py-4 px-6 font-medium">A partir de</th>
               <th class="py-4 px-6 font-medium">Categoria</th>
               <th class="py-4 px-6 font-medium">Estoque</th>
               <th class="py-4 px-6 font-medium">Status</th>
@@ -65,7 +65,7 @@
                 </div>
               </td>
               <td class="py-4 px-6 text-neutral-700 dark:text-neutral-300 font-medium">
-                R$ {{ parseFloat(prod.basePrice).toFixed(2) }}
+                {{ minPriceLabel(prod) }}
               </td>
               <td class="py-4 px-6 text-neutral-500 dark:text-neutral-500">
                 {{ getCategoryName(prod.categoryId) }}
@@ -221,20 +221,6 @@
             <div class="grid grid-cols-2 gap-4">
               <div class="flex flex-col gap-2">
                 <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300"
-                  >Preço Base (R$)</label
-                >
-                <input
-                  v-model="form.basePrice"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  required
-                  class="w-full px-3.5 py-2.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-all duration-200 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 placeholder-neutral-400"
-                  placeholder="0.00"
-                />
-              </div>
-              <div class="flex flex-col gap-2">
-                <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300"
                   >Categoria</label
                 >
                 <select
@@ -264,7 +250,7 @@
                 </button>
               </div>
               <div v-if="form.variations.length === 0" class="text-xs text-neutral-400 italic py-1">
-                Sem variações — o produto terá apenas o preço base.
+                Sem variações — o preço será definido pela primeira variação adicionada.
               </div>
               <div
                 v-for="(variation, i) in form.variations"
@@ -514,7 +500,13 @@ const products = shallowRef([])
 const categories = shallowRef([])
 const showModal = ref(false)
 const editingItem = ref(null)
-const form = ref({ name: '', description: '', basePrice: 0, categoryId: '', status: true, manageStock: false, stock: 0, variations: [] })
+const form = ref({ name: '', description: '', categoryId: '', status: true, manageStock: false, stock: 0, variations: [] })
+
+const minPriceLabel = (prod) => {
+  const prices = (prod.variations || []).map((v) => Number(v.price)).filter((p) => p > 0)
+  if (prices.length === 0) return '—'
+  return `R$ ${Math.min(...prices).toFixed(2).replace('.', ',')}`
+}
 const imagePreview = ref(null)
 const imageBase64 = ref(null)
 const cropSrc = ref(null)
@@ -566,7 +558,6 @@ const openModal = (prod = null) => {
     form.value = {
       name: prod.name,
       description: prod.description || '',
-      basePrice: prod.basePrice,
       categoryId: prod.categoryId,
       status: prod.status,
       manageStock: prod.manageStock || false,
@@ -579,7 +570,6 @@ const openModal = (prod = null) => {
     form.value = {
       name: '',
       description: '',
-      basePrice: 0,
       categoryId: categories.value[0]?.id || '',
       status: true,
       manageStock: false,

@@ -134,7 +134,7 @@
               </p>
             </div>
             <div class="mt-3 font-semibold text-red-600 dark:text-red-400 text-sm">
-              {{ formatarMoeda(produto.basePrice) }}
+              {{ precoMinimo(produto) }}
             </div>
           </div>
           <div class="w-24 h-24 rounded-xl shrink-0 overflow-hidden border border-neutral-100 dark:border-neutral-800/50 bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center">
@@ -552,6 +552,13 @@ const produtosFiltrados = computed(() => {
 const subtotal = computed(() => {
   return carrinho.value.reduce((acc, item) => acc + item.totalPrice * item.quantity, 0);
 });
+
+const precoMinimo = (produto) => {
+  const prices = (produto.variations || []).map((v) => Number(v.price)).filter((p) => p > 0)
+  if (prices.length === 0) return 'Ver opções'
+  const min = Math.min(...prices)
+  return prices.length > 1 ? `A partir de ${formatarMoeda(min)}` : formatarMoeda(min)
+};
 
 // --- Lógica do Produto (Modal) ---
 const modalProduto = ref(false);

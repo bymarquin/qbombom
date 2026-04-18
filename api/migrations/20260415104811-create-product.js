@@ -16,10 +16,6 @@ module.exports = {
       description: {
         type: Sequelize.TEXT
       },
-      basePrice: {
-        type: Sequelize.DECIMAL(10, 2),
-        defaultValue: 0.00
-      },
       status: {
         type: Sequelize.BOOLEAN,
         defaultValue: true

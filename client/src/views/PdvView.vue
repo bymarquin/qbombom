@@ -137,7 +137,7 @@
               </p>
               <div class="mt-auto pt-2 flex items-center justify-between">
                 <span class="text-red-600 font-bold">{{
-                  produto.basePrice > 0 ? formatarMoeda(produto.basePrice) : 'Montar'
+                  produto.variations?.length > 0 ? formatarMoeda(Math.min(...produto.variations.map(v => Number(v.price)))) : 'Montar'
                 }}</span>
                 <div
                   class="w-6 h-6 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center group-hover:bg-red-600 group-hover:text-white transition-colors"
@@ -447,16 +447,6 @@
             </div>
           </section>
 
-          <!-- Preço base do produto caso não tenha variações -->
-          <section
-            v-else-if="produtoDetalhado.basePrice > 0"
-            class="p-4 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl flex justify-between items-center"
-          >
-            <span class="font-semibold text-neutral-900 dark:text-neutral-100">Preço Fixo</span>
-            <span class="font-bold text-red-600">{{
-              formatarMoeda(produtoDetalhado.basePrice)
-            }}</span>
-          </section>
 
           <!-- Grupos de Adicionais -->
           <section v-for="grupo in produtoDetalhado.additionalGroups" :key="grupo.id">
@@ -954,9 +944,7 @@ const adicionaisComPrecoCalculado = computed(() => {
 const totalItemAtual = computed(() => {
   if (!produtoDetalhado.value) return 0
 
-  let base = tamanhoSelecionado.value
-    ? Number(tamanhoSelecionado.value.price)
-    : Number(produtoDetalhado.value.basePrice)
+  let base = tamanhoSelecionado.value ? Number(tamanhoSelecionado.value.price) : 0
 
   const extras = adicionaisComPrecoCalculado.value.reduce((acc, curr) => acc + curr.price, 0)
   return base + extras

@@ -259,9 +259,7 @@ const adicionaisComPreco = computed(() => {
 
 const totalItemAtual = computed(() => {
   if (!props.produtoDetalhado) return 0;
-  const base = tamanhoSelecionado.value
-    ? Number(tamanhoSelecionado.value.price)
-    : Number(props.produtoDetalhado.basePrice);
+  const base = tamanhoSelecionado.value ? Number(tamanhoSelecionado.value.price) : 0;
   return base + adicionaisComPreco.value.reduce((acc, item) => acc + item.price, 0);
 });
 
