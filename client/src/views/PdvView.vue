@@ -884,7 +884,7 @@ const carregarDetalhesProduto = async (produtoId) => {
   erroProdutoDetalhe.value = ''
 
   try {
-    const { data } = await CatalogService.getProduct(produtoId, {}, { timeout: 12000 })
+    const { data } = await CatalogService.getProduct(produtoId, {}, { timeout: 30000 })
     produtoDetalhado.value = data
     tamanhoSelecionado.value = null
     adicionaisSelecionados.value = []
