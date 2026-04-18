@@ -127,7 +127,7 @@
                   {{ grupo.name }}
                 </h3>
                 <span
-                  v-if="grupo.name === 'Casquinha'"
+                  v-if="grupo.stepperMode"
                   class="bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-[10px] uppercase px-2 py-0.5 rounded font-bold border border-neutral-200 dark:border-neutral-800"
                 >
                   Opcional
@@ -150,7 +150,7 @@
               </div>
 
               <!-- Stepper de casquinha -->
-              <div v-if="grupo.name === 'Casquinha'" class="flex flex-col gap-3">
+              <div v-if="grupo.stepperMode" class="flex flex-col gap-3">
                 <div
                   v-for="add in grupo.items"
                   :key="add.id"
@@ -315,7 +315,7 @@ watch(() => props.produtoDetalhado, () => {
 
 // --- Detecção de sorvete (tem grupo Casquinha) ---
 const isSorvete = computed(() =>
-  props.produtoDetalhado?.additionalGroups?.some(g => g.name === 'Casquinha') ?? false
+  props.produtoDetalhado?.additionalGroups?.some(g => g.stepperMode) ?? false
 );
 
 const bolaPrice = computed(() =>
@@ -331,7 +331,7 @@ const decrementarItem = (itemId) => {
 };
 
 const casquinhaTotal = computed(() => {
-  const grupo = props.produtoDetalhado?.additionalGroups?.find(g => g.name === 'Casquinha');
+  const grupo = props.produtoDetalhado?.additionalGroups?.find(g => g.stepperMode);
   if (!grupo) return 0;
   return grupo.items.reduce((acc, item) => acc + Number(item.price) * (itemQuantidades.value[item.id] || 0), 0);
 });
@@ -373,7 +373,7 @@ const podeProsseguir = computed(() => {
   if (!props.produtoDetalhado) return false;
   if (!isSorvete.value && props.produtoDetalhado.variations?.length > 0 && !tamanhoSelecionado.value) return false;
   return props.produtoDetalhado.additionalGroups?.every(
-    (grupo) => grupo.name === 'Casquinha' || grupo.minChoices === 0 || qtdSelecionadaNoGrupo(grupo.id) >= grupo.minChoices
+    (grupo) => grupo.stepperMode || grupo.minChoices === 0 || qtdSelecionadaNoGrupo(grupo.id) >= grupo.minChoices
   ) ?? true;
 });
 

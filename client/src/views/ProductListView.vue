@@ -454,6 +454,16 @@
                     <input v-model.number="groupForm.freeChoices" type="number" min="0" class="w-full px-2 py-1.5 text-xs border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-500" />
                   </div>
                 </div>
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                  <div
+                    class="relative w-9 h-5 rounded-full transition-colors"
+                    :class="groupForm.stepperMode ? 'bg-indigo-600' : 'bg-neutral-300 dark:bg-neutral-600'"
+                    @click="groupForm.stepperMode = !groupForm.stepperMode"
+                  >
+                    <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform" :class="groupForm.stepperMode ? 'translate-x-4' : ''"></div>
+                  </div>
+                  <span class="text-xs text-neutral-600 dark:text-neutral-400">Modo stepper (quantidade por item)</span>
+                </label>
                 <div class="flex justify-end gap-2">
                   <button type="button" @click="cancelGroupForm" class="px-3 py-1.5 text-xs text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 rounded hover:bg-neutral-200 transition-colors">Cancelar</button>
                   <button type="submit" class="px-3 py-1.5 text-xs text-white bg-indigo-600 rounded hover:bg-indigo-700 transition-colors">Salvar</button>
@@ -705,7 +715,7 @@ const toggleAssign = async (group) => {
 }
 
 const openNewGroupForm = () => {
-  groupForm.value = { id: null, name: '', minChoices: 0, maxChoices: 5, freeChoices: 0 }
+  groupForm.value = { id: null, name: '', minChoices: 0, maxChoices: 5, freeChoices: 0, stepperMode: false }
   isCreatingGroup.value = true
 }
 
@@ -720,6 +730,7 @@ const editGroup = (group) => {
     minChoices: group.minChoices ?? 0,
     maxChoices: group.maxChoices ?? 5,
     freeChoices: group.freeChoices ?? 0,
+    stepperMode: group.stepperMode ?? false,
   }
   isCreatingGroup.value = true
 }

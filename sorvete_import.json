@@ -11,8 +11,9 @@
             {
               "name": "Casquinha",
               "minChoices": 0,
-              "maxChoices": 1,
+              "maxChoices": 99,
               "freeChoices": 0,
+              "stepperMode": true,
               "items": [
                 { "name": "Cone",     "price": 0.75 },
                 { "name": "Cestinha", "price": 1.00 }

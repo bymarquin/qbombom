@@ -1,0 +1,161 @@
+{
+  "categories": [
+    {
+      "name": "Açaí",
+      "products": [
+        {
+          "name": "Açaí no Copo",
+          "description": "Complementos grátis inclusos no preço conforme o tamanho do copo.",
+          "variations": [
+            { "name": "300ml",         "price": 15.00, "maxAdditionals": 6  },
+            { "name": "400ml",         "price": 20.00, "maxAdditionals": 7  },
+            { "name": "500ml",         "price": 25.00, "maxAdditionals": 8  },
+            { "name": "700ml",         "price": 35.00, "maxAdditionals": 9  },
+            { "name": "1 KG (no Peso)","price": 50.00, "maxAdditionals": 17 }
+          ],
+          "additionalGroups": [
+            {
+              "name": "Sabor do Açaí",
+              "minChoices": 1,
+              "maxChoices": 1,
+              "freeChoices": 1,
+              "items": [
+                { "name": "Açaí Cremoso",       "price": 0 },
+                { "name": "Açaí Tradicional",   "price": 0 },
+                { "name": "Açaí com Morango",   "price": 0 },
+                { "name": "Açaí com Banana",    "price": 0 },
+                { "name": "Açaí com Avelã",     "price": 0 },
+                { "name": "Açaí com Leitinho",  "price": 0 },
+                { "name": "Açaí Zero",          "price": 0 }
+              ]
+            },
+            {
+              "name": "Creme",
+              "minChoices": 0,
+              "maxChoices": 1,
+              "freeChoices": 1,
+              "items": [
+                { "name": "Creme de Amendoim", "price": 0 },
+                { "name": "Creme de Cupuaçu",  "price": 0 },
+                { "name": "Creme de Óreo",     "price": 0 },
+                { "name": "Creme de Ninho",    "price": 0 }
+              ]
+            },
+            {
+              "name": "Complementos Grátis",
+              "minChoices": 0,
+              "maxChoices": 17,
+              "freeChoices": 17,
+              "items": [
+                { "name": "Amendoim",              "price": 0 },
+                { "name": "Castanha",              "price": 0 },
+                { "name": "Choco Boll",            "price": 0 },
+                { "name": "Choco Pawer",           "price": 0 },
+                { "name": "Granola",               "price": 0 },
+                { "name": "Granulado de Chocolate","price": 0 },
+                { "name": "Granulado Colorido",    "price": 0 },
+                { "name": "Gotas de Chocolate",    "price": 0 },
+                { "name": "Gotas Brancas",         "price": 0 },
+                { "name": "Jujubas",               "price": 0 },
+                { "name": "Pó de Ovomaltine",      "price": 0 },
+                { "name": "Leite em Pó",           "price": 0 },
+                { "name": "Leite Condensado",      "price": 0 },
+                { "name": "MM",                    "price": 0 },
+                { "name": "Óreo",                  "price": 0 },
+                { "name": "Uva Passas",            "price": 0 },
+                { "name": "Sucrilhos",             "price": 0 }
+              ]
+            },
+            {
+              "name": "Frutas",
+              "minChoices": 0,
+              "maxChoices": 5,
+              "freeChoices": 5,
+              "items": [
+                { "name": "Banana",  "price": 0 },
+                { "name": "Morango", "price": 0 },
+                { "name": "Kiwi",    "price": 0 },
+                { "name": "Manga",   "price": 0 },
+                { "name": "Uva",     "price": 0 }
+              ]
+            },
+            {
+              "name": "Complementos Pagos",
+              "minChoices": 0,
+              "maxChoices": 4,
+              "freeChoices": 0,
+              "items": [
+                { "name": "Nutela",      "price": 2.00 },
+                { "name": "Marshmallows","price": 1.00 },
+                { "name": "Tubinhos",   "price": 1.00 },
+                { "name": "Paçoquinha", "price": 1.00 }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Mix de Açaí",
+          "description": "Leva fixo: Banana, Leite em Pó e Leite Condensado. Escolha mais complementos.",
+          "variations": [
+            { "name": "300ml", "price": 15.00 },
+            { "name": "400ml", "price": 20.00 },
+            { "name": "500ml", "price": 25.00 },
+            { "name": "700ml", "price": 35.00 }
+          ],
+          "additionalGroups": [
+            {
+              "name": "Complementos Grátis",
+              "minChoices": 0,
+              "maxChoices": 17,
+              "freeChoices": 17,
+              "items": [
+                { "name": "Amendoim",              "price": 0 },
+                { "name": "Castanha",              "price": 0 },
+                { "name": "Choco Boll",            "price": 0 },
+                { "name": "Choco Pawer",           "price": 0 },
+                { "name": "Granola",               "price": 0 },
+                { "name": "Granulado de Chocolate","price": 0 },
+                { "name": "Granulado Colorido",    "price": 0 },
+                { "name": "Gotas de Chocolate",    "price": 0 },
+                { "name": "Gotas Brancas",         "price": 0 },
+                { "name": "Jujubas",               "price": 0 },
+                { "name": "Pó de Ovomaltine",      "price": 0 },
+                { "name": "Leite em Pó",           "price": 0 },
+                { "name": "Leite Condensado",      "price": 0 },
+                { "name": "MM",                    "price": 0 },
+                { "name": "Óreo",                  "price": 0 },
+                { "name": "Uva Passas",            "price": 0 },
+                { "name": "Sucrilhos",             "price": 0 }
+              ]
+            },
+            {
+              "name": "Frutas",
+              "minChoices": 0,
+              "maxChoices": 5,
+              "freeChoices": 5,
+              "items": [
+                { "name": "Banana",  "price": 0 },
+                { "name": "Morango", "price": 0 },
+                { "name": "Kiwi",    "price": 0 },
+                { "name": "Manga",   "price": 0 },
+                { "name": "Uva",     "price": 0 }
+              ]
+            },
+            {
+              "name": "Complementos Pagos",
+              "minChoices": 0,
+              "maxChoices": 4,
+              "freeChoices": 0,
+              "items": [
+                { "name": "Nutela",      "price": 2.00 },
+                { "name": "Marshmallows","price": 1.00 },
+                { "name": "Tubinhos",   "price": 1.00 },
+                { "name": "Paçoquinha", "price": 1.00 }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

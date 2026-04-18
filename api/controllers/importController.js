@@ -52,6 +52,7 @@ exports.importCatalog = async (req, res) => {
               minChoices: groupData.minChoices ?? 0,
               maxChoices: groupData.maxChoices ?? 1,
               freeChoices: groupData.freeChoices ?? 0,
+              stepperMode: groupData.stepperMode ?? false,
             }, { transaction: t });
             summary.groups++;
 

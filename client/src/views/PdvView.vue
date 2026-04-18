@@ -515,7 +515,7 @@
                 </p>
               </div>
               <span
-                v-if="grupo.name === 'Casquinha'"
+                v-if="grupo.stepperMode"
                 class="text-xs font-semibold px-2 py-0.5 rounded border bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700"
               >
                 Opcional
@@ -538,7 +538,7 @@
             </div>
 
             <!-- Stepper de casquinha -->
-            <div v-if="grupo.name === 'Casquinha'" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div v-if="grupo.stepperMode" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div
                 v-for="add in grupo.items"
                 :key="add.id"
@@ -1004,7 +1004,7 @@ const bolaCount = ref(1)
 const itemQuantidades = ref({})
 
 const isSorvete = computed(() =>
-  produtoDetalhado.value?.additionalGroups?.some(g => g.name === 'Casquinha') ?? false
+  produtoDetalhado.value?.additionalGroups?.some(g => g.stepperMode) ?? false
 )
 const bolaPrice = computed(() =>
   bolaCount.value === 1 ? 4.00 : bolaCount.value * 3.50
@@ -1017,7 +1017,7 @@ const decrementarItem = (itemId) => {
   if (atual > 0) itemQuantidades.value = { ...itemQuantidades.value, [itemId]: atual - 1 }
 }
 const casquinhaTotal = computed(() => {
-  const grupo = produtoDetalhado.value?.additionalGroups?.find(g => g.name === 'Casquinha')
+  const grupo = produtoDetalhado.value?.additionalGroups?.find(g => g.stepperMode)
   if (!grupo) return 0
   return grupo.items.reduce((acc, item) => acc + Number(item.price) * (itemQuantidades.value[item.id] || 0), 0)
 })
@@ -1113,7 +1113,7 @@ const podeConfirmarProduto = computed(() => {
   if (!isSorvete.value && produtoDetalhado.value.variations?.length > 0 && !tamanhoSelecionado.value) return false
   if (produtoDetalhado.value.additionalGroups) {
     for (const grupo of produtoDetalhado.value.additionalGroups) {
-      if (grupo.name === 'Casquinha') continue
+      if (grupo.stepperMode) continue
       if (grupo.minChoices > 0 && qtdSelecionadaNoGrupo(grupo.id) < grupo.minChoices) return false
     }
   }
@@ -1124,7 +1124,7 @@ const adicionaisComPrecoCalculado = computed(() => {
   if (!produtoDetalhado.value?.additionalGroups) return []
   const processados = []
   for (const grupo of produtoDetalhado.value.additionalGroups) {
-    if (grupo.name === 'Casquinha') continue
+    if (grupo.stepperMode) continue
     const itensOrdenados = [...itensSelecionadosNoGrupo(grupo.id)].sort((a, b) => Number(a.price) - Number(b.price))
     itensOrdenados.forEach((item, index) => {
       processados.push({ id: item.id, name: item.name, price: index < grupo.freeChoices ? 0 : Number(item.price) })
@@ -1144,7 +1144,7 @@ const confirmarItem = () => {
 
   const casquinhaAdds = []
   if (isSorvete.value) {
-    const grupo = produtoDetalhado.value.additionalGroups?.find(g => g.name === 'Casquinha')
+    const grupo = produtoDetalhado.value.additionalGroups?.find(g => g.stepperMode)
     grupo?.items.forEach(item => {
       const qty = itemQuantidades.value[item.id] || 0
       if (qty > 0) casquinhaAdds.push({ id: item.id, name: `${item.name} ×${qty}`, price: Number(item.price) * qty })
