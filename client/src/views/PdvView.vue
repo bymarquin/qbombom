@@ -555,7 +555,7 @@
             <textarea
               v-model="observacaoProduto"
               rows="2"
-              placeholder="Ex: Pouco açúcar, cobertura à parte..."
+              placeholder="Digite aqui se tiver alguma observação..."
               class="w-full p-3.5 border border-neutral-300 dark:border-neutral-700 rounded-lg text-sm bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-all duration-200 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 resize-none placeholder-neutral-400"
             ></textarea>
           </section>
