@@ -56,7 +56,6 @@
               :value="`${baseUrl}?mesa=${n}`"
               :size="120"
               level="M"
-              render-as="svg"
             />
           </div>
           <p class="text-xs text-neutral-400 font-mono text-center break-all">
