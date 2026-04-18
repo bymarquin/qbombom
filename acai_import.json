@@ -188,58 +188,7 @@
             { "name": "500ml", "price": 25.00 },
             { "name": "700ml", "price": 35.00 }
           ],
-          "additionalGroups": [
-            {
-              "name": "Complementos Grátis",
-              "minChoices": 0,
-              "maxChoices": 17,
-              "freeChoices": 17,
-              "items": [
-                { "name": "Amendoim",              "price": 0 },
-                { "name": "Castanha",              "price": 0 },
-                { "name": "Choco Boll",            "price": 0 },
-                { "name": "Choco Pawer",           "price": 0 },
-                { "name": "Granola",               "price": 0 },
-                { "name": "Granulado de Chocolate","price": 0 },
-                { "name": "Granulado Colorido",    "price": 0 },
-                { "name": "Gotas de Chocolate",    "price": 0 },
-                { "name": "Gotas Brancas",         "price": 0 },
-                { "name": "Jujubas",               "price": 0 },
-                { "name": "Pó de Ovomaltine",      "price": 0 },
-                { "name": "Leite em Pó",           "price": 0 },
-                { "name": "Leite Condensado",      "price": 0 },
-                { "name": "MM",                    "price": 0 },
-                { "name": "Óreo",                  "price": 0 },
-                { "name": "Uva Passas",            "price": 0 },
-                { "name": "Sucrilhos",             "price": 0 }
-              ]
-            },
-            {
-              "name": "Frutas",
-              "minChoices": 0,
-              "maxChoices": 5,
-              "freeChoices": 5,
-              "items": [
-                { "name": "Banana",  "price": 0 },
-                { "name": "Morango", "price": 0 },
-                { "name": "Kiwi",    "price": 0 },
-                { "name": "Manga",   "price": 0 },
-                { "name": "Uva",     "price": 0 }
-              ]
-            },
-            {
-              "name": "Complementos Pagos",
-              "minChoices": 0,
-              "maxChoices": 4,
-              "freeChoices": 0,
-              "items": [
-                { "name": "Nutela",      "price": 2.00 },
-                { "name": "Marshmallows","price": 1.00 },
-                { "name": "Tubinhos",   "price": 1.00 },
-                { "name": "Paçoquinha", "price": 1.00 }
-              ]
-            }
-          ]
+          "additionalGroups": []
         }
       ]
     }
