@@ -6,13 +6,12 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     vue(),
-    vueDevTools(),
+    mode !== 'production' && vueDevTools(),
     tailwindcss(),
     VitePWA({
-      injectRegister: false,
       registerType: 'autoUpdate',
       strategies: 'injectManifest',
       srcDir: 'src',
@@ -51,10 +50,10 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,svg,woff2}'],
       },
     }),
-  ],
+  ].filter(Boolean),
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
-})
+}))
