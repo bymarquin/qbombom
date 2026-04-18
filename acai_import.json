@@ -188,7 +188,20 @@
             { "name": "500ml", "price": 25.00 },
             { "name": "700ml", "price": 35.00 }
           ],
-          "additionalGroups": []
+          "additionalGroups": [
+            {
+              "name": "Complementos Pagos",
+              "minChoices": 0,
+              "maxChoices": 4,
+              "freeChoices": 0,
+              "items": [
+                { "name": "Nutela",      "price": 2.00 },
+                { "name": "Marshmallows","price": 1.00 },
+                { "name": "Tubinhos",   "price": 1.00 },
+                { "name": "Paçoquinha", "price": 1.00 }
+              ]
+            }
+          ]
         }
       ]
     }
