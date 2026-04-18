@@ -116,16 +116,22 @@ function imprimir() {
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: sans-serif; background: white; padding: 16px; }
+    .toolbar { display: flex; justify-content: center; margin-bottom: 16px; }
+    .btn { background: #dc2626; color: white; border: none; border-radius: 8px; padding: 10px 24px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn:hover { background: #b91c1c; }
     .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
     .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; break-inside: avoid; }
     .label { font-size: 14px; font-weight: 700; color: #1f2937; }
     .url { font-size: 9px; color: #9ca3af; font-family: monospace; text-align: center; word-break: break-all; }
-    @media print { @page { margin: 10mm; } }
+    @media print { .toolbar { display: none; } @page { margin: 10mm; } }
   </style>
 </head>
 <body>
+  <div class="toolbar">
+    <button class="btn" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+  </div>
   <div class="grid">${cards}</div>
-  <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }<\/script>
+  <script>setTimeout(() => window.print(), 500)<\/script>
 </body>
 </html>`)
   win.document.close()
