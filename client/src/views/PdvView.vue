@@ -782,13 +782,33 @@
 
         <!-- Footer -->
         <div
-          class="p-5 border-t border-neutral-100 dark:border-neutral-800/50 bg-white dark:bg-neutral-900 flex justify-end gap-3 shrink-0"
+          class="p-5 border-t border-neutral-100 dark:border-neutral-800/50 bg-white dark:bg-neutral-900 flex justify-between gap-3 shrink-0"
         >
+          <button
+            v-if="!confirmandoCancelamento"
+            @click="confirmandoCancelamento = true"
+            class="px-4 py-2.5 font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg transition-colors flex items-center gap-2 text-sm"
+          >
+            <Trash2 class="w-4 h-4" />
+            Cancelar Pedido
+          </button>
+          <div v-else class="flex items-center gap-2">
+            <span class="text-sm text-red-700 dark:text-red-400 font-medium">Cancelar pedido?</span>
+            <button
+              @click="cancelarPedido"
+              class="px-3 py-1.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+            >Sim</button>
+            <button
+              @click="confirmandoCancelamento = false"
+              class="px-3 py-1.5 text-sm font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors"
+            >Não</button>
+          </div>
+          <div class="flex gap-3">
           <button
             @click="fecharModalPagamento"
             class="px-5 py-2.5 font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors"
           >
-            Cancelar
+            Voltar
           </button>
           <button
             @click="finalizarPedido"
@@ -802,6 +822,7 @@
             {{ salvandoPedido ? 'Finalizando...' : 'Confirmar e Enviar' }}
             <kbd v-if="!salvandoPedido" class="text-[10px] font-mono bg-red-700/50 text-red-100 px-1.5 py-0.5 rounded border border-red-500/50">Enter</kbd>
           </button>
+          </div>
         </div>
       </div>
     </div>
@@ -969,9 +990,18 @@ const abrirModalPagamento = () => {
   modalPagamentoAberto.value = true
 }
 
+const confirmandoCancelamento = ref(false)
+
 const fecharModalPagamento = () => {
   modalPagamentoAberto.value = false
   metodoPagamentoSelecionado.value = 'PIX'
+  confirmandoCancelamento.value = false
+}
+
+const cancelarPedido = () => {
+  limparPedido()
+  fecharModalPagamento()
+  toast.info('Pedido cancelado.')
 }
 
 const finalizarPedido = async () => {
