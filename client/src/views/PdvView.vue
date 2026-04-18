@@ -495,7 +495,7 @@
 
           <!-- Aviso para produto sem variações (preço zero) -->
           <section
-            v-if="!produtoDetalhado.variations || produtoDetalhado.variations.length === 0"
+            v-if="!isSorvete && (!produtoDetalhado.variations || produtoDetalhado.variations.length === 0)"
             class="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl"
           >
             <p class="text-sm font-semibold text-orange-700 dark:text-orange-400">Produto sem tamanho definido</p>
