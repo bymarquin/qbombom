@@ -40,7 +40,7 @@ exports.show = async (req, res) => {
       order: [
         [{ model: ProductVariation, as: 'variations' }, 'price', 'ASC'],
         [{ model: AdditionalGroup, as: 'additionalGroups' }, 'position', 'ASC'],
-        [{ model: AdditionalGroup, as: 'additionalGroups' }, { model: AdditionalItem, as: 'items' }, 'price', 'ASC']
+        [{ model: AdditionalGroup, as: 'additionalGroups' }, { model: AdditionalItem, as: 'items' }, 'name', 'ASC']
       ]
     });
     
