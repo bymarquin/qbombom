@@ -12,6 +12,18 @@ const r2 = new S3Client({
 const BUCKET = process.env.R2_BUCKET_NAME;
 const CDN_URL = process.env.R2_CDN_URL;
 
+function getCacheControlByKey(key) {
+  if (key.startsWith('products/')) {
+    return 'public, max-age=31536000, immutable'
+  }
+
+  if (key.startsWith('receipts/')) {
+    return 'private, no-store'
+  }
+
+  return 'public, max-age=86400'
+}
+
 /**
  * Faz upload de um buffer para o R2 e retorna a URL pública.
  * @param {Buffer} buffer
@@ -25,6 +37,7 @@ async function uploadFile(buffer, key, contentType) {
     Key: key,
     Body: buffer,
     ContentType: contentType,
+    CacheControl: getCacheControlByKey(key),
   }));
 
   return `${CDN_URL}/${key}`;
