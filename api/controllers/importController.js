@@ -44,7 +44,7 @@ exports.importCatalog = async (req, res) => {
             summary.variations++;
           }
 
-          for (const groupData of (prodData.additionalGroups || [])) {
+          for (const [groupIndex, groupData] of (prodData.additionalGroups || []).entries()) {
             if (!groupData.name) continue;
 
             const group = await AdditionalGroup.create({
@@ -53,6 +53,7 @@ exports.importCatalog = async (req, res) => {
               maxChoices: groupData.maxChoices ?? 1,
               freeChoices: groupData.freeChoices ?? 0,
               stepperMode: groupData.stepperMode ?? false,
+              position: groupIndex,
             }, { transaction: t });
             summary.groups++;
 
