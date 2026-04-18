@@ -404,8 +404,8 @@ const usarLocalizacao = async () => {
     return;
   }
   if (navigator.permissions) {
-    const { state } = await navigator.permissions.query({ name: 'geolocation' });
-    if (state === 'denied') {
+    const permStatus = await navigator.permissions.query({ name: 'geolocation' });
+    if (permStatus.state === 'denied') {
       toast.error('Localização bloqueada. Clique no cadeado da barra de endereço e libere a permissão.');
       return;
     }
