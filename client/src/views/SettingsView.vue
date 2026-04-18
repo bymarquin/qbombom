@@ -482,32 +482,49 @@
           <div class="flex items-center justify-between mb-2">
             <div>
               <h2 class="text-xl font-bold text-neutral-900 dark:text-neutral-100">WhatsApp</h2>
-              <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">Notificações automáticas de status do pedido para o cliente</p>
+              <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
+                Notificações automáticas de status do pedido para o cliente
+              </p>
             </div>
             <button
               @click="recarregarStatus"
               :disabled="waLoading"
               class="text-sm px-3 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
             >
-              {{ waLoading ? 'Verificando...' : 'Atualizar status' }}
+              {{ waLoading ? "Verificando..." : "Atualizar status" }}
             </button>
           </div>
 
           <!-- Status -->
-          <div class="flex items-center gap-3 p-4 rounded-xl border"
-            :class="waStatus === 'open' ? 'border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-900/10' : 'border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/30'"
+          <div
+            class="flex items-center gap-3 p-4 rounded-xl border"
+            :class="
+              waStatus === 'open'
+                ? 'border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-900/10'
+                : 'border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/30'
+            "
           >
-            <div class="w-3 h-3 rounded-full shrink-0"
+            <div
+              class="w-3 h-3 rounded-full shrink-0"
               :class="waStatus === 'open' ? 'bg-green-500 animate-pulse' : 'bg-neutral-400'"
             />
             <div>
-              <p class="font-semibold text-sm"
-                :class="waStatus === 'open' ? 'text-green-700 dark:text-green-400' : 'text-neutral-700 dark:text-neutral-300'"
+              <p
+                class="font-semibold text-sm"
+                :class="
+                  waStatus === 'open'
+                    ? 'text-green-700 dark:text-green-400'
+                    : 'text-neutral-700 dark:text-neutral-300'
+                "
               >
-                {{ waStatus === 'open' ? 'Conectado' : 'Desconectado' }}
+                {{ waStatus === "open" ? "Conectado" : "Desconectado" }}
               </p>
               <p class="text-xs text-neutral-500 dark:text-neutral-400">
-                {{ waStatus === 'open' ? 'Envio de mensagens ativo' : 'Escaneie o QR Code para conectar' }}
+                {{
+                  waStatus === "open"
+                    ? "Envio de mensagens ativo"
+                    : "Escaneie o QR Code para conectar"
+                }}
               </p>
             </div>
           </div>
@@ -520,37 +537,49 @@
                 :disabled="waLoading"
                 class="px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-medium text-sm transition-colors"
               >
-                {{ waLoading ? 'Aguarde...' : 'Gerar QR Code' }}
+                {{ waLoading ? "Aguarde..." : "Gerar QR Code" }}
               </button>
             </div>
 
             <div v-if="waQrCode" class="flex flex-col items-center gap-4 py-4">
               <p class="text-sm text-neutral-600 dark:text-neutral-400 text-center">
-                Abra o WhatsApp no celular → <strong>Dispositivos conectados</strong> → <strong>Conectar dispositivo</strong> e escaneie:
+                Abra o WhatsApp no celular → <strong>Dispositivos conectados</strong> →
+                <strong>Conectar dispositivo</strong> e escaneie:
               </p>
-              <div class="p-4 bg-white rounded-2xl border border-neutral-200 shadow-sm inline-block">
+              <div
+                class="p-4 bg-white rounded-2xl border border-neutral-200 shadow-sm inline-block"
+              >
                 <img :src="waQrCode" alt="QR Code WhatsApp" class="w-56 h-56" />
               </div>
-              <button @click="buscarQRCode" class="text-sm text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 underline">
+              <button
+                @click="buscarQRCode"
+                class="text-sm text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 underline"
+              >
                 Atualizar QR Code
               </button>
             </div>
           </div>
 
           <!-- Mensagens editáveis (sempre visível) -->
-          <div class="p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/30 space-y-4">
+          <div
+            class="p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/30 space-y-4"
+          >
             <div class="flex items-center justify-between">
-              <h3 class="font-semibold text-neutral-900 dark:text-neutral-100">Mensagens automáticas</h3>
+              <h3 class="font-semibold text-neutral-900 dark:text-neutral-100">
+                Mensagens automáticas
+              </h3>
               <button
                 @click="salvarMensagens"
                 :disabled="waSavingMessages"
                 class="text-sm px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-medium transition-colors"
               >
-                {{ waSavingMessages ? 'Salvando...' : 'Salvar' }}
+                {{ waSavingMessages ? "Salvando..." : "Salvar" }}
               </button>
             </div>
             <div v-for="msg in waMessageFields" :key="msg.key" class="space-y-1">
-              <label class="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              <label
+                class="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300"
+              >
                 <span>{{ msg.emoji }}</span> {{ msg.label }}
               </label>
               <textarea
@@ -579,85 +608,87 @@ const currentTab = ref("profile");
 const isSaving = ref(false);
 
 // WhatsApp
-const waStatus = ref('disconnected')
-const waQrCode = ref(null)
-const waLoading = ref(false)
+const waStatus = ref("disconnected");
+const waQrCode = ref(null);
+const waLoading = ref(false);
 
 const recarregarStatus = async () => {
-  waLoading.value = true
+  waLoading.value = true;
   try {
-    const { data } = await WhatsAppService.getStatus()
-    waStatus.value = data.status
+    const { data } = await WhatsAppService.getStatus();
+    waStatus.value = data.status;
   } catch {
-    waStatus.value = 'disconnected'
+    waStatus.value = "disconnected";
   } finally {
-    waLoading.value = false
+    waLoading.value = false;
   }
-}
+};
 
 const buscarQRCode = async () => {
   try {
-    const { data } = await WhatsAppService.getQRCode()
-    waQrCode.value = data.base64 || data.qrcode || data.code || null
+    const { data } = await WhatsAppService.getQRCode();
+    waQrCode.value = data.base64 || data.qrcode || data.code || null;
   } catch {
-    toast.error('Erro ao buscar QR Code')
+    toast.error("Erro ao buscar QR Code");
   }
-}
+};
 
 const criarInstancia = async () => {
-  waLoading.value = true
+  waLoading.value = true;
   try {
-    await WhatsAppService.createInstance()
-    await buscarQRCode()
+    await WhatsAppService.createInstance();
+    await buscarQRCode();
   } catch {
     // instância já existe, tenta pegar o QR Code direto
-    await buscarQRCode()
+    await buscarQRCode();
   } finally {
-    waLoading.value = false
+    waLoading.value = false;
   }
-}
+};
 
 const waMessages = reactive({
-  em_preparo: '🍧 Seu pedido está sendo preparado! Em breve ficará pronto.',
-  pronto: '✅ Seu pedido está pronto! Pode retirar ou aguardar a entrega.',
-  finalizado: '🎉 Pedido finalizado. Obrigado pela preferência! Volte sempre 😊',
-  cancelado: '❌ Seu pedido foi cancelado. Entre em contato se tiver dúvidas.',
-})
+  em_preparo: "🍧 Seu pedido está sendo preparado! Em breve ficará pronto.",
+  pronto: "✅ Seu pedido está pronto! Pode retirar ou aguardar a entrega.",
+  finalizado: "🎉 Pedido finalizado. Obrigado pela preferência! Volte sempre 😊",
+  cancelado: "❌ Seu pedido foi cancelado. Entre em contato se tiver dúvidas.",
+});
 
-const waSavingMessages = ref(false)
+const waSavingMessages = ref(false);
 
 const waMessageFields = [
-  { key: 'em_preparo', emoji: '🍧', label: 'Em preparo' },
-  { key: 'pronto',     emoji: '✅', label: 'Pronto' },
-  { key: 'finalizado', emoji: '🎉', label: 'Finalizado' },
-  { key: 'cancelado',  emoji: '❌', label: 'Cancelado' },
-]
+  { key: "em_preparo", emoji: "🍧", label: "Em preparo" },
+  { key: "pronto", emoji: "✅", label: "Pronto" },
+  { key: "finalizado", emoji: "🎉", label: "Finalizado" },
+  { key: "cancelado", emoji: "❌", label: "Cancelado" },
+];
 
 const carregarMensagens = async () => {
   try {
-    const { data } = await WhatsAppService.getMessages()
-    Object.assign(waMessages, data)
-  } catch { /* silencia erro de carregamento de mensagens */ }
-}
+    const { data } = await WhatsAppService.getMessages();
+    Object.assign(waMessages, data);
+  } catch {
+    /* silencia erro de carregamento de mensagens */
+  }
+};
 
 const salvarMensagens = async () => {
-  waSavingMessages.value = true
+  waSavingMessages.value = true;
   try {
-    await WhatsAppService.updateMessages({ ...waMessages })
-    toast.success('Mensagens salvas!')
+    await WhatsAppService.updateMessages({ ...waMessages });
+    toast.success("Mensagens salvas!");
   } catch {
-    toast.error('Erro ao salvar mensagens')
+    toast.error("Erro ao salvar mensagens");
   } finally {
-    waSavingMessages.value = false
+    waSavingMessages.value = false;
   }
-}
+};
 
 watch(currentTab, (tab) => {
-  if (tab === 'whatsapp') {
-    recarregarStatus()
-    carregarMensagens()
+  if (tab === "whatsapp") {
+    recarregarStatus();
+    carregarMensagens();
   }
-})
+});
 
 // Abas de Configuração
 const tabs = [
@@ -697,15 +728,15 @@ const tabs = [
 const form = reactive({
   profile: {
     name: "Qbombom Sorvetes",
-    cnpj: "12.345.678/0001-90",
-    phone: "(11) 99999-9999",
-    email: "contato@qbombom.com.br",
+    cnpj: "",
+    phone: "(88) 99290-0865",
+    email: "",
     address: {
-      zip: "01234-567",
-      street: "Av. Paulista",
-      number: "1000",
-      neighborhood: "Bela Vista",
-      city: "São Paulo - SP",
+      zip: "63170-000",
+      street: "",
+      number: "",
+      neighborhood: "Centro",
+      city: "Araripe - CE",
     },
   },
   hours: {
@@ -754,8 +785,8 @@ const form = reactive({
     },
   },
   pix: {
-    type: "cnpj",
-    key: "12.345.678/0001-90",
+    type: "Celular",
+    key: "88992998161",
   },
   print: {
     autoPrint: true,
