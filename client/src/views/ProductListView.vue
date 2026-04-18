@@ -320,6 +320,43 @@
               </div>
             </div>
 
+            <!-- Produto por peso -->
+            <div class="flex items-center gap-3 mt-1">
+              <input
+                v-model="form.weightBased"
+                id="prod-weight-based"
+                type="checkbox"
+                class="w-4 h-4 rounded border-neutral-300 dark:border-neutral-700 accent-red-600 cursor-pointer"
+              />
+              <label for="prod-weight-based" class="text-sm font-medium text-neutral-700 dark:text-neutral-300 cursor-pointer">
+                Produto vendido por peso
+              </label>
+            </div>
+            <div v-if="form.weightBased" class="grid grid-cols-2 gap-4">
+              <div class="flex flex-col gap-2">
+                <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Preço por KG (R$)</label>
+                <input
+                  v-model.number="form.pricePerKg"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0,00"
+                  class="w-full px-3.5 py-2.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-all duration-200 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 placeholder-neutral-400"
+                />
+              </div>
+              <div class="flex flex-col gap-2">
+                <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Valor mínimo (R$)</label>
+                <input
+                  v-model.number="form.minPrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0,00"
+                  class="w-full px-3.5 py-2.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-all duration-200 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 placeholder-neutral-400"
+                />
+              </div>
+            </div>
+
             <div class="flex items-center gap-3 mt-1">
               <input
                 v-model="form.status"
@@ -524,7 +561,7 @@ const products = shallowRef([])
 const categories = shallowRef([])
 const showModal = ref(false)
 const editingItem = ref(null)
-const form = ref({ name: '', description: '', categoryId: '', status: true, manageStock: false, stock: 0, variations: [] })
+const form = ref({ name: '', description: '', categoryId: '', status: true, manageStock: false, stock: 0, variations: [], weightBased: false, pricePerKg: 0, minPrice: 0 })
 
 const minPriceLabel = (prod) => {
   const prices = (prod.variations || []).map((v) => Number(v.price)).filter((p) => p > 0)
@@ -587,6 +624,9 @@ const openModal = (prod = null) => {
       manageStock: prod.manageStock || false,
       stock: prod.stock || 0,
       variations: (prod.variations || []).map((v) => ({ name: v.name, price: v.price, maxAdditionals: v.maxAdditionals ?? null })),
+      weightBased: prod.weightBased || false,
+      pricePerKg: prod.pricePerKg || 0,
+      minPrice: prod.minPrice || 0,
     }
   } else {
     editingItem.value = null
@@ -599,6 +639,9 @@ const openModal = (prod = null) => {
       manageStock: false,
       stock: 0,
       variations: [],
+      weightBased: false,
+      pricePerKg: 0,
+      minPrice: 0,
     }
   }
   showModal.value = true
