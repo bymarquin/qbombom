@@ -192,7 +192,10 @@
                     colspan="4"
                     class="px-6 py-8 text-center text-neutral-500 dark:text-neutral-500"
                   >
-                    Nenhum pedido recente.
+                    <div class="flex flex-col items-center gap-2">
+                      <ClipboardList class="w-8 h-8 opacity-50" />
+                      Nenhum pedido recente.
+                    </div>
                   </td>
                 </tr>
                 <tr
@@ -275,7 +278,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { DollarSign, ShoppingBag, Receipt, XOctagon } from 'lucide-vue-next'
+import { DollarSign, ShoppingBag, Receipt, XOctagon, ClipboardList } from 'lucide-vue-next'
 import { DashboardService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 import { formatarMoeda } from '@/utils/formatters'

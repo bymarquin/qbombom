@@ -40,7 +40,8 @@
           </div>
 
           <div class="flex-1 overflow-y-auto no-scrollbar space-y-3 pr-1">
-            <div v-if="colNovos.length === 0" class="text-center py-10 text-sm text-neutral-400">
+            <div v-if="colNovos.length === 0" class="flex flex-col items-center py-10 gap-2 text-sm text-neutral-400">
+              <Inbox class="w-8 h-8 opacity-50" />
               Nenhum pedido novo.
             </div>
 
@@ -131,7 +132,8 @@
           </div>
 
           <div class="flex-1 overflow-y-auto no-scrollbar space-y-3 pr-1">
-            <div v-if="colPreparo.length === 0" class="text-center py-10 text-sm text-neutral-400">
+            <div v-if="colPreparo.length === 0" class="flex flex-col items-center py-10 gap-2 text-sm text-neutral-400">
+              <ChefHat class="w-8 h-8 opacity-50" />
               Nenhum pedido na cozinha.
             </div>
 
@@ -197,7 +199,8 @@
           </div>
 
           <div class="flex-1 overflow-y-auto no-scrollbar space-y-3 pr-1">
-            <div v-if="colPronto.length === 0" class="text-center py-10 text-sm text-neutral-400">
+            <div v-if="colPronto.length === 0" class="flex flex-col items-center py-10 gap-2 text-sm text-neutral-400">
+              <Truck class="w-8 h-8 opacity-50" />
               Nenhum pedido aguardando despacho.
             </div>
 
@@ -505,7 +508,7 @@
 
 <script setup>
 import { ref, shallowRef, onMounted, computed } from "vue";
-import { Printer, CheckCircle2, Package, Check, RefreshCw, X } from "lucide-vue-next";
+import { Printer, CheckCircle2, Package, Check, RefreshCw, X, Inbox, ChefHat, Truck } from "lucide-vue-next";
 import { OrderService, AuthService } from "@/services/http";
 import { useToastStore } from "@/stores/toast";
 import { useOrderSocket } from "@/composables/useOrderSocket";
