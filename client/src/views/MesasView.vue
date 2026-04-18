@@ -64,6 +64,13 @@
           <p class="text-xs text-neutral-400 font-mono text-center break-all">
             {{ baseUrl }}?mesa={{ n }}
           </p>
+          <button
+            @click="imprimirMesa(n)"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-neutral-500 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+          >
+            <Printer class="w-3 h-3" />
+            Imprimir
+          </button>
         </div>
       </div>
     </div>
@@ -94,12 +101,12 @@ async function gerarQrs() {
 onMounted(gerarQrs)
 watch([qtdMesas, baseUrl], gerarQrs)
 
-function imprimir() {
+function abrirJanelaImpressao(itens) {
   const win = window.open('', '_blank')
   if (!win) return
 
-  const cards = Object.entries(qrUrls.value)
-    .map(([n, src]) => `
+  const cards = itens
+    .map(({ n, src }) => `
       <div class="card">
         <p class="label">Mesa ${String(n).padStart(2, '0')}</p>
         <img src="${src}" width="160" height="160" />
@@ -138,5 +145,15 @@ function imprimir() {
   win.document.getElementById('btnPrint').addEventListener('click', () => win.print())
   win.setTimeout(() => win.print(), 500)
   win.onafterprint = () => win.close()
+}
+
+function imprimir() {
+  const itens = Object.entries(qrUrls.value).map(([n, src]) => ({ n: Number(n), src }))
+  abrirJanelaImpressao(itens)
+}
+
+function imprimirMesa(n) {
+  const src = qrUrls.value[n]
+  if (src) abrirJanelaImpressao([{ n, src }])
 }
 </script>
