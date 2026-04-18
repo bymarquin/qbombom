@@ -26,7 +26,7 @@ export default defineConfig(({ mode }) => ({
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
-        start_url: '/',
+        start_url: '/cardapio',
         icons: [
           {
             src: '/pwa-192.svg',

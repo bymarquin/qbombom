@@ -75,6 +75,7 @@ exports.create = async (req, res) => {
       );
     }
 
+    await product.reload({ include: [{ model: ProductVariation, as: 'variations' }] });
     res.status(201).json(product);
   } catch (error) {
     res.status(500).json({ error: 'Failed to create product' });
@@ -107,6 +108,7 @@ exports.update = async (req, res) => {
       }
     }
 
+    await product.reload({ include: [{ model: ProductVariation, as: 'variations' }] });
     res.json(product);
   } catch (error) {
     console.error('[update product]', error);

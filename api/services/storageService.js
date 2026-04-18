@@ -17,10 +17,6 @@ function getCacheControlByKey(key) {
     return 'public, max-age=31536000, immutable'
   }
 
-  if (key.startsWith('receipts/')) {
-    return 'private, no-store'
-  }
-
   return 'public, max-age=86400'
 }
 

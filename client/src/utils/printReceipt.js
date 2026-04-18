@@ -1,3 +1,6 @@
+const esc = (s) =>
+  String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+
 export const printReceipt = (order) => {
   return new Promise((resolve) => {
     let itemsHtml;
@@ -8,14 +11,14 @@ export const printReceipt = (order) => {
         if (item.selectedAdditionals) {
           try {
             const parsed = typeof item.selectedAdditionals === 'string' ? JSON.parse(item.selectedAdditionals) : item.selectedAdditionals;
-            addText = parsed.map(a => `  + ${a.name}`).join('\n');
+            addText = parsed.map(a => `  + ${esc(a.name)}`).join('\n');
           } catch {
             // ignore
           }
         }
 
-        const productName = item.product?.name || 'Produto';
-        const varName = item.variation?.name ? ` (${item.variation.name})` : '';
+        const productName = esc(item.product?.name || 'Produto');
+        const varName = item.variation?.name ? ` (${esc(item.variation.name)})` : '';
         const price = `R$ ${Number(item.totalPrice).toFixed(2).replace('.', ',')}`;
 
         return `
@@ -26,7 +29,7 @@ export const printReceipt = (order) => {
               <span class="item-price">${price}</span>
             </div>
             ${addText ? `<div class="item-adds">${addText.replace(/\n/g, '<br>')}</div>` : ''}
-            ${item.observation ? `<div class="item-obs">* ${item.observation}</div>` : ''}
+            ${item.observation ? `<div class="item-obs">* ${esc(item.observation)}</div>` : ''}
           </div>
         `;
       }).join('');
@@ -239,12 +242,12 @@ export const printReceipt = (order) => {
 
           <div class="customer-box">
             <span class="label">Cliente</span><br>
-            <strong>${order.customerName || 'Nao informado'}</strong>
-            ${order.customerPhone ? `<br>${order.customerPhone}` : ''}
+            <strong>${esc(order.customerName || 'Nao informado')}</strong>
+            ${order.customerPhone ? `<br>${esc(order.customerPhone)}` : ''}
             ${order.deliveryAddress ? `
               <div class="address-block">
                 <span class="label">Endereco de entrega</span><br>
-                ${order.deliveryAddress}
+                ${esc(order.deliveryAddress)}
               </div>
             ` : ''}
           </div>
@@ -276,7 +279,7 @@ export const printReceipt = (order) => {
             <hr class="divider">
             <div class="obs-box">
               <span class="label">Observacao Geral</span>
-              ${order.observation}
+              ${esc(order.observation)}
             </div>
           ` : ''}
 

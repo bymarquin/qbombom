@@ -136,9 +136,7 @@
                 {{ produto.description }}
               </p>
               <div class="mt-auto pt-2 flex items-center justify-between">
-                <span class="text-red-600 font-bold">{{
-                  produto.variations?.length > 0 ? formatarMoeda(Math.min(...produto.variations.map(v => Number(v.price)))) : 'Montar'
-                }}</span>
+                <span class="text-red-600 font-bold">{{ precoMinimoPdv(produto) }}</span>
                 <div
                   class="w-6 h-6 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center group-hover:bg-red-600 group-hover:text-white transition-colors"
                 >
@@ -447,6 +445,15 @@
             </div>
           </section>
 
+
+          <!-- Aviso para produto sem variações (preço zero) -->
+          <section
+            v-if="!produtoDetalhado.variations || produtoDetalhado.variations.length === 0"
+            class="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl"
+          >
+            <p class="text-sm font-semibold text-orange-700 dark:text-orange-400">Produto sem tamanho definido</p>
+            <p class="text-xs text-orange-600 dark:text-orange-500 mt-1">Adicione pelo menos uma variação (tamanho) para definir o preço.</p>
+          </section>
 
           <!-- Grupos de Adicionais -->
           <section v-for="grupo in produtoDetalhado.additionalGroups" :key="grupo.id">
@@ -763,6 +770,11 @@ const produtosFiltrados = computed(() => {
 })
 
 import { formatarMoeda, mascararTelefone, limparTelefone } from "@/utils/formatters"
+
+const precoMinimoPdv = (produto) => {
+  const prices = (produto.variations || []).map((v) => Number(v.price)).filter((p) => p > 0)
+  return prices.length > 0 ? formatarMoeda(Math.min(...prices)) : 'Montar'
+}
 
 // --- CARRINHO ---
 const carrinho = ref([])
