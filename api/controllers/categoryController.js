@@ -24,7 +24,8 @@ exports.index = async (req, res) => {
       ],
       order: [
         ['id', 'ASC'],
-        [{ model: Product, as: 'products' }, 'id', 'ASC']
+        [{ model: Product, as: 'products' }, 'id', 'ASC'],
+        [{ model: Product, as: 'products' }, { model: ProductVariation, as: 'variations' }, 'price', 'ASC']
       ]
     });
     res.json(categories);
