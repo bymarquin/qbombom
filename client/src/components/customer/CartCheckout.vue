@@ -403,6 +403,10 @@ const usarLocalizacao = () => {
     toast.error('Geolocalização não suportada pelo navegador.');
     return;
   }
+  if (!window.isSecureContext) {
+    toast.error('Localização requer conexão segura (HTTPS).');
+    return;
+  }
   buscandoLocalizacao.value = true;
   navigator.geolocation.getCurrentPosition(
     async ({ coords }) => {
@@ -424,8 +428,12 @@ const usarLocalizacao = () => {
         buscandoLocalizacao.value = false;
       }
     },
-    () => {
-      toast.error('Permissão de localização negada.');
+    (err) => {
+      if (err.code === 1) {
+        toast.error('Permissão negada. Libere a localização nas configurações do navegador.');
+      } else {
+        toast.error('Não foi possível obter sua localização.');
+      }
       buscandoLocalizacao.value = false;
     },
     { timeout: 10000 }
