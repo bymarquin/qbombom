@@ -148,7 +148,7 @@
               v-if="produto.imageUrl"
               :src="produto.imageUrl"
               :alt="produto.name"
-              class="w-full h-full object-contain"
+              class="w-full h-full object-cover"
             />
             <div v-else class="w-full h-full flex items-center justify-center">
               <Coffee class="w-10 h-10 text-neutral-300 dark:text-neutral-600" />
