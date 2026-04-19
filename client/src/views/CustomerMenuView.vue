@@ -8,20 +8,7 @@
       class="bg-red-600 text-white px-4 py-3 text-center sticky top-0 z-50 shadow-md"
     >
       <div class="flex items-center justify-center gap-2 font-bold">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-5 w-5"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="12" y1="8" x2="12" y2="12"></line>
-          <line x1="12" y1="16" x2="12.01" y2="16"></line>
-        </svg>
+        <AlertCircle class="h-5 w-5" />
         Loja Fechada no Momento
       </div>
       <p class="text-xs text-red-100 mt-1">
@@ -126,7 +113,7 @@
       <!-- Busca -->
       <div class="px-5 py-3 border-t border-neutral-100 dark:border-neutral-800">
         <div class="relative">
-          <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
           <input
             v-model="termoBusca"
             type="text"
@@ -182,8 +169,9 @@
 
       <div
         v-else-if="produtosFiltrados.length === 0"
-        class="h-40 flex flex-col items-center justify-center text-neutral-500 dark:text-neutral-500 text-sm"
+        class="h-40 flex flex-col items-center justify-center gap-2 text-neutral-400 dark:text-neutral-500 text-sm"
       >
+        <ShoppingCart class="w-8 h-8 opacity-50" />
         <p>Nenhum produto nesta categoria.</p>
       </div>
 
@@ -233,7 +221,7 @@
             <div class="mt-2 flex items-center justify-between">
               <span class="font-bold text-red-600 dark:text-red-400 text-sm">{{ precoMinimo(produto) }}</span>
               <div class="w-6 h-6 rounded-full bg-red-600 flex items-center justify-center shrink-0">
-                <svg class="w-3.5 h-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                <Plus class="w-3.5 h-3.5 text-white" />
               </div>
             </div>
           </div>
@@ -365,7 +353,7 @@ import ImageCarousel from "@/components/ImageCarousel.vue";
 import CartCheckout from "@/components/customer/CartCheckout.vue";
 import OrderSuccess from "@/components/customer/OrderSuccess.vue";
 import OrderTracking from "@/components/customer/OrderTracking.vue";
-import { Coffee, Sun, Moon, MapPin } from "lucide-vue-next";
+import { Coffee, Sun, Moon, MapPin, AlertCircle, Search, ShoppingCart, Plus } from "lucide-vue-next";
 
 const isDark = useDark();
 const toggleDark = useToggle(isDark);

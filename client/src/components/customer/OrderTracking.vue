@@ -76,14 +76,7 @@
                       @click="copiarChave"
                       class="mt-2 text-xs bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 font-bold px-3 py-2 rounded-md hover:bg-red-200 dark:hover:bg-red-900/60 transition flex items-center justify-center gap-1 w-full uppercase"
                     >
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                        ></path>
-                      </svg>
+                      <Copy class="w-4 h-4" />
                       Copiar Código PIX
                     </button>
                   </div>
@@ -109,14 +102,7 @@
                   class="block w-full py-3.5 bg-red-600 text-white rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-red-700 cursor-pointer shadow-md active:scale-95 text-center relative mt-2"
                 >
                   <span v-if="!uploadingReceipt" class="flex justify-center items-center gap-2"
-                    ><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-                      ></path>
-                    </svg>
+                    ><Paperclip class="w-5 h-5" />
                     Anexar Comprovante do PIX</span
                   >
                   <span v-else class="flex justify-center items-center gap-2"
@@ -146,14 +132,7 @@
                 <div
                   class="w-12 h-12 bg-blue-100 dark:bg-blue-800/30 rounded-full flex items-center justify-center mx-auto mb-3 text-blue-600 dark:text-blue-400"
                 >
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    ></path>
-                  </svg>
+                  <CheckCircle class="w-6 h-6" />
                 </div>
                 <h4 class="font-bold text-blue-800 dark:text-blue-300 mb-1">
                   Comprovante Recebido!
@@ -267,9 +246,7 @@
               :disabled="confirmingDelivery"
               class="w-full mb-2 py-3 bg-green-600 text-white rounded-lg text-sm font-semibold transition-all hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              <svg v-if="!confirmingDelivery" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
+              <Check v-if="!confirmingDelivery" class="w-5 h-5" />
               <div v-else class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
               {{ confirmingDelivery ? "Confirmando..." : "Recebi meu pedido" }}
             </button>
@@ -304,6 +281,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
+import { Paperclip, Copy, CheckCircle, Check } from "lucide-vue-next";
 import { useToastStore } from "@/stores/toast";
 import { formatarMoeda } from "@/utils/formatters";
 import { OrderService, SettingService } from "@/services/http";

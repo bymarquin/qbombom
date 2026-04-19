@@ -34,18 +34,14 @@
         class="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-opacity"
         :class="showControls ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
       >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
-        </svg>
+        <ChevronLeft class="w-4 h-4" />
       </button>
       <button
         @click.stop="next"
         class="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-opacity"
         :class="showControls ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
       >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
-        </svg>
+        <ChevronRight class="w-4 h-4" />
       </button>
 
       <!-- Dots -->
@@ -66,6 +62,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
 
 const props = defineProps({
   images: { type: Array, default: () => [] },

@@ -13,14 +13,7 @@
         @click="openModal()"
         class="bg-red-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-red-700 active:scale-[0.98] shadow-sm dark:shadow-none hover:shadow-md dark:shadow-none flex items-center justify-center gap-2"
       >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 4v16m8-8H4"
-          ></path>
-        </svg>
+        <Plus class="w-4 h-4" />
         Novo Cliente
       </button>
     </header>
@@ -130,14 +123,7 @@
             @click="closeModal"
             class="text-neutral-400 hover:text-neutral-600 dark:text-neutral-400 transition-colors rounded-full p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              ></path>
-            </svg>
+            <X class="w-5 h-5" />
           </button>
         </div>
         <div class="overflow-y-auto p-8">
@@ -234,7 +220,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Pencil, Trash2 } from 'lucide-vue-next'
+import { Pencil, Trash2, Plus, X } from 'lucide-vue-next'
 import { CustomerService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 import { useDialogStore } from '@/stores/dialog'

@@ -13,7 +13,7 @@
           class="text-xs font-medium text-neutral-500 hover:text-red-600 dark:hover:text-red-400 flex items-center gap-1 px-3 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all disabled:opacity-50"
           title="Remove grupos com o mesmo nome, mantendo apenas um"
         >
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          <Trash2 class="w-3.5 h-3.5" />
           {{ deduplicando ? 'Limpando...' : 'Limpar duplicatas' }}
         </button>
         <RouterLink
@@ -33,7 +33,7 @@
         <div class="px-5 py-3 border-b border-neutral-100 dark:border-neutral-800/50 flex items-center justify-between shrink-0">
           <span class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Todos os Grupos</span>
           <button @click="openNewGroupForm" class="text-xs font-medium text-red-600 hover:text-red-700 flex items-center gap-1">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <Plus class="w-3.5 h-3.5" />
             Novo grupo
           </button>
         </div>
@@ -88,7 +88,7 @@
                 <div class="flex items-center gap-2">
                   <span>R$ {{ parseFloat(item.price).toFixed(2) }}</span>
                   <button @click="deleteItem(item.id)" class="text-red-400 hover:text-red-600 transition-colors">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <X class="w-3 h-3" />
                   </button>
                 </div>
               </div>
@@ -180,7 +180,7 @@
               class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
               :class="isAssigned(group.id) ? 'border-red-600 bg-red-600' : 'border-neutral-300 dark:border-neutral-600'"
             >
-              <svg v-if="isAssigned(group.id)" class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+              <Check v-if="isAssigned(group.id)" class="w-3 h-3 text-white" />
             </div>
             <div class="min-w-0">
               <p class="text-sm font-medium text-neutral-900 dark:text-neutral-100">{{ group.name }}</p>
@@ -199,7 +199,7 @@
 <script setup>
 import { ref, shallowRef, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { Pencil, Trash2 } from 'lucide-vue-next'
+import { Pencil, Trash2, Plus, X, Check } from 'lucide-vue-next'
 import { AdditionalService, CatalogService, ImportService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 import { useDialogStore } from '@/stores/dialog'

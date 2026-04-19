@@ -783,9 +783,7 @@
         <!-- Tela de confirmação PIX -->
         <div v-if="aguardandoPix" class="p-6 bg-neutral-50 dark:bg-neutral-950 flex flex-col items-center gap-5 animate-in fade-in slide-in-from-bottom-2">
           <div class="w-16 h-16 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-            <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
+            <Clock class="w-8 h-8 text-orange-500" />
           </div>
           <div class="text-center">
             <p class="font-bold text-neutral-900 dark:text-neutral-100 text-lg">Aguardando PIX</p>
@@ -858,6 +856,7 @@ import {
   Check,
   Phone,
   MapPin,
+  Clock,
 } from 'lucide-vue-next'
 import { CatalogService, OrderService, AuthService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'

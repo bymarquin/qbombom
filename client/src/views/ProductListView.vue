@@ -13,9 +13,7 @@
         to="/app/produtos/novo"
         class="bg-red-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-red-700 active:scale-[0.98] shadow-sm dark:shadow-none hover:shadow-md dark:shadow-none flex items-center justify-center gap-2"
       >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-        </svg>
+        <Plus class="w-4 h-4" />
         Novo Produto
       </RouterLink>
     </header>
@@ -119,7 +117,7 @@
 
 <script setup>
 import { shallowRef, onMounted } from 'vue'
-import { Pencil, Trash2, ListPlus } from 'lucide-vue-next'
+import { Pencil, Trash2, ListPlus, Plus } from 'lucide-vue-next'
 import { CatalogService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 import { useDialogStore } from '@/stores/dialog'
