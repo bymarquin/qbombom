@@ -126,6 +126,7 @@
                     <Cropper
                       ref="cropperRef"
                       :src="cropSrc"
+                      :stencil-component="GuidedStencil"
                       :stencil-props="{ aspectRatio: 1 }"
                       :default-size="{ width: 300, height: 300 }"
                       class="w-full h-full"
@@ -235,12 +236,24 @@
 </template>
 
 <script setup>
-import { ref, shallowRef, computed, onMounted } from 'vue'
+import { ref, shallowRef, computed, onMounted, defineComponent, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Cropper } from 'vue-advanced-cropper'
+import { Cropper, RectangleStencil } from 'vue-advanced-cropper'
 import 'vue-advanced-cropper/dist/style.css'
 import { CatalogService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
+
+const GuidedStencil = defineComponent({
+  inheritAttrs: false,
+  setup(_, { attrs }) {
+    return () => h(RectangleStencil, attrs, {
+      default: () => h('div', { class: 'absolute inset-0 pointer-events-none' }, [
+        h('div', { style: 'position:absolute;top:50%;left:0;right:0;height:0;border-top:1.5px dashed rgba(255,255,255,0.4)' }),
+        h('div', { style: 'position:absolute;left:50%;top:0;bottom:0;width:0;border-left:1.5px dashed rgba(255,255,255,0.4)' }),
+      ])
+    })
+  }
+})
 
 const route = useRoute()
 const router = useRouter()
