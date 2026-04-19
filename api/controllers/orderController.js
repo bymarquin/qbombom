@@ -1,4 +1,5 @@
 const { Order, OrderItem, Product, ProductVariation, Customer, sequelize } = require('../models');
+const { Op } = require('sequelize');
 const { uploadFile } = require('../services/storageService');
 const whatsappService = require('../services/whatsappService');
 
@@ -48,7 +49,18 @@ async function notifyCustomer(order, status) {
 
 exports.index = async (req, res) => {
   try {
-    const where = req.query.status ? { status: req.query.status } : {};
+    const where = {}
+    if (req.query.status) where.status = req.query.status
+
+    const { dateFrom, dateTo } = req.query
+    if (dateFrom || dateTo) {
+      const from = dateFrom ? new Date(dateFrom) : new Date('2000-01-01')
+      const to = dateTo ? new Date(dateTo) : new Date()
+      from.setHours(0, 0, 0, 0)
+      to.setHours(23, 59, 59, 999)
+      where.createdAt = { [Op.between]: [from, to] }
+    }
+
     const orders = await Order.findAll({
       where,
       include: ORDER_INCLUDES,

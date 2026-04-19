@@ -9,7 +9,37 @@
           Gerencie e acompanhe o fluxo de pedidos da loja em tempo real.
         </p>
       </div>
-      <div class="flex gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
+        <!-- Atalhos de data -->
+        <div class="flex bg-neutral-100 dark:bg-neutral-800 rounded-lg p-1 gap-1">
+          <button
+            v-for="atalho in atalhosDatas"
+            :key="atalho.label"
+            @click="aplicarAtalho(atalho)"
+            class="px-3 py-1.5 text-xs font-semibold rounded-md transition-all"
+            :class="atalhoAtivo === atalho.label
+              ? 'bg-white dark:bg-neutral-900 text-red-600 shadow-sm'
+              : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'"
+          >
+            {{ atalho.label }}
+          </button>
+        </div>
+        <!-- Datas customizadas -->
+        <div class="flex items-center gap-1">
+          <input
+            type="date"
+            v-model="dateFrom"
+            @change="atalhoAtivo = 'Custom'; loadData()"
+            class="text-xs px-2 py-1.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 focus:outline-none focus:border-red-400"
+          />
+          <span class="text-xs text-neutral-400">até</span>
+          <input
+            type="date"
+            v-model="dateTo"
+            @change="atalhoAtivo = 'Custom'; loadData()"
+            class="text-xs px-2 py-1.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 focus:outline-none focus:border-red-400"
+          />
+        </div>
         <button
           @click="loadData"
           class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-sm font-semibold text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors shadow-sm"
@@ -272,6 +302,41 @@ const toast = useToastStore();
 const orders = shallowRef([]);
 const loadingData = ref(false);
 
+const toDateInput = (d) => d.toISOString().slice(0, 10)
+const hoje = toDateInput(new Date())
+const dateFrom = ref(hoje)
+const dateTo = ref(hoje)
+const atalhoAtivo = ref('Hoje')
+
+const atalhosDatas = [
+  {
+    label: 'Hoje',
+    get() { const d = toDateInput(new Date()); return { from: d, to: d } }
+  },
+  {
+    label: 'Ontem',
+    get() {
+      const d = new Date(); d.setDate(d.getDate() - 1)
+      const s = toDateInput(d); return { from: s, to: s }
+    }
+  },
+  {
+    label: '7 dias',
+    get() {
+      const d = new Date(); d.setDate(d.getDate() - 6)
+      return { from: toDateInput(d), to: toDateInput(new Date()) }
+    }
+  },
+]
+
+const aplicarAtalho = (atalho) => {
+  const { from, to } = atalho.get()
+  dateFrom.value = from
+  dateTo.value = to
+  atalhoAtivo.value = atalho.label
+  loadData()
+}
+
 function onOrderCreated(newOrder) {
   const exists = orders.value.some((o) => o.id === newOrder.id);
   if (!exists) {
@@ -298,7 +363,7 @@ function onOrderUpdated(updated) {
 const loadData = async () => {
   loadingData.value = true;
   try {
-    const res = await OrderService.getOrders();
+    const res = await OrderService.getOrders({ dateFrom: dateFrom.value, dateTo: dateTo.value });
     orders.value = res.data;
   } catch (error) {
     console.error("Falha ao buscar pedidos", error);

@@ -5,6 +5,7 @@ const MESSAGES_KEY = 'whatsapp_messages'
 const DEFAULT_MESSAGES = {
   em_preparo: '🍧 Seu pedido está sendo preparado! Em breve ficará pronto.',
   pronto: '✅ Seu pedido está pronto! Pode retirar ou aguardar a entrega.',
+  em_rota: '🛵 Seu pedido saiu para entrega! Acompanhe e confirme o recebimento pelo link abaixo:',
   finalizado: '🎉 Pedido finalizado. Obrigado pela preferência! Volte sempre 😊',
   cancelado: '❌ Seu pedido foi cancelado. Entre em contato se tiver dúvidas.',
 }

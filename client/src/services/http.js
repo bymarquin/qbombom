@@ -240,8 +240,11 @@ export const ImportService = {
 }
 
 export const OrderService = {
-  getOrders(status = '') {
-    const params = status ? { status } : {}
+  getOrders({ status = '', dateFrom = '', dateTo = '' } = {}) {
+    const params = {}
+    if (status) params.status = status
+    if (dateFrom) params.dateFrom = dateFrom
+    if (dateTo) params.dateTo = dateTo
     return api.get('/orders', { params })
   },
   getOrder(id) {

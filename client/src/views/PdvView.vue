@@ -780,6 +780,20 @@
           </div>
         </div>
 
+        <!-- Tela de confirmação PIX -->
+        <div v-if="aguardandoPix" class="p-6 bg-neutral-50 dark:bg-neutral-950 flex flex-col items-center gap-5 animate-in fade-in slide-in-from-bottom-2">
+          <div class="w-16 h-16 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+            <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <div class="text-center">
+            <p class="font-bold text-neutral-900 dark:text-neutral-100 text-lg">Aguardando PIX</p>
+            <p class="text-3xl font-black text-red-600 mt-1">{{ formatarMoeda(subtotal) }}</p>
+            <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-2">Confirme após receber o pagamento</p>
+          </div>
+        </div>
+
         <!-- Footer -->
         <div
           class="p-5 border-t border-neutral-100 dark:border-neutral-800/50 bg-white dark:bg-neutral-900 flex justify-between gap-3 shrink-0"
@@ -792,24 +806,31 @@
             Cancelar Pedido
           </button>
           <div class="flex gap-3">
-          <button
-            @click="fecharModalPagamento"
-            class="px-5 py-2.5 font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors"
-          >
-            Voltar
-          </button>
-          <button
-            @click="finalizarPedido"
-            :disabled="salvandoPedido"
-            class="px-6 py-2.5 font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-70 disabled:cursor-not-allowed rounded-lg shadow-sm dark:shadow-none hover:shadow-md dark:shadow-none transition-all duration-200 active:scale-[0.98] flex items-center gap-2"
-          >
-            <div
-              v-if="salvandoPedido"
-              class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
-            ></div>
-            {{ salvandoPedido ? 'Finalizando...' : 'Confirmar e Enviar' }}
-            <kbd v-if="!salvandoPedido" class="text-[10px] font-mono bg-red-700/50 text-red-100 px-1.5 py-0.5 rounded border border-red-500/50">Enter</kbd>
-          </button>
+            <button
+              @click="aguardandoPix ? (aguardandoPix = false) : fecharModalPagamento()"
+              class="px-5 py-2.5 font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors"
+            >
+              Voltar
+            </button>
+            <button
+              v-if="!aguardandoPix"
+              @click="metodoPagamentoSelecionado === 'PIX' ? (aguardandoPix = true) : finalizarPedido()"
+              :disabled="salvandoPedido"
+              class="px-6 py-2.5 font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-70 disabled:cursor-not-allowed rounded-lg shadow-sm dark:shadow-none transition-all duration-200 active:scale-[0.98] flex items-center gap-2"
+            >
+              Confirmar e Enviar
+              <kbd class="text-[10px] font-mono bg-red-700/50 text-red-100 px-1.5 py-0.5 rounded border border-red-500/50">Enter</kbd>
+            </button>
+            <button
+              v-else
+              @click="finalizarPedido"
+              :disabled="salvandoPedido"
+              class="px-6 py-2.5 font-semibold text-white bg-green-600 hover:bg-green-700 disabled:opacity-70 disabled:cursor-not-allowed rounded-lg shadow-sm dark:shadow-none transition-all duration-200 active:scale-[0.98] flex items-center gap-2"
+            >
+              <div v-if="salvandoPedido" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <Check v-else class="w-5 h-5" />
+              {{ salvandoPedido ? 'Finalizando...' : 'PIX Recebido — Confirmar' }}
+            </button>
           </div>
         </div>
       </div>
@@ -962,7 +983,10 @@ const atalhosTeclado = (e) => {
     case 'Enter':
       if (e.target.tagName === 'TEXTAREA') break
       if (modalAberto.value && podeConfirmarProduto.value && !loadingProduto.value) confirmarItem()
-      else if (modalPagamentoAberto.value && !salvandoPedido.value) finalizarPedido()
+      else if (modalPagamentoAberto.value && !salvandoPedido.value) {
+        if (metodoPagamentoSelecionado.value === 'PIX' && !aguardandoPix.value) aguardandoPix.value = true
+        else finalizarPedido()
+      }
       break
   }
 }
@@ -973,6 +997,7 @@ onUnmounted(() => window.removeEventListener('keydown', atalhosTeclado))
 const modalPagamentoAberto = ref(false)
 const metodosPagamento = ['PIX', 'Crédito', 'Débito', 'Dinheiro']
 const metodoPagamentoSelecionado = ref('PIX')
+const aguardandoPix = ref(false)
 
 const abrirModalPagamento = () => {
   if (carrinho.value.length === 0) return
@@ -982,6 +1007,7 @@ const abrirModalPagamento = () => {
 const fecharModalPagamento = () => {
   modalPagamentoAberto.value = false
   metodoPagamentoSelecionado.value = 'PIX'
+  aguardandoPix.value = false
 }
 
 const cancelarPedido = async () => {
@@ -1029,6 +1055,7 @@ const finalizarPedido = async () => {
     nomeCliente.value = ''
     telefoneCliente.value = ''
     enderecoEntrega.value = ''
+    aguardandoPix.value = false
     fecharModalPagamento()
     
     // Automaticamente imprime a via da cozinha/balcão
@@ -1063,7 +1090,8 @@ const calcularPeso = (preco, pricePerKg) => {
   return gramas >= 1000 ? `${(gramas / 1000).toFixed(2).replace('.', ',')} kg` : `${Math.round(gramas)} g`
 }
 const isSorvete = computed(() =>
-  produtoDetalhado.value?.additionalGroups?.some(g => g.stepperMode) ?? false
+  !isWeightBased.value &&
+  (produtoDetalhado.value?.additionalGroups?.some(g => g.stepperMode) ?? false)
 )
 const bolaPrice = computed(() =>
   bolaCount.value === 1 ? 4.00 : bolaCount.value * 3.50
