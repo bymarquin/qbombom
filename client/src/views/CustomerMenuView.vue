@@ -221,7 +221,7 @@
               <h3 class="font-bold text-neutral-900 dark:text-neutral-100 text-sm leading-tight mb-1 line-clamp-2">
                 {{ produto.name }}
               </h3>
-              <p class="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2 leading-relaxed">
+              <p v-if="produto.description" class="text-xs text-amber-600 dark:text-amber-400 font-medium line-clamp-2 leading-relaxed">
                 {{ produto.description }}
               </p>
             </div>

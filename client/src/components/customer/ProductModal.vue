@@ -23,7 +23,7 @@
               <img :src="produtoDetalhado.imageUrl" :alt="produtoDetalhado.name" class="w-full h-full object-cover" />
             </div>
 
-            <p v-if="produtoDetalhado.description" class="text-sm text-neutral-500 dark:text-neutral-500">
+            <p v-if="produtoDetalhado.description" class="text-sm text-amber-600 dark:text-amber-400 font-medium bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-lg px-3 py-2">
               {{ produtoDetalhado.description }}
             </p>
 
