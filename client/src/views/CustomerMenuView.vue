@@ -201,6 +201,7 @@
               v-if="produto.images && produto.images.length > 0"
               :images="produto.images.map(i => i.imageUrl)"
               container-class="w-full h-full"
+              :autoplay="3000"
             />
             <img
               v-else-if="produto.imageUrl"

@@ -5,6 +5,8 @@
     :class="containerClass"
     @touchstart.passive="onTouchStart"
     @touchend.passive="onTouchEnd"
+    @mouseenter="stopAutoplay"
+    @mouseleave="startAutoplay"
   >
     <!-- Images -->
     <div
@@ -63,12 +65,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 
 const props = defineProps({
   images: { type: Array, default: () => [] },
   containerClass: { type: String, default: '' },
   showControls: { type: Boolean, default: false },
+  autoplay: { type: Number, default: 0 },
 })
 
 const current = ref(0)
@@ -76,13 +79,28 @@ const current = ref(0)
 const prev = () => { current.value = (current.value - 1 + props.images.length) % props.images.length }
 const next = () => { current.value = (current.value + 1) % props.images.length }
 
+let timer = null
+
+const startAutoplay = () => {
+  if (!props.autoplay || props.images.length <= 1) return
+  timer = setInterval(next, props.autoplay)
+}
+
+const stopAutoplay = () => {
+  if (timer) { clearInterval(timer); timer = null }
+}
+
+onMounted(startAutoplay)
+onUnmounted(stopAutoplay)
+
 let touchStartX = 0
-const onTouchStart = (e) => { touchStartX = e.touches[0].clientX }
+const onTouchStart = (e) => { touchStartX = e.touches[0].clientX; stopAutoplay() }
 const onTouchEnd = (e) => {
   const diff = touchStartX - e.changedTouches[0].clientX
   if (Math.abs(diff) > 40) {
     if (diff > 0) next()
     else prev()
   }
+  startAutoplay()
 }
 </script>

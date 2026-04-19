@@ -28,6 +28,7 @@
                   ? produtoDetalhado.images.map(i => i.imageUrl)
                   : [produtoDetalhado.imageUrl]"
                 container-class="w-full h-full"
+                :autoplay="4000"
                 :show-controls="true"
               />
             </div>
