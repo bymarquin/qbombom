@@ -350,9 +350,7 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
 import { ShoppingBag, Trash2 } from "lucide-vue-next";
-import { useToastStore } from "@/stores/toast";
 import { formatarMoeda, mascararTelefone } from "@/utils/formatters";
 
 const isOpen = defineModel("isOpen", { type: Boolean, required: true });
@@ -379,8 +377,6 @@ defineProps({
 });
 
 const emit = defineEmits(["remover-item", "enviar-pedido"]);
-
-const toast = useToastStore();
 
 const fechar = () => {
   isOpen.value = false;

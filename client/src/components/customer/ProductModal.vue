@@ -166,7 +166,7 @@
                   Opcional
                 </span>
                 <span
-                  v-else-if="grupo.maxChoices === 1 && grupo.minChoices >= 1"
+                  v-else-if="!isSaborGroup(grupo) && grupo.maxChoices === 1 && grupo.minChoices >= 1"
                   class="bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-[10px] uppercase px-2 py-0.5 rounded font-bold border border-neutral-200 dark:border-neutral-800"
                 >
                   Obrigatório
@@ -174,11 +174,11 @@
                 <span
                   v-else-if="grupo.minChoices > 0"
                   class="text-xs font-semibold px-2 py-1 rounded-md border"
-                  :class="qtdSelecionadaNoGrupo(grupo.id) < grupo.minChoices
+                  :class="qtdSelecionadaNoGrupo(grupo.id) < minEfetivoGrupo(grupo)
                     ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-100 dark:border-red-800/50'
                     : 'bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700'"
                 >
-                  {{ qtdSelecionadaNoGrupo(grupo.id) }} / {{ grupo.minChoices }}
+                  {{ qtdSelecionadaNoGrupo(grupo.id) }} / {{ minEfetivoGrupo(grupo) }}
                 </span>
               </div>
 
@@ -215,7 +215,7 @@
               </div>
 
               <!-- Seleção única (radio style) -->
-              <div v-else-if="grupo.maxChoices === 1 && grupo.minChoices >= 1" class="flex flex-col gap-3">
+              <div v-else-if="!isSaborGroup(grupo) && grupo.maxChoices === 1 && grupo.minChoices >= 1" class="flex flex-col gap-3">
                 <label
                   v-for="add in grupo.items"
                   :key="add.id"
@@ -388,6 +388,18 @@ const totalSelecionado = computed(() => {
 });
 const atingiuLimite = computed(() => limiteGlobal.value !== null && totalSelecionado.value >= limiteGlobal.value);
 
+watch(bolaCount, (novo) => {
+  if (!isSorvete.value) return;
+  const gruposSabor = (props.produtoDetalhado?.additionalGroups ?? []).filter(g => !g.stepperMode && g.minChoices > 0);
+  for (const g of gruposSabor) {
+    const selecionados = itensSelecionadosNoGrupo(g.id);
+    if (selecionados.length > novo) {
+      const remover = new Set(selecionados.slice(novo).map(a => a.id));
+      adicionaisSelecionados.value = adicionaisSelecionados.value.filter(a => !remover.has(a.id));
+    }
+  }
+});
+
 watch(tamanhoSelecionado, () => {
   const max = limiteGlobal.value;
   if (max !== null && adicionaisSelecionados.value.length > max) {
@@ -407,8 +419,12 @@ const qtdSelecionadaNoGrupo = (grupoId) => itensSelecionadosNoGrupo(grupoId).len
 const isAdicionalSelecionado = (adicional) =>
   adicionaisSelecionados.value.some((a) => a.id === adicional.id);
 
+const isSaborGroup = (grupo) => isSorvete.value && !grupo.stepperMode && grupo.minChoices > 0;
+const maxEfetivoGrupo = (grupo) => isSaborGroup(grupo) ? bolaCount.value : grupo.maxChoices;
+const minEfetivoGrupo = (grupo) => isSaborGroup(grupo) ? bolaCount.value : grupo.minChoices;
+
 const estaBloqueado = (adicional, grupo) =>
-  !isAdicionalSelecionado(adicional) && (atingiuLimite.value || qtdSelecionadaNoGrupo(grupo.id) >= grupo.maxChoices);
+  !isAdicionalSelecionado(adicional) && (atingiuLimite.value || qtdSelecionadaNoGrupo(grupo.id) >= maxEfetivoGrupo(grupo));
 
 const selecionarUnico = (add, grupo) => {
   adicionaisSelecionados.value = adicionaisSelecionados.value.filter((a) => a.grupoId !== grupo.id);
@@ -423,7 +439,7 @@ const podeProsseguir = computed(() => {
   }
   if (!isSorvete.value && props.produtoDetalhado.variations?.length > 0 && !tamanhoSelecionado.value) return false;
   return props.produtoDetalhado.additionalGroups?.every(
-    (grupo) => grupo.stepperMode || grupo.minChoices === 0 || qtdSelecionadaNoGrupo(grupo.id) >= grupo.minChoices
+    (grupo) => grupo.stepperMode || grupo.minChoices === 0 || qtdSelecionadaNoGrupo(grupo.id) >= minEfetivoGrupo(grupo)
   ) ?? true;
 });
 
