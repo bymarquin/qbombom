@@ -419,7 +419,7 @@ const qtdSelecionadaNoGrupo = (grupoId) => itensSelecionadosNoGrupo(grupoId).len
 const isAdicionalSelecionado = (adicional) =>
   adicionaisSelecionados.value.some((a) => a.id === adicional.id);
 
-const isSaborGroup = (grupo) => isSorvete.value && !grupo.stepperMode && grupo.minChoices > 0;
+const isSaborGroup = (grupo) => !!grupo.isSaborGroup;
 const maxEfetivoGrupo = (grupo) => isSaborGroup(grupo) ? bolaCount.value : grupo.maxChoices;
 const minEfetivoGrupo = (grupo) => isSaborGroup(grupo) ? bolaCount.value : grupo.minChoices;
 

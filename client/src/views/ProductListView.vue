@@ -501,6 +501,16 @@
                   </div>
                   <span class="text-xs text-neutral-600 dark:text-neutral-400">Modo stepper (quantidade por item)</span>
                 </label>
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                  <div
+                    class="relative w-9 h-5 rounded-full transition-colors"
+                    :class="groupForm.isSaborGroup ? 'bg-red-600' : 'bg-neutral-300 dark:bg-neutral-600'"
+                    @click="groupForm.isSaborGroup = !groupForm.isSaborGroup"
+                  >
+                    <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform" :class="groupForm.isSaborGroup ? 'translate-x-4' : ''"></div>
+                  </div>
+                  <span class="text-xs text-neutral-600 dark:text-neutral-400">Grupo de sabores do sorvete (limite = nº de bolas)</span>
+                </label>
                 <div class="flex justify-end gap-2">
                   <button type="button" @click="cancelGroupForm" class="px-3 py-1.5 text-xs text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 rounded hover:bg-neutral-200 transition-colors">Cancelar</button>
                   <button type="submit" class="px-3 py-1.5 text-xs text-white bg-indigo-600 rounded hover:bg-indigo-700 transition-colors">Salvar</button>
@@ -767,7 +777,7 @@ const toggleAssign = async (group) => {
 }
 
 const openNewGroupForm = () => {
-  groupForm.value = { id: null, name: '', minChoices: 0, maxChoices: 5, freeChoices: 0, stepperMode: false }
+  groupForm.value = { id: null, name: '', minChoices: 0, maxChoices: 5, freeChoices: 0, stepperMode: false, isSaborGroup: false }
   isCreatingGroup.value = true
 }
 
@@ -783,6 +793,7 @@ const editGroup = (group) => {
     maxChoices: group.maxChoices ?? 5,
     freeChoices: group.freeChoices ?? 0,
     stepperMode: group.stepperMode ?? false,
+    isSaborGroup: group.isSaborGroup ?? false,
   }
   isCreatingGroup.value = true
 }

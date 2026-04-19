@@ -15,13 +15,14 @@ exports.getAllGroups = async (req, res) => {
 
 exports.createGroup = async (req, res) => {
   try {
-    const { name, minChoices, maxChoices, freeChoices, stepperMode } = req.body;
+    const { name, minChoices, maxChoices, freeChoices, stepperMode, isSaborGroup } = req.body;
     const group = await AdditionalGroup.create({
       name,
       minChoices: minChoices ?? 0,
       maxChoices: maxChoices ?? 99,
       freeChoices: freeChoices ?? 0,
       stepperMode: stepperMode ?? false,
+      isSaborGroup: isSaborGroup ?? false,
     });
     res.status(201).json(group);
   } catch (error) {
@@ -33,8 +34,8 @@ exports.updateGroup = async (req, res) => {
   try {
     const group = await AdditionalGroup.findByPk(req.params.id);
     if (!group) return res.status(404).json({ error: 'Group not found' });
-    const { name, minChoices, maxChoices, freeChoices, stepperMode } = req.body;
-    await group.update({ name, minChoices, maxChoices, freeChoices, stepperMode });
+    const { name, minChoices, maxChoices, freeChoices, stepperMode, isSaborGroup } = req.body;
+    await group.update({ name, minChoices, maxChoices, freeChoices, stepperMode, isSaborGroup });
     res.json(group);
   } catch (error) {
     res.status(500).json({ error: 'Failed to update group' });
