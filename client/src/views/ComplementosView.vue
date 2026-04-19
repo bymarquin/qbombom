@@ -3,13 +3,7 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-8 shrink-0">
       <div>
-        <div class="flex items-center gap-2 mb-1">
-          <RouterLink to="/app/produtos" class="text-sm text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 transition-colors">
-            Produtos
-          </RouterLink>
-          <span class="text-neutral-300 dark:text-neutral-600">/</span>
-          <h1 class="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">Complementos</h1>
-        </div>
+        <h1 class="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-1 tracking-tight">Complementos</h1>
         <p class="text-sm text-neutral-500 dark:text-neutral-500">{{ productName }}</p>
       </div>
       <RouterLink
