@@ -1,4 +1,77 @@
 const { sequelize, Category, Product, ProductVariation, AdditionalGroup, AdditionalItem, ProductAdditionalGroup } = require('../models');
+const { Op } = require('sequelize');
+
+exports.deduplicateGroups = async (req, res) => {
+  try {
+    const removed = []
+
+    await sequelize.transaction(async (t) => {
+      const allGroups = await AdditionalGroup.findAll({
+        include: [{ model: AdditionalItem, as: 'items' }],
+        order: [['createdAt', 'ASC']],
+        transaction: t,
+      })
+
+      // Agrupar por nome
+      const byName = {}
+      for (const g of allGroups) {
+        if (!byName[g.name]) byName[g.name] = []
+        byName[g.name].push(g)
+      }
+
+      for (const [name, groups] of Object.entries(byName)) {
+        if (groups.length <= 1) continue
+
+        // Manter o que tem mais itens; em empate, o mais antigo (já vem ordenado por createdAt)
+        const keeper = groups.reduce((best, g) =>
+          g.items.length > best.items.length ? g : best
+        , groups[0])
+
+        const duplicates = groups.filter((g) => g.id !== keeper.id)
+
+        for (const dup of duplicates) {
+          // Redirecionar vínculos para o keeper (ignorar conflito de PK duplicada)
+          const links = await ProductAdditionalGroup.findAll({
+            where: { additionalGroupId: dup.id },
+            transaction: t,
+          })
+
+          for (const link of links) {
+            const alreadyLinked = await ProductAdditionalGroup.findOne({
+              where: { productId: link.productId, additionalGroupId: keeper.id },
+              transaction: t,
+            })
+            if (!alreadyLinked) {
+              await ProductAdditionalGroup.create(
+                { productId: link.productId, additionalGroupId: keeper.id },
+                { transaction: t }
+              )
+            }
+          }
+
+          await ProductAdditionalGroup.destroy({
+            where: { additionalGroupId: dup.id },
+            transaction: t,
+          })
+          await AdditionalItem.destroy({
+            where: { additionalGroupId: dup.id },
+            transaction: t,
+          })
+          await dup.destroy({ transaction: t })
+          removed.push({ name, removedId: dup.id, keptId: keeper.id })
+        }
+      }
+    })
+
+    res.json({
+      message: `${removed.length} grupo(s) duplicado(s) removido(s).`,
+      removed,
+    })
+  } catch (error) {
+    console.error('[deduplicateGroups]', error)
+    res.status(500).json({ error: error.message })
+  }
+}
 
 exports.importCatalog = async (req, res) => {
   const { categories } = req.body;
@@ -50,30 +123,36 @@ exports.importCatalog = async (req, res) => {
           for (const [groupIndex, groupData] of (prodData.additionalGroups || []).entries()) {
             if (!groupData.name) continue;
 
-            const group = await AdditionalGroup.create({
-              name: groupData.name,
-              minChoices: groupData.minChoices ?? 0,
-              maxChoices: groupData.maxChoices ?? 1,
-              freeChoices: groupData.freeChoices ?? 0,
-              stepperMode: groupData.stepperMode ?? false,
-              position: groupIndex,
-            }, { transaction: t });
-            summary.groups++;
+            const [group, created] = await AdditionalGroup.findOrCreate({
+              where: { name: groupData.name },
+              defaults: {
+                minChoices: groupData.minChoices ?? 0,
+                maxChoices: groupData.maxChoices ?? 1,
+                freeChoices: groupData.freeChoices ?? 0,
+                stepperMode: groupData.stepperMode ?? false,
+                isSaborGroup: groupData.isSaborGroup ?? false,
+                position: groupIndex,
+              },
+              transaction: t,
+            });
+            if (created) summary.groups++;
 
-            await ProductAdditionalGroup.create({
-              productId: product.id,
-              additionalGroupId: group.id,
-            }, { transaction: t });
+            await ProductAdditionalGroup.findOrCreate({
+              where: { productId: product.id, additionalGroupId: group.id },
+              transaction: t,
+            });
 
-            for (const itemData of (groupData.items || [])) {
-              if (!itemData.name) continue;
-              await AdditionalItem.create({
-                name: itemData.name,
-                price: itemData.price ?? 0,
-                status: true,
-                additionalGroupId: group.id,
-              }, { transaction: t });
-              summary.items++;
+            if (created) {
+              for (const itemData of (groupData.items || [])) {
+                if (!itemData.name) continue;
+                await AdditionalItem.create({
+                  name: itemData.name,
+                  price: itemData.price ?? 0,
+                  status: true,
+                  additionalGroupId: group.id,
+                }, { transaction: t });
+                summary.items++;
+              }
             }
           }
         }

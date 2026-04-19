@@ -6,12 +6,23 @@
         <h1 class="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-1 tracking-tight">Complementos</h1>
         <p class="text-sm text-neutral-500 dark:text-neutral-500">{{ productName }}</p>
       </div>
-      <RouterLink
-        to="/app/produtos"
-        class="bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-neutral-200 dark:hover:bg-neutral-700"
-      >
-        Voltar
-      </RouterLink>
+      <div class="flex items-center gap-2">
+        <button
+          @click="deduplicar"
+          :disabled="deduplicando"
+          class="text-xs font-medium text-neutral-500 hover:text-red-600 dark:hover:text-red-400 flex items-center gap-1 px-3 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all disabled:opacity-50"
+          title="Remove grupos com o mesmo nome, mantendo apenas um"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          {{ deduplicando ? 'Limpando...' : 'Limpar duplicatas' }}
+        </button>
+        <RouterLink
+          to="/app/produtos"
+          class="bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+        >
+          Voltar
+        </RouterLink>
+      </div>
     </div>
 
     <!-- Conteúdo (estrutura do modal) -->
@@ -189,7 +200,7 @@
 import { ref, shallowRef, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { Pencil, Trash2 } from 'lucide-vue-next'
-import { AdditionalService, CatalogService } from '@/services/http'
+import { AdditionalService, CatalogService, ImportService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 import { useDialogStore } from '@/stores/dialog'
 
@@ -207,6 +218,7 @@ const isCreatingGroup = ref(false)
 const groupForm = ref({ id: null, name: '' })
 const newItemForm = ref({})
 const groupSearch = ref('')
+const deduplicando = ref(false)
 
 onMounted(() => loadGroups())
 
@@ -345,6 +357,19 @@ const saveItem = async (groupId) => {
   } catch (error) {
     console.error(error)
     toast.error('Erro ao adicionar item')
+  }
+}
+
+const deduplicar = async () => {
+  deduplicando.value = true
+  try {
+    const { data } = await ImportService.deduplicateGroups()
+    toast.success(data.message)
+    await loadGroups()
+  } catch {
+    toast.error('Erro ao limpar duplicatas')
+  } finally {
+    deduplicando.value = false
   }
 }
 

@@ -231,6 +231,9 @@ export const ImportService = {
   importCatalog(data) {
     return api.post('/import', data)
   },
+  deduplicateGroups() {
+    return api.post('/import/deduplicate-groups')
+  },
 }
 
 export const OrderService = {
