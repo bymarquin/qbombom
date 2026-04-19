@@ -26,6 +26,14 @@
             Novo grupo
           </button>
         </div>
+        <div class="px-4 py-2 border-b border-neutral-100 dark:border-neutral-800/50 shrink-0">
+          <input
+            v-model="groupSearch"
+            type="text"
+            placeholder="Buscar grupo..."
+            class="w-full px-3 py-1.5 text-xs border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:border-red-400"
+          />
+        </div>
 
         <div class="flex-1 overflow-y-auto p-4 space-y-3">
           <div v-if="loadingGroups" class="flex justify-center py-8">
@@ -34,6 +42,9 @@
 
           <div v-else-if="allGroups.length === 0" class="text-center py-8 text-neutral-400 text-sm">
             Nenhum grupo criado ainda.
+          </div>
+          <div v-else-if="sortedGroups.length === 0" class="text-center py-8 text-neutral-400 text-sm">
+            Nenhum grupo encontrado.
           </div>
 
           <div
@@ -130,17 +141,23 @@
 
       <!-- Coluna direita: grupos vinculados ao produto -->
       <div class="w-1/2 flex flex-col overflow-hidden">
-        <div class="px-5 py-3 border-b border-neutral-100 dark:border-neutral-800/50 shrink-0">
+        <div class="px-5 py-3 border-b border-neutral-100 dark:border-neutral-800/50 shrink-0 flex items-center justify-between">
           <span class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Vinculados a este produto</span>
+          <span v-if="assignedGroupIds.size > 0" class="text-xs font-semibold text-red-600 bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded-full">
+            {{ assignedGroupIds.size }}
+          </span>
         </div>
 
         <div class="flex-1 overflow-y-auto p-4 space-y-2">
           <div v-if="allGroups.length === 0" class="text-center py-8 text-neutral-400 text-sm">
             Crie grupos ao lado primeiro.
           </div>
+          <div v-else-if="sortedGroupsForAssign.length === 0" class="text-center py-8 text-neutral-400 text-sm">
+            Nenhum grupo encontrado.
+          </div>
 
           <div
-            v-for="group in allGroups"
+            v-for="group in sortedGroupsForAssign"
             :key="group.id"
             @click="toggleAssign(group)"
             class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all"
@@ -154,9 +171,12 @@
             >
               <svg v-if="isAssigned(group.id)" class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
             </div>
-            <div>
+            <div class="min-w-0">
               <p class="text-sm font-medium text-neutral-900 dark:text-neutral-100">{{ group.name }}</p>
-              <p class="text-xs text-neutral-400">{{ group.items?.length || 0 }} opções</p>
+              <p v-if="group.items?.length" class="text-xs text-neutral-400 truncate">
+                {{ group.items.map(i => i.name).join(' · ') }}
+              </p>
+              <p v-else class="text-xs text-neutral-400">Sem itens</p>
             </div>
           </div>
         </div>
@@ -186,6 +206,7 @@ const loadingGroups = ref(false)
 const isCreatingGroup = ref(false)
 const groupForm = ref({ id: null, name: '' })
 const newItemForm = ref({})
+const groupSearch = ref('')
 
 onMounted(() => loadGroups())
 
@@ -214,9 +235,31 @@ const loadGroups = async () => {
 
 const isAssigned = (groupId) => assignedGroupIds.value.has(groupId)
 
+const filteredGroups = computed(() => {
+  const q = groupSearch.value.trim().toLowerCase()
+  if (!q) return allGroups.value
+  return allGroups.value.filter((g) =>
+    g.name.toLowerCase().includes(q) ||
+    g.items?.some((i) => i.name.toLowerCase().includes(q))
+  )
+})
+
 const sortedGroups = computed(() => {
-  const assigned = allGroups.value.filter((g) => isAssigned(g.id))
-  const rest = allGroups.value.filter((g) => !isAssigned(g.id))
+  const assigned = filteredGroups.value.filter((g) => isAssigned(g.id))
+  const rest = filteredGroups.value.filter((g) => !isAssigned(g.id))
+  return [...assigned, ...rest]
+})
+
+const sortedGroupsForAssign = computed(() => {
+  const q = groupSearch.value.trim().toLowerCase()
+  const list = q
+    ? allGroups.value.filter((g) =>
+        g.name.toLowerCase().includes(q) ||
+        g.items?.some((i) => i.name.toLowerCase().includes(q))
+      )
+    : allGroups.value
+  const assigned = list.filter((g) => isAssigned(g.id))
+  const rest = list.filter((g) => !isAssigned(g.id))
   return [...assigned, ...rest]
 })
 
