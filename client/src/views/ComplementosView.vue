@@ -118,7 +118,7 @@
               >
                 <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform" :class="groupForm.isSaborGroup ? 'translate-x-4' : ''"></div>
               </div>
-              <span class="text-xs text-neutral-600 dark:text-neutral-400">Grupo de sabores do sorvete (limite = nº de bolas)</span>
+              <span class="text-xs text-neutral-600 dark:text-neutral-400">Grupo de sabores</span>
             </label>
             <div class="flex justify-end gap-2">
               <button type="button" @click="cancelGroupForm" class="px-3 py-1.5 text-xs text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 rounded hover:bg-neutral-200 transition-colors">Cancelar</button>
