@@ -228,6 +228,9 @@ export const AdditionalService = {
 }
 
 export const ImportService = {
+  exportCatalog() {
+    return api.get('/import/export')
+  },
   importCatalog(data) {
     return api.post('/import', data)
   },

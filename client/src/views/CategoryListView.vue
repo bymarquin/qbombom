@@ -11,6 +11,14 @@
       </div>
       <div class="flex gap-2">
         <button
+          @click="exportarJson"
+          :disabled="exportando"
+          class="bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 flex items-center justify-center gap-2 disabled:opacity-50"
+        >
+          <Download class="w-4 h-4" />
+          {{ exportando ? 'Exportando...' : 'Exportar JSON' }}
+        </button>
+        <button
           @click="showImportModal = true"
           class="bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 flex items-center justify-center gap-2"
         >
@@ -241,7 +249,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Pencil, Trash2, Upload } from 'lucide-vue-next'
+import { Pencil, Trash2, Upload, Download } from 'lucide-vue-next'
 import { CatalogService, ImportService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 import { useDialogStore } from '@/stores/dialog'
@@ -316,6 +324,26 @@ const deleteCategory = async (id) => {
 
 // --- IMPORTAÇÃO JSON ---
 const showImportModal = ref(false)
+const exportando = ref(false)
+
+const exportarJson = async () => {
+  exportando.value = true
+  try {
+    const { data } = await ImportService.exportCatalog()
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `catalogo_${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch {
+    toast.error('Erro ao exportar catálogo.')
+  } finally {
+    exportando.value = false
+  }
+}
+
 const importJson = ref('')
 const jsonError = ref('')
 const importing = ref(false)

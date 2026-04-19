@@ -1,6 +1,60 @@
 const { sequelize, Category, Product, ProductVariation, AdditionalGroup, AdditionalItem, ProductAdditionalGroup } = require('../models');
 const { Op } = require('sequelize');
 
+exports.exportCatalog = async (req, res) => {
+  try {
+    const categories = await Category.findAll({
+      include: [{
+        model: Product,
+        as: 'products',
+        include: [
+          { model: ProductVariation, as: 'variations', order: [['createdAt', 'ASC']] },
+          {
+            model: AdditionalGroup,
+            as: 'additionalGroups',
+            through: { attributes: [] },
+            include: [{ model: AdditionalItem, as: 'items', order: [['createdAt', 'ASC']] }],
+          },
+        ],
+      }],
+      order: [['createdAt', 'ASC']],
+    })
+
+    const output = {
+      categories: categories.map((cat) => ({
+        name: cat.name,
+        products: (cat.products || []).map((prod) => ({
+          name: prod.name,
+          ...(prod.description ? { description: prod.description } : {}),
+          ...(prod.weightBased ? { weightBased: true, pricePerKg: prod.pricePerKg, minPrice: prod.minPrice } : {}),
+          variations: (prod.variations || []).map((v) => ({
+            name: v.name,
+            price: parseFloat(v.price),
+            ...(v.maxAdditionals != null ? { maxAdditionals: v.maxAdditionals } : {}),
+          })),
+          additionalGroups: (prod.additionalGroups || []).map((g) => ({
+            name: g.name,
+            minChoices: g.minChoices,
+            maxChoices: g.maxChoices,
+            freeChoices: g.freeChoices,
+            ...(g.stepperMode ? { stepperMode: true } : {}),
+            ...(g.isSaborGroup ? { isSaborGroup: true } : {}),
+            items: (g.items || []).map((i) => ({
+              name: i.name,
+              price: parseFloat(i.price),
+            })),
+          })),
+        })),
+      })),
+    }
+
+    res.json(output)
+  } catch (error) {
+    console.error('[exportCatalog]', error)
+    res.status(500).json({ error: error.message })
+  }
+}
+
 exports.deduplicateGroups = async (req, res) => {
   try {
     const removed = []
