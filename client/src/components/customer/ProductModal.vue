@@ -365,7 +365,8 @@ const calcularPeso = (preco, pricePerKg) => {
   return gramas >= 1000 ? `${(gramas / 1000).toFixed(2).replace('.', ',')} kg` : `${Math.round(gramas)} g`;
 };
 const isSorvete = computed(() =>
-  props.produtoDetalhado?.additionalGroups?.some(g => g.stepperMode) ?? false
+  !isWeightBased.value &&
+  (props.produtoDetalhado?.additionalGroups?.some(g => g.stepperMode) ?? false)
 );
 
 const bolaPrice = computed(() =>
