@@ -452,45 +452,54 @@
                 Notificações automáticas de status do pedido para o cliente
               </p>
             </div>
-            <button
-              @click="recarregarStatus"
-              :disabled="waLoading"
-              class="text-sm px-3 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
-            >
-              {{ waLoading ? "Verificando..." : "Atualizar status" }}
-            </button>
+            <div class="flex items-center gap-2">
+              <button
+                @click="reconectarWhatsapp"
+                v-if="waStatus !== 'open'"
+                :disabled="waLoadingAction"
+                class="text-sm px-3 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors disabled:opacity-50"
+              >
+                {{ waLoadingAction ? "Conectando..." : "Reconectar" }}
+              </button>
+              <button
+                @click="desconectarWhatsapp"
+                v-else
+                :disabled="waLoadingAction"
+                class="text-sm px-3 py-1.5 rounded-lg border border-amber-200 dark:border-amber-900/50 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors disabled:opacity-50"
+              >
+                {{ waLoadingAction ? "Desconectando..." : "Desconectar" }}
+              </button>
+              <button
+                @click="recarregarStatus"
+                :disabled="waLoading"
+                class="text-sm px-3 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
+              >
+                {{ waLoading ? "Verificando..." : "Atualizar status" }}
+              </button>
+            </div>
           </div>
 
           <!-- Status -->
           <div
             class="flex items-center gap-3 p-4 rounded-xl border"
-            :class="
-              waStatus === 'open'
-                ? 'border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-900/10'
-                : 'border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/30'
-            "
+            :class="waStatusMeta.containerClass"
           >
             <div
               class="w-3 h-3 rounded-full shrink-0"
-              :class="waStatus === 'open' ? 'bg-green-500 animate-pulse' : 'bg-neutral-400'"
+              :class="waStatusMeta.dotClass"
             />
             <div>
-              <p
-                class="font-semibold text-sm"
-                :class="
-                  waStatus === 'open'
-                    ? 'text-green-700 dark:text-green-400'
-                    : 'text-neutral-700 dark:text-neutral-300'
-                "
-              >
-                {{ waStatus === "open" ? "Conectado" : "Desconectado" }}
+              <p class="font-semibold text-sm" :class="waStatusMeta.labelClass">
+                {{ waStatusMeta.label }}
               </p>
               <p class="text-xs text-neutral-500 dark:text-neutral-400">
-                {{
-                  waStatus === "open"
-                    ? "Envio de mensagens ativo"
-                    : "Escaneie o QR Code para conectar"
-                }}
+                {{ waStatusMeta.description }}
+              </p>
+              <p v-if="waRawStatus" class="text-[11px] text-neutral-400 mt-1">
+                Status técnico: {{ waRawStatus }}
+              </p>
+              <p v-if="waLastError" class="text-[11px] text-red-500 mt-1">
+                Erro: {{ waLastError }}
               </p>
             </div>
           </div>
@@ -562,10 +571,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch } from "vue";
+import { ref, reactive, watch, computed, onMounted, onUnmounted } from "vue";
 import { useToastStore } from "@/stores/toast";
 import { SettingService, WhatsAppService } from "@/services/http";
-import { onMounted } from "vue";
 import { mascararTelefone, limparTelefone } from "@/utils/formatters";
 import {
   Save,
@@ -589,14 +597,109 @@ const isSaving = ref(false);
 const waStatus = ref("disconnected");
 const waQrCode = ref(null);
 const waLoading = ref(false);
+const waLoadingAction = ref(false);
+const waRawStatus = ref(null);
+const waLastError = ref("");
+const waPollingInFlight = ref(false);
+let waPollTimer = null;
+let waPollMs = 0;
+
+const waStatusMeta = computed(() => {
+  if (waStatus.value === "open") {
+    return {
+      label: "Conectado",
+      description: "Envio de mensagens ativo",
+      containerClass: "border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-900/10",
+      dotClass: "bg-green-500 animate-pulse",
+      labelClass: "text-green-700 dark:text-green-400",
+    };
+  }
+
+  if (waStatus.value === "connecting") {
+    return {
+      label: "Conectando",
+      description: "Aguardando pareamento/QR Code",
+      containerClass: "border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-900/10",
+      dotClass: "bg-amber-500 animate-pulse",
+      labelClass: "text-amber-700 dark:text-amber-400",
+    };
+  }
+
+  if (waStatus.value === "error") {
+    return {
+      label: "Com erro",
+      description: "Falha ao consultar instância. Tente reconectar.",
+      containerClass: "border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/10",
+      dotClass: "bg-red-500",
+      labelClass: "text-red-700 dark:text-red-400",
+    };
+  }
+
+  return {
+    label: "Desconectado",
+    description: "Escaneie o QR Code para conectar",
+    containerClass: "border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/30",
+    dotClass: "bg-neutral-400",
+    labelClass: "text-neutral-700 dark:text-neutral-300",
+  };
+});
+
+const applyWaStatus = (data = {}) => {
+  waStatus.value = data.status || "disconnected";
+  waRawStatus.value = data.rawStatus || null;
+  waLastError.value = data.lastError || "";
+  if (waStatus.value === "open") waQrCode.value = null;
+};
+
+const getWaPollInterval = () => {
+  if (waStatus.value === "connecting") return 5000;
+  if (waStatus.value !== "open" && waQrCode.value) return 5000;
+  return 15000;
+};
+
+const stopWaPolling = () => {
+  if (waPollTimer) {
+    clearInterval(waPollTimer);
+    waPollTimer = null;
+  }
+};
+
+const pollWaStatus = async () => {
+  if (waPollingInFlight.value || waLoading.value || waLoadingAction.value) return;
+  waPollingInFlight.value = true;
+  try {
+    await recarregarStatus();
+    if (waStatus.value !== "open" && !waQrCode.value) {
+      await buscarQRCode();
+    }
+  } finally {
+    waPollingInFlight.value = false;
+  }
+};
+
+const restartWaPolling = () => {
+  if (currentTab.value !== "whatsapp") {
+    stopWaPolling();
+    return;
+  }
+
+  const nextInterval = getWaPollInterval();
+  if (waPollTimer && waPollMs === nextInterval) return;
+
+  stopWaPolling();
+  waPollMs = nextInterval;
+  waPollTimer = setInterval(() => {
+    pollWaStatus();
+  }, waPollMs);
+};
 
 const recarregarStatus = async () => {
   waLoading.value = true;
   try {
     const { data } = await WhatsAppService.getStatus();
-    waStatus.value = data.status;
+    applyWaStatus(data);
   } catch {
-    waStatus.value = "disconnected";
+    applyWaStatus({ status: "error", lastError: "Falha ao consultar status." });
   } finally {
     waLoading.value = false;
   }
@@ -615,12 +718,43 @@ const criarInstancia = async () => {
   waLoading.value = true;
   try {
     await WhatsAppService.createInstance();
+    await recarregarStatus();
     await buscarQRCode();
   } catch {
     // instância já existe, tenta pegar o QR Code direto
     await buscarQRCode();
   } finally {
     waLoading.value = false;
+  }
+};
+
+const desconectarWhatsapp = async () => {
+  waLoadingAction.value = true;
+  try {
+    await WhatsAppService.disconnect();
+    waQrCode.value = null;
+    await recarregarStatus();
+    toast.success("WhatsApp desconectado com sucesso.");
+  } catch {
+    toast.error("Erro ao desconectar WhatsApp");
+  } finally {
+    waLoadingAction.value = false;
+  }
+};
+
+const reconectarWhatsapp = async () => {
+  waLoadingAction.value = true;
+  try {
+    await WhatsAppService.reconnect();
+    await recarregarStatus();
+    if (waStatus.value !== "open") {
+      await buscarQRCode();
+    }
+    toast.success("Reconexão iniciada.");
+  } catch {
+    toast.error("Erro ao reconectar WhatsApp");
+  } finally {
+    waLoadingAction.value = false;
   }
 };
 
@@ -663,9 +797,19 @@ const salvarMensagens = async () => {
 
 watch(currentTab, (tab) => {
   if (tab === "whatsapp") {
-    recarregarStatus();
+    recarregarStatus().then(() => {
+      if (waStatus.value !== "open") return buscarQRCode();
+      return null;
+    });
     carregarMensagens();
+    restartWaPolling();
+  } else {
+    stopWaPolling();
   }
+});
+
+watch([waStatus, waQrCode, currentTab], () => {
+  restartWaPolling();
 });
 
 // Abas de Configuração
@@ -801,6 +945,10 @@ const carregarConfiguracoes = async () => {
 
 onMounted(() => {
   carregarConfiguracoes();
+});
+
+onUnmounted(() => {
+  stopWaPolling();
 });
 
 const salvarConfiguracoes = async () => {

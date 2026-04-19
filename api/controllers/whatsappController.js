@@ -28,16 +28,8 @@ exports.updateMessages = async (req, res) => {
 }
 
 exports.getStatus = async (req, res) => {
-  try {
-    const instances = await whatsappService.getInstance()
-    const instanceName = process.env.EVOLUTION_INSTANCE || 'qbombom'
-    const instance = Array.isArray(instances)
-      ? instances.find((i) => i.name === instanceName)
-      : null
-    res.json({ status: instance?.connectionStatus || 'disconnected', instance })
-  } catch (error) {
-    res.json({ status: 'disconnected', error: error.message })
-  }
+  const data = await whatsappService.getConnectionStatus()
+  res.json(data)
 }
 
 exports.getQRCode = async (req, res) => {
@@ -55,5 +47,23 @@ exports.createInstance = async (req, res) => {
     res.json(data)
   } catch (error) {
     res.status(500).json({ error: error.message })
+  }
+}
+
+exports.disconnectInstance = async (req, res) => {
+  try {
+    const data = await whatsappService.disconnectInstance()
+    res.json({ success: true, data })
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message })
+  }
+}
+
+exports.reconnectInstance = async (req, res) => {
+  try {
+    const data = await whatsappService.reconnectInstance()
+    res.json({ success: true, data })
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message })
   }
 }

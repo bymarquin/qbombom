@@ -304,6 +304,8 @@ export const WhatsAppService = {
   getStatus() { return api.get('/whatsapp/status') },
   getQRCode() { return api.get('/whatsapp/qrcode') },
   createInstance() { return api.post('/whatsapp/instance') },
+  disconnect() { return api.post('/whatsapp/disconnect') },
+  reconnect() { return api.post('/whatsapp/reconnect') },
   getMessages() { return api.get('/whatsapp/messages') },
   updateMessages(data) { return api.put('/whatsapp/messages', data) },
 }

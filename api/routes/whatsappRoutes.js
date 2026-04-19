@@ -10,6 +10,8 @@ router.use(requireRoles(['SUPER_ADMIN', 'MANAGER']))
 router.get('/status', whatsappController.getStatus)
 router.get('/qrcode', whatsappController.getQRCode)
 router.post('/instance', whatsappController.createInstance)
+router.post('/disconnect', whatsappController.disconnectInstance)
+router.post('/reconnect', whatsappController.reconnectInstance)
 router.get('/messages', whatsappController.getMessages)
 router.put('/messages', whatsappController.updateMessages)
 

@@ -20,6 +20,35 @@ const client = axios.create({
   timeout: 8000,
 })
 
+const requestFirstSuccess = async (candidates) => {
+  let lastError = null
+
+  for (const candidate of candidates) {
+    const { method, url, data } = candidate
+    try {
+      const response = await client.request({ method, url, data })
+      return response.data
+    } catch (error) {
+      lastError = error
+    }
+  }
+
+  throw lastError || new Error('Falha ao executar ação no WhatsApp')
+}
+
+const normalizeStatus = (rawStatus) => {
+  const value = String(rawStatus || '').toLowerCase()
+
+  if (!value) return 'disconnected'
+  if (['open', 'connected', 'online'].some((s) => value.includes(s))) return 'open'
+  if (['connecting', 'pairing', 'qrcode', 'qr', 'scan'].some((s) => value.includes(s))) return 'connecting'
+  if (['close', 'closed', 'disconnected', 'logout', 'offline'].some((s) => value.includes(s))) {
+    return 'disconnected'
+  }
+
+  return 'disconnected'
+}
+
 const DEFAULT_MESSAGES = {
   em_preparo: '🍧 Seu pedido está sendo preparado! Em breve ficará pronto.',
   pronto: '✅ Seu pedido está pronto! Pode retirar ou aguardar a entrega.',
@@ -174,6 +203,35 @@ exports.getInstance = async () => {
   return data
 }
 
+exports.getConnectionStatus = async () => {
+  try {
+    const instances = await exports.getInstance()
+    const instance = Array.isArray(instances)
+      ? instances.find((i) => i.name === INSTANCE)
+      : null
+
+    const rawStatus = instance?.connectionStatus || instance?.status || instance?.state || null
+
+    return {
+      status: normalizeStatus(rawStatus),
+      rawStatus,
+      instanceName: INSTANCE,
+      instance,
+      updatedAt: new Date().toISOString(),
+      lastError: null,
+    }
+  } catch (error) {
+    return {
+      status: 'error',
+      rawStatus: null,
+      instanceName: INSTANCE,
+      instance: null,
+      updatedAt: new Date().toISOString(),
+      lastError: error.message,
+    }
+  }
+}
+
 exports.getQRCode = async () => {
   const { data } = await client.get(`/instance/connect/${INSTANCE}`)
   return data
@@ -188,5 +246,25 @@ exports.createInstance = async () => {
     rejectCall: true,
     msgCall: 'Não atendemos por chamada. Faça seu pedido pelo nosso cardápio!',
   })
+  return data
+}
+
+exports.disconnectInstance = async () => {
+  const data = await requestFirstSuccess([
+    { method: 'post', url: `/instance/logout/${INSTANCE}` },
+    { method: 'delete', url: `/instance/logout/${INSTANCE}` },
+    { method: 'post', url: `/instance/disconnect/${INSTANCE}` },
+  ])
+
+  return data
+}
+
+exports.reconnectInstance = async () => {
+  const data = await requestFirstSuccess([
+    { method: 'get', url: `/instance/connect/${INSTANCE}` },
+    { method: 'post', url: `/instance/connect/${INSTANCE}` },
+    { method: 'post', url: `/instance/restart/${INSTANCE}` },
+  ])
+
   return data
 }
