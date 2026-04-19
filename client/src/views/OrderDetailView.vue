@@ -281,6 +281,9 @@ const cancelOrder = async () => {
 const printOrder = async () => {
   if (!order.value) return
   await printReceipt(order.value)
+  if (order.value.status === 'novo') {
+    await updateStatus('em_preparo')
+  }
 }
 
 const getReceiptUrl = (url) => {
