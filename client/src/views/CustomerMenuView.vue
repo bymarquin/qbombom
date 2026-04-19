@@ -296,6 +296,7 @@
       :pode-finalizar-pedido="podeFinalizarPedido"
       :enviando="enviando"
       :is-store-open="isStoreOpen"
+      :pedido-minimo-entrega="PEDIDO_MINIMO_ENTREGA"
       @enviar-pedido="enviarPedido"
       @remover-item="removerItem"
     />
@@ -465,9 +466,12 @@ const checkout = ref(
 syncToLocalStorage("qbombom_carrinho", carrinho);
 syncToLocalStorage("qbombom_checkout", checkout);
 
+const PEDIDO_MINIMO_ENTREGA = 12;
+
 const podeFinalizarPedido = computed(() => {
   if (!checkout.value.nome || !checkout.value.telefone) return false;
   if (checkout.value.tipo === "Entrega") {
+    if (subtotal.value < PEDIDO_MINIMO_ENTREGA) return false;
     return Boolean(
       checkout.value.endereco.rua &&
       checkout.value.endereco.numero &&

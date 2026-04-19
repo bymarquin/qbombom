@@ -334,6 +334,12 @@
           Preencha seus dados para continuar.
         </p>
         <p
+          v-else-if="checkout.tipo === 'Entrega' && subtotal < pedidoMinimoEntrega"
+          class="text-center text-xs text-red-600 dark:text-red-400 mt-2 font-medium"
+        >
+          Pedido mínimo para entrega: {{ formatarMoeda(pedidoMinimoEntrega) }}
+        </p>
+        <p
           v-else-if="
             checkout.tipo === 'Entrega' &&
             (!checkout.endereco.rua || !checkout.endereco.numero || !checkout.endereco.bairro)
@@ -373,6 +379,10 @@ defineProps({
   isStoreOpen: {
     type: Boolean,
     default: true,
+  },
+  pedidoMinimoEntrega: {
+    type: Number,
+    default: 12,
   },
 });
 
