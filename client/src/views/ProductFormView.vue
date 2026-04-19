@@ -18,7 +18,7 @@
     </header>
 
     <div class="flex-1 overflow-y-auto">
-      <form @submit.prevent="saveProduct" class="max-w-2xl flex flex-col gap-5 pb-8">
+      <form @submit.prevent="saveProduct" class="w-full max-w-5xl mx-auto flex flex-col gap-5 pb-8">
 
         <div class="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-100 dark:border-neutral-800/50 shadow-xl shadow-red-900/5 dark:shadow-none p-6 flex flex-col gap-5">
           <h2 class="text-sm font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Informações básicas</h2>

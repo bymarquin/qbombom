@@ -194,7 +194,7 @@ import { OrderService, AuthService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 import { useOrderStatus } from '@/composables/useOrderStatus'
 import { printReceipt } from '@/utils/printReceipt'
-import { socket } from '@/services/socket'
+import socket from '@/services/socket'
 
 const route = useRoute()
 const router = useRouter()
