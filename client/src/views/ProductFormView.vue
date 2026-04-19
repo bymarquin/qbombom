@@ -62,104 +62,114 @@
           </div>
         </div>
 
-        <!-- Imagem -->
+        <!-- Imagens -->
         <div class="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-100 dark:border-neutral-800/50 shadow-xl shadow-red-900/5 dark:shadow-none p-6 flex flex-col gap-4">
           <div class="flex items-center justify-between">
-            <h2 class="text-sm font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Imagem</h2>
-            <button
-              v-if="imagePreview"
-              type="button"
-              @click="imagePreview = null; imageBase64 = null"
-              class="text-xs text-red-500 hover:text-red-700 transition-colors flex items-center gap-1"
-            >
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-              Remover
-            </button>
+            <div>
+              <h2 class="text-sm font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Imagens</h2>
+              <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">Primeira imagem é a capa · Arraste para reordenar</p>
+            </div>
+            <label class="cursor-pointer flex items-center gap-1.5 text-xs font-semibold text-red-600 hover:text-red-700 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              Adicionar
+              <input type="file" accept="image/*" multiple class="sr-only" @change="onFilesSelected" />
+            </label>
           </div>
 
-          <label class="relative flex flex-col items-center justify-center w-full h-56 border-2 border-dashed rounded-xl cursor-pointer transition-all overflow-hidden group"
-            :class="imagePreview
-              ? 'border-transparent'
-              : 'border-neutral-300 dark:border-neutral-700 hover:border-red-400 dark:hover:border-red-600 bg-neutral-50 dark:bg-neutral-950/30'"
+          <!-- Grid de thumbnails -->
+          <div v-if="imageList.length > 0" class="grid grid-cols-3 sm:grid-cols-4 gap-3">
+            <div
+              v-for="(img, idx) in imageList"
+              :key="img._key"
+              draggable="true"
+              @dragstart="dragStart(idx)"
+              @dragover.prevent="dragOver(idx)"
+              @dragend="dragEnd"
+              class="relative aspect-square rounded-xl overflow-hidden border-2 transition-all cursor-grab active:cursor-grabbing"
+              :class="[
+                idx === 0 ? 'border-red-500 ring-2 ring-red-500/30' : 'border-neutral-200 dark:border-neutral-700',
+                dragOverIdx === idx ? 'scale-105 border-indigo-500' : '',
+              ]"
+            >
+              <img :src="img.preview" class="w-full h-full object-cover" draggable="false" />
+              <div v-if="idx === 0" class="absolute top-1.5 left-1.5 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide">Capa</div>
+              <button
+                type="button"
+                @click="removeImage(idx)"
+                class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors"
+              >
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+
+            <!-- Botão adicionar inline -->
+            <label class="aspect-square rounded-xl border-2 border-dashed border-neutral-300 dark:border-neutral-700 hover:border-red-400 dark:hover:border-red-600 cursor-pointer flex items-center justify-center transition-colors bg-neutral-50 dark:bg-neutral-950/30">
+              <svg class="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/></svg>
+              <input type="file" accept="image/*" multiple class="sr-only" @change="onFilesSelected" />
+            </label>
+          </div>
+
+          <!-- Dropzone vazio -->
+          <label
+            v-else
+            class="flex flex-col items-center justify-center gap-3 w-full h-48 border-2 border-dashed border-neutral-300 dark:border-neutral-700 hover:border-red-400 dark:hover:border-red-600 rounded-xl cursor-pointer transition-colors bg-neutral-50 dark:bg-neutral-950/30 text-center px-6"
           >
-            <img v-if="imagePreview" :src="imagePreview" class="absolute inset-0 w-full h-full object-cover rounded-xl" />
-            <div v-if="imagePreview" class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all rounded-xl flex items-center justify-center">
-              <span class="opacity-0 group-hover:opacity-100 transition-opacity text-white text-sm font-semibold flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                Trocar imagem
-              </span>
+            <div class="w-14 h-14 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+              <svg class="w-7 h-7 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
             </div>
-            <div v-if="!imagePreview" class="flex flex-col items-center gap-3 text-neutral-400 dark:text-neutral-500 px-6 text-center">
-              <div class="w-14 h-14 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <div>
-                <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Clique para selecionar</p>
-                <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">JPG, PNG, WEBP — a imagem será cortada em formato quadrado</p>
-              </div>
+            <div>
+              <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Clique para selecionar imagens</p>
+              <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">JPG, PNG, WEBP · Pode selecionar várias de uma vez</p>
             </div>
-            <input type="file" accept="image/*" class="sr-only" @change="onImageChange" />
+            <input type="file" accept="image/*" multiple class="sr-only" @change="onFilesSelected" />
           </label>
 
-          <!-- Crop modal -->
+          <!-- Crop modal (com fila) -->
           <Teleport to="body">
             <Transition name="crop-modal">
-              <div v-if="cropSrc" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div v-if="cropQueue.length > 0" class="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-black/75 backdrop-blur-sm" @click="cancelCrop" />
-
                 <div class="relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden">
-                  <!-- Header -->
                   <div class="px-6 py-4 flex items-center justify-between shrink-0">
                     <div>
-                      <h4 class="font-bold text-neutral-900 dark:text-neutral-100">Ajustar imagem</h4>
+                      <h4 class="font-bold text-neutral-900 dark:text-neutral-100">
+                        Ajustar imagem
+                        <span v-if="cropQueue.length > 1" class="ml-2 text-xs font-normal text-neutral-400">({{ cropQueueIdx + 1 }} de {{ cropQueue.length }})</span>
+                      </h4>
                       <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">Arraste para reposicionar · Scroll para zoom</p>
                     </div>
                     <button type="button" @click="cancelCrop" class="p-2 rounded-lg text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                   </div>
-
-                  <!-- Cropper -->
                   <div class="bg-neutral-950 relative" style="height: 380px">
                     <Cropper
                       ref="cropperRef"
-                      :src="cropSrc"
+                      :src="cropQueue[cropQueueIdx]"
                       :stencil-component="GuidedStencil"
                       :stencil-props="{ aspectRatio: 1 }"
                       :default-size="{ width: 300, height: 300 }"
                       class="w-full h-full"
                     />
                   </div>
-
-                  <!-- Controls -->
                   <div class="px-6 py-4 flex items-center justify-between gap-4 border-t border-neutral-100 dark:border-neutral-800">
                     <div class="flex items-center gap-2">
-                      <button
-                        type="button"
-                        @click="cropperRef.rotate(-90)"
-                        class="p-2 rounded-lg border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-                        title="Girar 90°"
-                      >
+                      <button type="button" @click="cropperRef.rotate(-90)" class="p-2 rounded-lg border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors" title="Girar esquerda">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                       </button>
-                      <button
-                        type="button"
-                        @click="cropperRef.rotate(90)"
-                        class="p-2 rounded-lg border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-                        title="Girar -90°"
-                      >
+                      <button type="button" @click="cropperRef.rotate(90)" class="p-2 rounded-lg border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors" title="Girar direita">
                         <svg class="w-4 h-4 scale-x-[-1]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                       </button>
                     </div>
                     <div class="flex gap-3 ml-auto">
-                      <button type="button" @click="cancelCrop" class="px-4 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
-                        Cancelar
+                      <button type="button" @click="skipCrop" class="px-4 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
+                        {{ cropQueueIdx + 1 < cropQueue.length ? 'Pular' : 'Cancelar' }}
                       </button>
                       <button type="button" @click="confirmCrop" class="px-5 py-2 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 active:scale-95 transition-all flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        Usar imagem
+                        {{ cropQueueIdx + 1 < cropQueue.length ? 'Usar e continuar' : 'Usar imagem' }}
                       </button>
                     </div>
                   </div>
@@ -269,10 +279,17 @@ const form = ref({
   weightBased: false, pricePerKg: 0, minPrice: 0,
 })
 
-const imagePreview = ref(null)
-const imageBase64 = ref(null)
-const cropSrc = ref(null)
+// imageList: [{_key, preview, id?, imageBase64?}]
+// _key = único por item para o v-for
+// id = presente se imagem já existe no servidor
+// imageBase64 = presente se é nova (ainda não salva)
+const imageList = ref([])
+const cropQueue = ref([])   // base64 das imagens aguardando crop
+const cropQueueIdx = ref(0)
 const cropperRef = ref(null)
+
+let _keyCounter = 0
+const makeKey = () => ++_keyCounter
 
 onMounted(async () => {
   const catRes = await CatalogService.getCategories({ all: true })
@@ -281,7 +298,15 @@ onMounted(async () => {
   if (isEditing.value) {
     try {
       const { data } = await CatalogService.getProduct(route.params.id, { all: true })
-      imagePreview.value = data.imageUrl || null
+      imageList.value = (data.images || [])
+        .sort((a, b) => a.position - b.position)
+        .map((img) => ({ _key: makeKey(), id: img.id, preview: img.imageUrl }))
+
+      // fallback: se não tem images mas tem imageUrl legado
+      if (imageList.value.length === 0 && data.imageUrl) {
+        imageList.value = [{ _key: makeKey(), preview: data.imageUrl }]
+      }
+
       form.value = {
         name: data.name,
         description: data.description || '',
@@ -303,23 +328,59 @@ onMounted(async () => {
   }
 })
 
-const onImageChange = (e) => {
-  const file = e.target.files[0]
-  if (!file) return
-  const reader = new FileReader()
-  reader.onload = (ev) => { cropSrc.value = ev.target.result }
-  reader.readAsDataURL(file)
+// Selecionar arquivos → fila de crop
+const onFilesSelected = (e) => {
+  const files = Array.from(e.target.files)
+  if (!files.length) return
+  const readers = files.map((file) => new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = (ev) => resolve(ev.target.result)
+    reader.readAsDataURL(file)
+  }))
+  Promise.all(readers).then((results) => {
+    cropQueue.value = results
+    cropQueueIdx.value = 0
+  })
   e.target.value = ''
 }
 
 const confirmCrop = () => {
   const { canvas } = cropperRef.value.getResult()
-  imageBase64.value = canvas.toDataURL('image/jpeg', 0.9)
-  imagePreview.value = imageBase64.value
-  cropSrc.value = null
+  const base64 = canvas.toDataURL('image/jpeg', 0.9)
+  imageList.value.push({ _key: makeKey(), preview: base64, imageBase64: base64 })
+  advanceCropQueue()
 }
 
-const cancelCrop = () => { cropSrc.value = null }
+const skipCrop = () => { advanceCropQueue() }
+
+const cancelCrop = () => { cropQueue.value = []; cropQueueIdx.value = 0 }
+
+const advanceCropQueue = () => {
+  if (cropQueueIdx.value + 1 < cropQueue.value.length) {
+    cropQueueIdx.value++
+  } else {
+    cropQueue.value = []
+    cropQueueIdx.value = 0
+  }
+}
+
+const removeImage = (idx) => { imageList.value.splice(idx, 1) }
+
+// Drag-to-reorder
+const dragFromIdx = ref(null)
+const dragOverIdx = ref(null)
+const dragStart = (idx) => { dragFromIdx.value = idx }
+const dragOver = (idx) => { dragOverIdx.value = idx }
+const dragEnd = () => {
+  if (dragFromIdx.value !== null && dragOverIdx.value !== null && dragFromIdx.value !== dragOverIdx.value) {
+    const list = [...imageList.value]
+    const [moved] = list.splice(dragFromIdx.value, 1)
+    list.splice(dragOverIdx.value, 0, moved)
+    imageList.value = list
+  }
+  dragFromIdx.value = null
+  dragOverIdx.value = null
+}
 
 const addVariation = () => { form.value.variations.push({ name: '', price: 0, maxAdditionals: null }) }
 const removeVariation = (i) => { form.value.variations.splice(i, 1) }
@@ -327,7 +388,11 @@ const removeVariation = (i) => { form.value.variations.splice(i, 1) }
 const saveProduct = async () => {
   salvando.value = true
   try {
-    const payload = { ...form.value, ...(imageBase64.value ? { imageBase64: imageBase64.value } : {}) }
+    const images = imageList.value.map((img) => {
+      if (img.id) return { id: img.id, imageUrl: img.preview }
+      return { imageBase64: img.imageBase64 }
+    })
+    const payload = { ...form.value, images }
     if (isEditing.value) {
       await CatalogService.updateProduct(route.params.id, payload)
       toast.success('Atualizado com sucesso!')

@@ -19,6 +19,11 @@ module.exports = (sequelize, DataTypes) => {
         otherKey: 'additionalGroupId',
         as: 'additionalGroups',
       });
+      Product.hasMany(models.ProductImage, {
+        foreignKey: 'productId',
+        as: 'images',
+        onDelete: 'CASCADE',
+      });
       Product.hasMany(models.OrderItem, {
         foreignKey: 'productId',
         as: 'orderItems'

@@ -195,10 +195,15 @@
           :disabled="loadingProdutoId === produto.id"
           class="bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden border border-neutral-100 dark:border-neutral-800/50 shadow-sm dark:shadow-none text-left transition-all active:scale-[0.97] disabled:opacity-70 flex flex-col"
         >
-          <!-- Imagem -->
-          <div class="w-full h-36 bg-neutral-100 dark:bg-neutral-800 relative overflow-hidden">
+          <!-- Imagem / Carousel -->
+          <div class="w-full h-36 bg-neutral-100 dark:bg-neutral-800 relative overflow-hidden group">
+            <ImageCarousel
+              v-if="produto.images && produto.images.length > 0"
+              :images="produto.images.map(i => i.imageUrl)"
+              container-class="w-full h-full"
+            />
             <img
-              v-if="produto.imageUrl"
+              v-else-if="produto.imageUrl"
               :src="produto.imageUrl"
               :alt="produto.name"
               class="w-full h-full object-cover"
@@ -206,7 +211,6 @@
             <div v-else class="w-full h-full flex items-center justify-center">
               <Coffee class="w-10 h-10 text-neutral-300 dark:text-neutral-600" />
             </div>
-            <!-- Spinner de loading -->
             <div
               v-if="loadingProdutoId === produto.id"
               class="absolute inset-0 bg-black/30 flex items-center justify-center"
@@ -356,6 +360,7 @@ import { limparTelefone, mascararTelefone } from "@/utils/formatters";
 import { formatarMoeda } from "@/utils/formatters";
 import socket from "@/services/socket";
 import ProductModal from "@/components/customer/ProductModal.vue";
+import ImageCarousel from "@/components/ImageCarousel.vue";
 import CartCheckout from "@/components/customer/CartCheckout.vue";
 import OrderSuccess from "@/components/customer/OrderSuccess.vue";
 import OrderTracking from "@/components/customer/OrderTracking.vue";
