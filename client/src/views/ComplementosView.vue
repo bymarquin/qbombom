@@ -37,9 +37,12 @@
           </div>
 
           <div
-            v-for="group in allGroups"
+            v-for="group in sortedGroups"
             :key="group.id"
-            class="bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden"
+            class="rounded-xl overflow-hidden border"
+            :class="isAssigned(group.id)
+              ? 'border-red-500 ring-1 ring-red-500 bg-red-50 dark:bg-red-900/10'
+              : 'border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950'"
           >
             <div class="px-4 py-3 flex items-center justify-between">
               <div>
@@ -163,7 +166,7 @@
 </template>
 
 <script setup>
-import { ref, shallowRef, onMounted } from 'vue'
+import { ref, shallowRef, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { Pencil, Trash2 } from 'lucide-vue-next'
 import { AdditionalService, CatalogService } from '@/services/http'
@@ -210,6 +213,12 @@ const loadGroups = async () => {
 }
 
 const isAssigned = (groupId) => assignedGroupIds.value.has(groupId)
+
+const sortedGroups = computed(() => {
+  const assigned = allGroups.value.filter((g) => isAssigned(g.id))
+  const rest = allGroups.value.filter((g) => !isAssigned(g.id))
+  return [...assigned, ...rest]
+})
 
 const toggleAssign = async (group) => {
   try {
