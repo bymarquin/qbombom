@@ -94,7 +94,7 @@
                 dragOverIdx === idx ? 'scale-105 border-indigo-500' : '',
               ]"
             >
-              <img :src="img.imageUrl" class="w-full h-full object-cover" draggable="false" />
+              <img :src="img.preview || img.imageUrl" class="w-full h-full object-cover" draggable="false" />
               <div v-if="idx === 0" class="absolute top-1.5 left-1.5 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide">Capa</div>
               <button
                 type="button"
@@ -195,8 +195,71 @@
                       <button type="button" @click="closeStoragePicker" class="px-4 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
                         Cancelar
                       </button>
-                      <button type="button" @click="addSelectedStorageImages" class="px-5 py-2 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 active:scale-95 transition-all">
-                        Adicionar selecionadas
+                      <button type="button" @click="addSelectedStorageImages" class="px-5 py-2 text-sm font-semibold bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 rounded-lg hover:bg-neutral-300 dark:hover:bg-neutral-700 active:scale-95 transition-all">
+                        Adicionar sem recorte
+                      </button>
+                      <button type="button" @click="startCroppingSelectedStorageImages" class="px-5 py-2 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 active:scale-95 transition-all">
+                        Recortar e adicionar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Transition>
+          </Teleport>
+
+          <!-- Crop modal (com fila) -->
+          <Teleport to="body">
+            <Transition name="crop-modal">
+              <div v-if="cropQueue.length > 0" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-black/75 backdrop-blur-sm" @click="cancelCrop" />
+                <div class="relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden">
+                  <div class="px-6 py-4 flex items-center justify-between shrink-0">
+                    <div>
+                      <h4 class="font-bold text-neutral-900 dark:text-neutral-100">
+                        Ajustar imagem
+                        <span v-if="cropQueue.length > 1" class="ml-2 text-xs font-normal text-neutral-400">({{ cropQueueIdx + 1 }} de {{ cropQueue.length }})</span>
+                      </h4>
+                      <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">Escolha o formato de recorte e ajuste como quiser</p>
+                    </div>
+                    <button type="button" @click="cancelCrop" class="p-2 rounded-lg text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                      <X class="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div class="px-6 pb-3 flex gap-2 flex-wrap">
+                    <button
+                      v-for="option in cropAspectOptions"
+                      :key="option.value"
+                      type="button"
+                      @click="cropAspect = option.value"
+                      class="px-2.5 py-1.5 text-xs rounded-lg border transition-colors"
+                      :class="cropAspect === option.value ? 'border-red-500 bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300' : 'border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'"
+                    >
+                      {{ option.label }}
+                    </button>
+                  </div>
+
+                  <div class="bg-neutral-950 relative" style="height: 380px">
+                    <Cropper
+                      ref="cropperRef"
+                      :src="currentCropImage"
+                      :stencil-component="RectangleStencil"
+                      :stencil-props="cropStencilProps"
+                      :default-size="{ width: 280, height: 280 }"
+                      class="w-full h-full"
+                    />
+                  </div>
+                  <div class="px-6 py-4 flex items-center justify-between gap-4 border-t border-neutral-100 dark:border-neutral-800">
+                    <button type="button" @click="skipCrop" class="px-4 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
+                      {{ cropQueueIdx + 1 < cropQueue.length ? 'Pular' : 'Usar original' }}
+                    </button>
+                    <div class="flex gap-3 ml-auto">
+                      <button type="button" @click="cancelCrop" class="px-4 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
+                        Cancelar
+                      </button>
+                      <button type="button" @click="confirmCrop" class="px-5 py-2 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 active:scale-95 transition-all">
+                        {{ cropQueueIdx + 1 < cropQueue.length ? 'Recortar e continuar' : 'Recortar e adicionar' }}
                       </button>
                     </div>
                   </div>
@@ -276,6 +339,8 @@
 import { ref, shallowRef, computed, onMounted } from 'vue'
 import { Plus, X, Image as ImageIcon } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
+import { Cropper, RectangleStencil } from 'vue-advanced-cropper'
+import 'vue-advanced-cropper/dist/style.css'
 import { CatalogService, R2Service } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 
@@ -299,9 +364,29 @@ const form = ref({
 const imageList = ref([])
 const showStoragePicker = ref(false)
 const isLoadingStorage = ref(false)
-const storagePrefix = ref('products')
+const storagePrefix = ref('')
 const storageFiles = ref([])
 const storageSelection = ref([])
+const cropQueue = ref([])
+const cropQueueIdx = ref(0)
+const cropperRef = ref(null)
+const cropAspect = ref('free')
+
+const cropAspectOptions = [
+  { value: 'free', label: 'Livre' },
+  { value: '1:1', label: '1:1' },
+  { value: '9:16', label: '9:16' },
+  { value: '16:9', label: '16:9' },
+]
+
+const cropStencilProps = computed(() => {
+  if (cropAspect.value === 'free') return {}
+  const [w, h] = cropAspect.value.split(':').map(Number)
+  if (!w || !h) return {}
+  return { aspectRatio: w / h }
+})
+
+const currentCropImage = computed(() => cropQueue.value[cropQueueIdx.value]?.url || null)
 
 let _keyCounter = 0
 const makeKey = () => ++_keyCounter
@@ -315,11 +400,11 @@ onMounted(async () => {
       const { data } = await CatalogService.getProduct(route.params.id, { all: true })
       imageList.value = (data.images || [])
         .sort((a, b) => a.position - b.position)
-        .map((img) => ({ _key: makeKey(), id: img.id, imageUrl: img.imageUrl }))
+        .map((img) => ({ _key: makeKey(), id: img.id, imageUrl: img.imageUrl, preview: img.imageUrl }))
 
       // fallback: se não tem images mas tem imageUrl legado
       if (imageList.value.length === 0 && data.imageUrl) {
-        imageList.value = [{ _key: makeKey(), imageUrl: data.imageUrl }]
+        imageList.value = [{ _key: makeKey(), imageUrl: data.imageUrl, preview: data.imageUrl }]
       }
 
       form.value = {
@@ -385,7 +470,7 @@ const addSelectedStorageImages = () => {
   selectedFiles.forEach((file) => {
     const alreadyAdded = imageList.value.some((img) => img.imageUrl === file.url)
     if (alreadyAdded) return
-    imageList.value.push({ _key: makeKey(), imageUrl: file.url })
+    imageList.value.push({ _key: makeKey(), imageUrl: file.url, preview: file.url })
     addedCount += 1
   })
 
@@ -396,6 +481,66 @@ const addSelectedStorageImages = () => {
 
   toast.success(`${addedCount} imagem(ns) adicionada(s).`)
   closeStoragePicker()
+}
+
+const startCroppingSelectedStorageImages = () => {
+  const selectedFiles = storageFiles.value.filter((file) => storageSelection.value.includes(file.key))
+  if (!selectedFiles.length) {
+    toast.warning('Selecione pelo menos uma imagem.')
+    return
+  }
+
+  cropQueue.value = selectedFiles
+  cropQueueIdx.value = 0
+  cropAspect.value = 'free'
+  showStoragePicker.value = false
+}
+
+const confirmCrop = () => {
+  const result = cropperRef.value?.getResult?.()
+  const canvas = result?.canvas
+  if (!canvas) {
+    toast.error('Nao foi possivel aplicar o recorte.')
+    return
+  }
+
+  const base64 = canvas.toDataURL('image/jpeg', 0.92)
+  imageList.value.push({
+    _key: makeKey(),
+    preview: base64,
+    imageBase64: base64,
+  })
+
+  advanceCropQueue()
+}
+
+const skipCrop = () => {
+  const current = cropQueue.value[cropQueueIdx.value]
+  if (current?.url) {
+    const alreadyAdded = imageList.value.some((img) => img.imageUrl === current.url)
+    if (!alreadyAdded) {
+      imageList.value.push({ _key: makeKey(), imageUrl: current.url, preview: current.url })
+    }
+  }
+
+  advanceCropQueue()
+}
+
+const cancelCrop = () => {
+  cropQueue.value = []
+  cropQueueIdx.value = 0
+}
+
+const advanceCropQueue = () => {
+  if (cropQueueIdx.value + 1 < cropQueue.value.length) {
+    cropQueueIdx.value += 1
+    return
+  }
+
+  cropQueue.value = []
+  cropQueueIdx.value = 0
+  storageSelection.value = []
+  toast.success('Imagens adicionadas ao produto.')
 }
 
 const isImageUrl = (url) => /\.(png|jpe?g|gif|webp|avif|bmp|svg)(\?.*)?$/i.test(url)
@@ -425,8 +570,9 @@ const saveProduct = async () => {
   salvando.value = true
   try {
     const images = imageList.value.map((img) => {
-      if (img.id) return { id: img.id, imageUrl: img.imageUrl }
-      return { imageUrl: img.imageUrl }
+      if (img.id) return { id: img.id, imageUrl: img.imageUrl || img.preview }
+      if (img.imageBase64) return { imageBase64: img.imageBase64 }
+      return { imageUrl: img.imageUrl || img.preview }
     })
     const payload = { ...form.value, images }
     if (isEditing.value) {
