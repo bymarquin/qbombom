@@ -97,18 +97,18 @@ async function moveFile(sourceKey, destinationKey) {
   };
 }
 
-async function getFile(key) {
-  const response = await r2.send(new GetObjectCommand({
-    Bucket: BUCKET,
-    Key: key,
-  }));
+async function getFile(key, { ifNoneMatch } = {}) {
+  const params = { Bucket: BUCKET, Key: key };
+  if (ifNoneMatch) params.IfNoneMatch = ifNoneMatch;
 
-  const bytes = await response.Body.transformToByteArray();
+  const response = await r2.send(new GetObjectCommand(params));
 
   return {
-    buffer: Buffer.from(bytes),
+    stream: response.Body,
     contentType: response.ContentType || 'application/octet-stream',
-    cacheControl: response.CacheControl || 'public, max-age=86400',
+    contentLength: response.ContentLength,
+    cacheControl: response.CacheControl || getCacheControlByKey(key),
+    etag: response.ETag,
   };
 }
 

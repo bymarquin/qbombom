@@ -122,10 +122,24 @@ exports.proxy = async (req, res) => {
       return res.status(400).json({ error: 'key e obrigatoria.' });
     }
 
-    const file = await getFile(key);
+    const ifNoneMatch = req.headers['if-none-match'];
+
+    let file;
+    try {
+      file = await getFile(key, { ifNoneMatch });
+    } catch (err) {
+      if (err.name === 'NotModified' || err.$metadata?.httpStatusCode === 304) {
+        return res.status(304).end();
+      }
+      throw err;
+    }
+
     res.setHeader('Content-Type', file.contentType);
     res.setHeader('Cache-Control', file.cacheControl);
-    res.send(file.buffer);
+    if (file.etag) res.setHeader('ETag', file.etag);
+    if (file.contentLength) res.setHeader('Content-Length', file.contentLength);
+
+    file.stream.pipe(res);
   } catch (error) {
     console.error('[r2 proxy]', error);
     res.status(500).json({ error: 'Falha ao carregar arquivo do R2.' });
