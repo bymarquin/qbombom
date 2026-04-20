@@ -37,6 +37,20 @@
               {{ produtoDetalhado.description }}
             </p>
 
+            <div
+              v-if="stockBadge"
+              class="px-3 py-2 rounded-lg border text-sm font-semibold"
+              :class="
+                stockBadge.tone === 'danger'
+                  ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800/50'
+                  : stockBadge.tone === 'warning'
+                    ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800/50'
+                    : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800/50'
+              "
+            >
+              {{ stockBadge.label }}
+            </div>
+
             <!-- Stepper de bolas (sorvete) -->
             <section
               v-if="isSorvete"
@@ -312,10 +326,10 @@
             </div>
             <button
               @click="confirmarItem"
-              :disabled="!podeProsseguir || !isStoreOpen"
+              :disabled="!podeProsseguir || !isStoreOpen || isOutOfStock"
               class="w-full py-3 bg-red-600 text-white rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-red-700 active:scale-[0.98] shadow-sm hover:shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              Adicionar à Sacola
+              {{ isOutOfStock ? 'Esgotado no momento' : 'Adicionar à Sacola' }}
             </button>
           </footer>
         </div>
@@ -359,6 +373,19 @@ watch(() => props.produtoDetalhado, () => {
 });
 
 const isWeightBased = computed(() => props.produtoDetalhado?.weightBased ?? false);
+const isOutOfStock = computed(() => {
+  if (!props.produtoDetalhado?.manageStock) return false
+  return Number(props.produtoDetalhado?.stock || 0) <= 0
+})
+
+const stockBadge = computed(() => {
+  if (!props.produtoDetalhado?.manageStock) return null
+
+  const stock = Number(props.produtoDetalhado?.stock || 0)
+  if (stock <= 0) return { label: 'Esgotado', tone: 'danger' }
+  if (stock <= 5) return { label: 'Ultimas unidades', tone: 'warning' }
+  return { label: 'Em estoque', tone: 'success' }
+})
 
 const calcularPeso = (preco, pricePerKg) => {
   const gramas = (preco / pricePerKg) * 1000;
@@ -445,6 +472,7 @@ const selecionarUnico = (add, grupo) => {
 
 const podeProsseguir = computed(() => {
   if (!props.produtoDetalhado) return false;
+  if (isOutOfStock.value) return false;
   if (isWeightBased.value) {
     const min = Number(props.produtoDetalhado.minPrice) || 0;
     return pesoGramas.value > 0 && pesoGramas.value >= min;

@@ -180,7 +180,7 @@
           v-for="produto in produtosFiltrados"
           :key="produto.id"
           @click="abrirModalProduto(produto)"
-          :disabled="loadingProdutoId === produto.id"
+          :disabled="loadingProdutoId === produto.id || isOutOfStock(produto)"
           class="bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden border border-neutral-100 dark:border-neutral-800/50 shadow-sm dark:shadow-none text-left transition-all active:scale-[0.97] disabled:opacity-70 flex flex-col"
         >
           <!-- Imagem / Carousel -->
@@ -206,6 +206,14 @@
             >
               <div class="w-7 h-7 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
             </div>
+
+            <div
+              v-if="getStockBadge(produto)"
+              class="absolute top-2 right-2 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide"
+              :class="stockBadgeClass(getStockBadge(produto).tone)"
+            >
+              {{ getStockBadge(produto).label }}
+            </div>
           </div>
 
           <!-- Conteúdo -->
@@ -224,6 +232,14 @@
                 <Plus class="w-3.5 h-3.5 text-white" />
               </div>
             </div>
+
+            <p
+              v-if="getStockBadge(produto)"
+              class="mt-2 text-[11px] font-medium"
+              :class="stockTextClass(getStockBadge(produto).tone)"
+            >
+              {{ getStockBadge(produto).label }}
+            </p>
           </div>
         </button>
       </div>
@@ -717,6 +733,29 @@ const precoMinimo = (produto) => {
   const min = Math.min(...prices)
   return prices.length > 1 ? `A partir de ${formatarMoeda(min)}` : formatarMoeda(min)
 };
+
+const isOutOfStock = (produto) => Boolean(produto?.manageStock) && Number(produto?.stock || 0) <= 0
+
+const getStockBadge = (produto) => {
+  if (!produto?.manageStock) return null
+
+  const stock = Number(produto.stock || 0)
+  if (stock <= 0) return { label: 'Esgotado', tone: 'danger' }
+  if (stock <= 5) return { label: 'Ultimas unidades', tone: 'warning' }
+  return { label: 'Em estoque', tone: 'success' }
+}
+
+const stockBadgeClass = (tone) => {
+  if (tone === 'danger') return 'bg-red-600 text-white'
+  if (tone === 'warning') return 'bg-amber-500 text-white'
+  return 'bg-emerald-600 text-white'
+}
+
+const stockTextClass = (tone) => {
+  if (tone === 'danger') return 'text-red-600 dark:text-red-400'
+  if (tone === 'warning') return 'text-amber-600 dark:text-amber-400'
+  return 'text-emerald-600 dark:text-emerald-400'
+}
 
 // --- Lógica do Produto (Modal) ---
 const modalProduto = ref(false);
