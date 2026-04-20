@@ -1063,7 +1063,12 @@ const finalizarPedido = async () => {
     }
   } catch (err) {
     console.error(err)
-    toast.error('Erro ao finalizar pedido. Tente novamente.')
+    if (err.response?.status === 422) {
+      carrinho.value = []
+      fecharModalPagamento()
+    } else {
+      toast.error('Erro ao finalizar pedido. Tente novamente.')
+    }
   } finally {
     salvandoPedido.value = false
   }

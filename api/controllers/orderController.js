@@ -375,6 +375,22 @@ exports.create = async (req, res) => {
     }, { transaction });
 
     if (items?.length > 0) {
+      const variationIds = [...new Set(items.map(i => i.productVariationId).filter(Boolean))];
+      if (variationIds.length > 0) {
+        const existingVariations = await ProductVariation.findAll({
+          where: { id: variationIds },
+          attributes: ['id'],
+          transaction
+        });
+        const existingIds = new Set(existingVariations.map(v => v.id));
+        const missing = variationIds.find(id => !existingIds.has(id));
+        if (missing) {
+          const err = new Error('Variação de produto não encontrada');
+          err.status = 422;
+          throw err;
+        }
+      }
+
       await OrderItem.bulkCreate(
         items.map(item => ({
           orderId: order.id,

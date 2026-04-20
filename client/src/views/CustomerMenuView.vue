@@ -873,7 +873,11 @@ const enviarPedido = async () => {
     // Ex: if(response.data.pixQrCode) { qrCodePix.value = response.data.pixQrCode }
   } catch (err) {
     console.error(err);
-    toast.error("Erro ao enviar pedido. Verifique a conexão.");
+    if (err.response?.status === 422) {
+      carrinho.value = [];
+    } else {
+      toast.error("Erro ao enviar pedido. Verifique a conexão.");
+    }
   } finally {
     enviando.value = false;
   }
