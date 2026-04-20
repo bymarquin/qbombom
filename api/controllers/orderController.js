@@ -187,6 +187,81 @@ async function restoreStock(items, transaction) {
   }
 }
 
+async function reserveStockAtomically(items, transaction) {
+  const productQtyMap = new Map();
+  const variationQtyMap = new Map();
+
+  for (const item of items || []) {
+    const qty = Math.max(Number(item.quantity) || 1, 1);
+
+    if (item.productId) {
+      productQtyMap.set(item.productId, (productQtyMap.get(item.productId) || 0) + qty);
+    }
+
+    if (item.productVariationId) {
+      variationQtyMap.set(item.productVariationId, (variationQtyMap.get(item.productVariationId) || 0) + qty);
+    }
+  }
+
+  for (const [productId, qty] of productQtyMap.entries()) {
+    const [affectedRows] = await Product.update(
+      { stock: sequelize.literal(`stock - ${qty}`) },
+      {
+        where: {
+          id: productId,
+          manageStock: true,
+          stock: { [Op.gte]: qty },
+        },
+        transaction,
+      },
+    );
+
+    if (affectedRows === 0) {
+      const product = await Product.findByPk(productId, {
+        attributes: ['name', 'manageStock', 'stock'],
+        transaction,
+      });
+
+      if (product?.manageStock) {
+        const error = new Error(
+          `Estoque insuficiente para ${product.name}. Disponivel: ${product.stock ?? 0}.`,
+        );
+        error.status = 409;
+        throw error;
+      }
+    }
+  }
+
+  for (const [variationId, qty] of variationQtyMap.entries()) {
+    const [affectedRows] = await ProductVariation.update(
+      { stock: sequelize.literal(`stock - ${qty}`) },
+      {
+        where: {
+          id: variationId,
+          manageStock: true,
+          stock: { [Op.gte]: qty },
+        },
+        transaction,
+      },
+    );
+
+    if (affectedRows === 0) {
+      const variation = await ProductVariation.findByPk(variationId, {
+        attributes: ['name', 'manageStock', 'stock'],
+        transaction,
+      });
+
+      if (variation?.manageStock) {
+        const error = new Error(
+          `Estoque insuficiente para a variacao ${variation.name}. Disponivel: ${variation.stock ?? 0}.`,
+        );
+        error.status = 409;
+        throw error;
+      }
+    }
+  }
+}
+
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
 async function notifyCustomer(order, status) {
@@ -314,23 +389,7 @@ exports.create = async (req, res) => {
         { transaction }
       );
 
-      for (const item of items) {
-        const qty = item.quantity || 1;
-
-        if (item.productId) {
-          const product = await Product.findByPk(item.productId, { transaction });
-          if (product?.manageStock) {
-            await product.update({ stock: product.stock - qty }, { transaction });
-          }
-        }
-
-        if (item.productVariationId) {
-          const variation = await ProductVariation.findByPk(item.productVariationId, { transaction });
-          if (variation?.manageStock) {
-            await variation.update({ stock: variation.stock - qty }, { transaction });
-          }
-        }
-      }
+      await reserveStockAtomically(items, transaction);
     }
 
     await transaction.commit();
@@ -348,7 +407,8 @@ exports.create = async (req, res) => {
   } catch (error) {
     await transaction.rollback();
     console.error('[orders.create]', error);
-    res.status(500).json({ error: 'Internal server error' });
+    const status = error.status || 500;
+    res.status(status).json({ error: status === 500 ? 'Internal server error' : error.message });
   }
 };
 
