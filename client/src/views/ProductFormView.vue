@@ -301,6 +301,14 @@
           <h2 class="text-sm font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Estoque e precificação</h2>
 
           <div class="flex items-center gap-3">
+            <input v-model="form.requiresPreparation" id="prod-requires-preparation" type="checkbox" class="w-4 h-4 rounded border-neutral-300 dark:border-neutral-700 accent-red-600 cursor-pointer" />
+            <div>
+              <label for="prod-requires-preparation" class="text-sm font-medium text-neutral-700 dark:text-neutral-300 cursor-pointer">Requer preparo</label>
+              <p class="text-xs text-neutral-400 dark:text-neutral-500">Desmarque para produtos prontos (picolé, pote de sorvete) — o pedido vai direto para "Pronto"</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
             <input v-model="form.manageStock" id="prod-manage-stock" type="checkbox" class="w-4 h-4 rounded border-neutral-300 dark:border-neutral-700 accent-red-600 cursor-pointer" />
             <label for="prod-manage-stock" class="text-sm font-medium text-neutral-700 dark:text-neutral-300 cursor-pointer">Controlar Estoque</label>
           </div>
@@ -359,6 +367,7 @@ const categories = shallowRef([])
 
 const form = ref({
   name: '', description: '', categoryId: '', status: true,
+  requiresPreparation: true,
   manageStock: false, stock: 0, variations: [],
   weightBased: false, pricePerKg: 0, minPrice: 0,
 })
@@ -418,6 +427,7 @@ onMounted(async () => {
         description: data.description || '',
         categoryId: data.categoryId,
         status: data.status,
+        requiresPreparation: data.requiresPreparation ?? true,
         manageStock: data.manageStock || false,
         stock: data.stock || 0,
         variations: (data.variations || []).map((v) => ({ name: v.name, price: v.price, maxAdditionals: v.maxAdditionals ?? null })),

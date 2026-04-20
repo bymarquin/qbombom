@@ -107,11 +107,12 @@ async function syncImages(productId, imagesPayload) {
 
 exports.create = async (req, res) => {
   try {
-    const { name, description, status, categoryId, manageStock, stock, images, variations, weightBased, pricePerKg, minPrice } = req.body;
+    const { name, description, status, categoryId, manageStock, stock, images, variations, weightBased, pricePerKg, minPrice, requiresPreparation } = req.body;
 
     const product = await Product.create({
       name, description, status, categoryId,
       manageStock, stock,
+      requiresPreparation: requiresPreparation ?? true,
       weightBased: weightBased ?? false,
       pricePerKg: pricePerKg ?? 0,
       minPrice: minPrice ?? 0,

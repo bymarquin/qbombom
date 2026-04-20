@@ -241,9 +241,13 @@
               @click="router.push({ name: 'pedido-detalhe', params: { id: order.id } })"
             >
               <div class="flex justify-between items-start mb-2">
-                <span class="text-xs font-bold text-neutral-500"
-                  >#{{ order.trackingCode || order.id.slice(0, 8) }}</span
-                >
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-bold text-neutral-500">#{{ order.trackingCode || order.id.slice(0, 8) }}</span>
+                  <span
+                    v-if="order.items?.every(i => i.product?.requiresPreparation === false)"
+                    class="px-1.5 py-0.5 bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 text-xs font-bold rounded"
+                  >Expresso</span>
+                </div>
                 <span class="text-xs font-medium text-neutral-400">{{
                   formatDateOnlyTime(order.createdAt)
                 }}</span>

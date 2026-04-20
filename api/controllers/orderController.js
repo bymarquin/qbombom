@@ -8,7 +8,7 @@ const ORDER_INCLUDES = [
     model: OrderItem,
     as: 'items',
     include: [
-      { model: Product, as: 'product', attributes: ['id', 'name'] },
+      { model: Product, as: 'product', attributes: ['id', 'name', 'requiresPreparation'] },
       { model: ProductVariation, as: 'variation', attributes: ['id', 'name'] }
     ]
   }
@@ -114,6 +114,16 @@ exports.create = async (req, res) => {
     const trackingCode = Math.random().toString(36).substring(2, 8).toUpperCase();
     const isPendingPix = paymentMethod === 'PIX' && (!paymentStatus || paymentStatus === 'pendente');
 
+    let allExpressItems = false;
+    if (!isPendingPix && items?.length > 0) {
+      const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))];
+      const products = await Product.findAll({ where: { id: productIds }, attributes: ['id', 'requiresPreparation'], transaction });
+      const productMap = new Map(products.map(p => [p.id, p]));
+      allExpressItems = items.every(i => productMap.get(i.productId)?.requiresPreparation === false);
+    }
+
+    const orderStatus = isPendingPix ? 'aguardando_pagamento' : allExpressItems ? 'pronto' : 'novo';
+
     const order = await Order.create({
       trackingCode,
       type: type || 'Mesa',
@@ -121,7 +131,7 @@ exports.create = async (req, res) => {
       customerId,
       customerPhone,
       deliveryAddress,
-      status: isPendingPix ? 'aguardando_pagamento' : 'novo',
+      status: orderStatus,
       paymentStatus: paymentStatus || 'pendente',
       paymentMethod,
       subtotal,

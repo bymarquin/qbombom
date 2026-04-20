@@ -57,6 +57,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true
     },
+    requiresPreparation: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
+    },
     weightBased: {
       type: DataTypes.BOOLEAN,
       defaultValue: false
