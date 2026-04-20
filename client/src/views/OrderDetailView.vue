@@ -200,6 +200,7 @@ import { OrderService, AuthService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 import { useOrderStatus } from '@/composables/useOrderStatus'
 import { printReceipt } from '@/utils/printReceipt'
+import { toMediaProxyUrl } from '@/utils/mediaUrl'
 import socket from '@/services/socket'
 
 const route = useRoute()
@@ -237,6 +238,7 @@ onMounted(() => {
   loadOrder()
   socket.on('orderUpdated', (updated) => {
     if (order.value && (order.value.id === updated.id || order.value.trackingCode === updated.trackingCode)) {
+      updated.receiptUrl = toMediaProxyUrl(updated.receiptUrl)
       Object.assign(order.value, updated)
     }
   })
@@ -294,9 +296,10 @@ const printOrder = async () => {
 
 const getReceiptUrl = (url) => {
   if (!url) return '#'
-  if (url.startsWith('http')) return url
+  const normalized = toMediaProxyUrl(url)
+  if (normalized.startsWith('http')) return normalized
   const baseUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3006/api' : '/api')
-  return `${baseUrl.replace('/api', '')}${url}`
+  return `${baseUrl.replace('/api', '')}${normalized}`
 }
 
 const formatMoney = (val) =>

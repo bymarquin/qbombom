@@ -363,6 +363,7 @@ import { syncToLocalStorage } from "@/composables/useLocalStorage";
 import { generatePixPayload } from "@/utils/pix";
 import { limparTelefone, mascararTelefone } from "@/utils/formatters";
 import { formatarMoeda } from "@/utils/formatters";
+import { toMediaProxyUrl } from "@/utils/mediaUrl";
 import socket from "@/services/socket";
 import ProductModal from "@/components/customer/ProductModal.vue";
 import ImageCarousel from "@/components/ImageCarousel.vue";
@@ -664,6 +665,7 @@ onMounted(() => {
 
       pedidoRastreado.value.status = updatedOrder.status;
       pedidoRastreado.value.paymentStatus = updatedOrder.paymentStatus;
+      pedidoRastreado.value.receiptUrl = toMediaProxyUrl(updatedOrder.receiptUrl);
 
       // Notificações Push nativas e Toasts de avanço só disparam se houve mudança de status real
       if (statusMudou) {

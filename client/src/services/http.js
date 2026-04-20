@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { useToastStore } from '@/stores/toast'
+import { normalizeMediaUrlsDeep, toMediaProxyUrlFromKey } from '@/utils/mediaUrl'
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3006/api' : '/api')
@@ -25,7 +26,13 @@ api.interceptors.request.use(
 
 // Interceptor de Resposta (Volta)
 api.interceptors.response.use(
-  (response) => response, // Sucesso (200), repassa a resposta
+  (response) => {
+    const responseType = response?.config?.responseType
+    if (responseType !== 'blob' && responseType !== 'arraybuffer') {
+      response.data = normalizeMediaUrlsDeep(response.data)
+    }
+    return response
+  }, // Sucesso (200), repassa a resposta
   async (error) => {
     const originalRequest = error.config
     const requestUrl = originalRequest?.url || ''
@@ -354,8 +361,7 @@ export const R2Service = {
     return api.get('/r2/files', { params })
   },
   getProxyUrl(key) {
-    const base = String(api.defaults.baseURL || '').replace(/\/+$/, '')
-    return `${base}/r2/files/proxy?key=${encodeURIComponent(key)}`
+    return toMediaProxyUrlFromKey(key)
   },
   getFileBlob(key) {
     return api.get('/r2/files/proxy', {
