@@ -74,6 +74,11 @@ const router = createRouter({
           name: 'usuarios',
           component: () => import('../views/UserListView.vue'),
         },
+        {
+          path: 'r2',
+          name: 'r2-storage',
+          component: () => import('../views/R2StorageView.vue'),
+        },
       ],
     },
     {

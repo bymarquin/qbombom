@@ -14,6 +14,7 @@ const mailerRoutes = require('./mailerRoutes');
 const whatsappRoutes = require('./whatsappRoutes');
 const importRoutes = require('./importRoutes');
 const geocodeRoutes = require('./geocodeRoutes');
+const r2Routes = require('./r2Routes');
 
 router.use('/auth', authRoutes);
 router.use('/categories', categoryRoutes);
@@ -28,5 +29,6 @@ router.use('/mailer', mailerRoutes);
 router.use('/whatsapp', whatsappRoutes);
 router.use('/import', importRoutes);
 router.use('/geocode', geocodeRoutes);
+router.use('/r2', r2Routes);
 
 module.exports = router;

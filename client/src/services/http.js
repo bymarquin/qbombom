@@ -349,4 +349,26 @@ export const UserService = {
   },
 }
 
+export const R2Service = {
+  listFiles(params = {}) {
+    return api.get('/r2/files', { params })
+  },
+  uploadFile({ file, prefix = '' }, config = {}) {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('prefix', prefix)
+
+    return api.post('/r2/files', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      ...config,
+    })
+  },
+  deleteFile(key) {
+    return api.delete('/r2/files', { data: { key } })
+  },
+  moveFile(sourceKey, destinationKey) {
+    return api.patch('/r2/files/move', { sourceKey, destinationKey })
+  },
+}
+
 export default api

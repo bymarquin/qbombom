@@ -1,4 +1,10 @@
-const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  ListObjectsV2Command,
+  CopyObjectCommand,
+} = require('@aws-sdk/client-s3');
 
 const r2 = new S3Client({
   region: 'auto',
@@ -47,4 +53,47 @@ async function deleteFile(key) {
   await r2.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
 }
 
-module.exports = { uploadFile, deleteFile };
+/**
+ * Lista arquivos de um prefixo no bucket.
+ * @param {{ prefix?: string, maxKeys?: number }} options
+ */
+async function listFiles({ prefix = '', maxKeys = 200, continuationToken } = {}) {
+  const response = await r2.send(
+    new ListObjectsV2Command({
+      Bucket: BUCKET,
+      Prefix: prefix,
+      MaxKeys: Math.min(Math.max(Number(maxKeys) || 200, 1), 1000),
+      ContinuationToken: continuationToken || undefined,
+    }),
+  );
+
+  const files = (response.Contents || []).map((item) => ({
+    key: item.Key,
+    size: item.Size || 0,
+    lastModified: item.LastModified ? item.LastModified.toISOString() : null,
+    url: CDN_URL ? `${CDN_URL}/${item.Key}` : null,
+  }));
+
+  return {
+    files,
+    isTruncated: !!response.IsTruncated,
+    nextContinuationToken: response.NextContinuationToken || null,
+  };
+}
+
+async function moveFile(sourceKey, destinationKey) {
+  await r2.send(new CopyObjectCommand({
+    Bucket: BUCKET,
+    CopySource: `${BUCKET}/${sourceKey}`,
+    Key: destinationKey,
+  }));
+
+  await deleteFile(sourceKey);
+
+  return {
+    key: destinationKey,
+    url: CDN_URL ? `${CDN_URL}/${destinationKey}` : null,
+  };
+}
+
+module.exports = { uploadFile, deleteFile, listFiles, moveFile };

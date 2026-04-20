@@ -210,6 +210,7 @@ import {
   ChevronsUpDown,
   History,
   QrCode,
+  HardDrive,
 } from "lucide-vue-next";
 
 const vClickOutside = {
@@ -299,6 +300,7 @@ const menuGroups = [
         roles: ["SUPER_ADMIN", "MANAGER"],
       },
       { name: "Produtos", path: "/app/produtos", icon: Package, roles: ["SUPER_ADMIN", "MANAGER"] },
+      { name: "Storage R2", path: "/app/r2", icon: HardDrive, roles: ["SUPER_ADMIN", "MANAGER"] },
       { name: "Equipe", path: "/app/usuarios", icon: Users, roles: ["SUPER_ADMIN", "MANAGER"] },
       {
         name: "Clientes",
