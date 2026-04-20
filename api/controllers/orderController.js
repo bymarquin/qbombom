@@ -168,22 +168,31 @@ async function attachEtaToOrders(orders) {
 }
 
 async function restoreStock(items, transaction) {
-  for (const item of items) {
-    const qty = item.quantity || 1;
+  const productQtyMap = new Map();
+  const variationQtyMap = new Map();
 
+  for (const item of items || []) {
+    const qty = Math.max(Number(item.quantity) || 1, 1);
     if (item.productId) {
-      const product = await Product.findByPk(item.productId, { transaction });
-      if (product?.manageStock) {
-        await product.update({ stock: product.stock + qty }, { transaction });
-      }
+      productQtyMap.set(item.productId, (productQtyMap.get(item.productId) || 0) + qty);
     }
-
     if (item.productVariationId) {
-      const variation = await ProductVariation.findByPk(item.productVariationId, { transaction });
-      if (variation?.manageStock) {
-        await variation.update({ stock: variation.stock + qty }, { transaction });
-      }
+      variationQtyMap.set(item.productVariationId, (variationQtyMap.get(item.productVariationId) || 0) + qty);
     }
+  }
+
+  for (const [productId, qty] of productQtyMap.entries()) {
+    await Product.update(
+      { stock: sequelize.literal(`stock + ${qty}`) },
+      { where: { id: productId, manageStock: true }, transaction },
+    );
+  }
+
+  for (const [variationId, qty] of variationQtyMap.entries()) {
+    await ProductVariation.update(
+      { stock: sequelize.literal(`stock + ${qty}`) },
+      { where: { id: variationId, manageStock: true }, transaction },
+    );
   }
 }
 
