@@ -94,6 +94,18 @@
               </h3>
               <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-3">{{ order.type }}</p>
 
+              <div
+                v-if="order.eta?.inQueue"
+                class="mb-3 rounded-lg border border-yellow-200 dark:border-yellow-900/40 bg-yellow-50 dark:bg-yellow-900/20 px-2.5 py-2"
+              >
+                <p class="text-xs font-semibold text-yellow-800 dark:text-yellow-300">
+                  ETA: {{ formatEta(order.eta.etaMinutes) }}
+                </p>
+                <p class="text-[11px] text-yellow-700/90 dark:text-yellow-400/90">
+                  Fila #{{ order.eta.queuePosition }}
+                </p>
+              </div>
+
               <div class="flex items-center gap-2 mb-4">
                 <span
                   class="px-2 py-1 bg-neutral-100 dark:bg-neutral-800 rounded text-xs font-semibold text-neutral-700 dark:text-neutral-300"
@@ -185,6 +197,18 @@
                 {{ order.customerName || "Cliente Balcão" }}
               </h3>
               <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-3">{{ order.type }}</p>
+
+              <div
+                v-if="order.eta?.inQueue"
+                class="mb-3 rounded-lg border border-yellow-200 dark:border-yellow-900/40 bg-yellow-50 dark:bg-yellow-900/20 px-2.5 py-2"
+              >
+                <p class="text-xs font-semibold text-yellow-800 dark:text-yellow-300">
+                  ETA: {{ formatEta(order.eta.etaMinutes) }}
+                </p>
+                <p class="text-[11px] text-yellow-700/90 dark:text-yellow-400/90">
+                  Fila #{{ order.eta.queuePosition }}
+                </p>
+              </div>
 
               <div class="flex items-center gap-2 mb-4">
                 <span
@@ -443,6 +467,14 @@ const formatDateOnlyTime = (dateString) => {
   const d = new Date(dateString);
   return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 };
+
+const formatEta = (minutes) => {
+  const value = Math.max(Number(minutes) || 0, 0)
+  if (value < 60) return `${value} min`
+  const hours = Math.floor(value / 60)
+  const remaining = value % 60
+  return remaining === 0 ? `${hours}h` : `${hours}h ${remaining}min`
+}
 </script>
 
 <style scoped>

@@ -3,6 +3,12 @@ const { Op } = require('sequelize');
 const { uploadFile } = require('../services/storageService');
 const whatsappService = require('../services/whatsappService');
 
+const ETA_ACTIVE_STATUSES = new Set(['novo', 'em_preparo']);
+const ETA_FINISHED_STATUSES = ['pronto', 'em_rota', 'entregue', 'finalizado'];
+const ETA_DEFAULT_SECONDS_PER_UNIT = 210;
+const ETA_MIN_SECONDS_PER_UNIT = 90;
+const ETA_MAX_SECONDS_PER_UNIT = 600;
+
 const ORDER_INCLUDES = [
   {
     model: OrderItem,
@@ -13,6 +19,153 @@ const ORDER_INCLUDES = [
     ]
   }
 ];
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function countPreparationUnits(order) {
+  if (!Array.isArray(order?.items) || order.items.length === 0) {
+    return 1;
+  }
+
+  const units = order.items.reduce((total, item) => {
+    const qty = Math.max(Number(item.quantity) || 1, 1);
+    const requiresPreparation = item?.product?.requiresPreparation !== false;
+    return requiresPreparation ? total + qty : total;
+  }, 0);
+
+  return Math.max(units, 1);
+}
+
+async function estimateSecondsPerUnitFromHistory() {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 30);
+
+  const historicalOrders = await Order.findAll({
+    where: {
+      status: { [Op.in]: ETA_FINISHED_STATUSES },
+      updatedAt: { [Op.gte]: cutoff },
+    },
+    include: ORDER_INCLUDES,
+    order: [['updatedAt', 'DESC']],
+    limit: 200,
+  });
+
+  let totalUnits = 0;
+  let totalSeconds = 0;
+  let validSamples = 0;
+
+  for (const order of historicalOrders) {
+    const units = countPreparationUnits(order);
+    const durationSeconds = Math.round((new Date(order.updatedAt) - new Date(order.createdAt)) / 1000);
+
+    if (durationSeconds < 120 || durationSeconds > 3 * 60 * 60) continue;
+
+    totalUnits += units;
+    totalSeconds += durationSeconds;
+    validSamples += 1;
+  }
+
+  if (validSamples < 5 || totalUnits <= 0) {
+    return ETA_DEFAULT_SECONDS_PER_UNIT;
+  }
+
+  return clamp(totalSeconds / totalUnits, ETA_MIN_SECONDS_PER_UNIT, ETA_MAX_SECONDS_PER_UNIT);
+}
+
+function createNonQueueEta(status, secondsPerUnit, generatedAt) {
+  if (status === 'aguardando_pagamento') {
+    return {
+      inQueue: false,
+      state: 'waiting_payment',
+      queuePosition: null,
+      etaMinutes: null,
+      etaAt: null,
+      modelSecondsPerUnit: secondsPerUnit,
+      generatedAt,
+    };
+  }
+
+  return {
+    inQueue: false,
+    state: 'out_of_queue',
+    queuePosition: null,
+    etaMinutes: null,
+    etaAt: null,
+    modelSecondsPerUnit: secondsPerUnit,
+    generatedAt,
+  };
+}
+
+async function buildEtaSnapshot() {
+  const [secondsPerUnit, activeQueue] = await Promise.all([
+    estimateSecondsPerUnitFromHistory(),
+    Order.findAll({
+      where: { status: { [Op.in]: Array.from(ETA_ACTIVE_STATUSES) } },
+      include: ORDER_INCLUDES,
+      order: [['createdAt', 'ASC']],
+    }),
+  ]);
+
+  const sortedQueue = [...activeQueue].sort((a, b) => {
+    const aRank = a.status === 'em_preparo' ? 0 : 1;
+    const bRank = b.status === 'em_preparo' ? 0 : 1;
+    if (aRank !== bRank) return aRank - bRank;
+    return new Date(a.createdAt) - new Date(b.createdAt);
+  });
+
+  const generatedAt = new Date().toISOString();
+  const byOrderId = new Map();
+  let queuedSeconds = 0;
+
+  sortedQueue.forEach((order, index) => {
+    const units = countPreparationUnits(order);
+    const estimatedTotalSeconds = Math.max(4 * 60, Math.round(units * secondsPerUnit));
+    const remainingFactor = order.status === 'em_preparo' ? 0.55 : 1;
+    const remainingSeconds = Math.max(2 * 60, Math.round(estimatedTotalSeconds * remainingFactor));
+    const etaSeconds = queuedSeconds + remainingSeconds;
+
+    byOrderId.set(order.id, {
+      inQueue: true,
+      state: 'in_queue',
+      queuePosition: index + 1,
+      etaMinutes: Math.max(1, Math.ceil(etaSeconds / 60)),
+      etaAt: new Date(Date.now() + etaSeconds * 1000).toISOString(),
+      modelSecondsPerUnit: Math.round(secondsPerUnit),
+      generatedAt,
+      prepUnits: units,
+      estimatedRemainingSeconds: remainingSeconds,
+    });
+
+    queuedSeconds += remainingSeconds;
+  });
+
+  return {
+    byOrderId,
+    generatedAt,
+    secondsPerUnit: Math.round(secondsPerUnit),
+  };
+}
+
+function mapEtaToOrder(order, snapshot) {
+  if (snapshot.byOrderId.has(order.id)) {
+    return snapshot.byOrderId.get(order.id);
+  }
+
+  return createNonQueueEta(order.status, snapshot.secondsPerUnit, snapshot.generatedAt);
+}
+
+async function attachEtaToOrders(orders) {
+  const list = Array.isArray(orders) ? orders : [orders];
+  if (!list.length) return;
+
+  const snapshot = await buildEtaSnapshot();
+
+  list.forEach((order) => {
+    order.setDataValue('eta', mapEtaToOrder(order, snapshot));
+  });
+}
 
 async function restoreStock(items, transaction) {
   for (const item of items) {
@@ -66,6 +219,9 @@ exports.index = async (req, res) => {
       include: ORDER_INCLUDES,
       order: [['createdAt', 'DESC']]
     });
+
+    await attachEtaToOrders(orders);
+
     res.json(orders);
   } catch (error) {
     console.error('[orders.index]', error);
@@ -77,6 +233,9 @@ exports.show = async (req, res) => {
   try {
     const order = await Order.findByPk(req.params.id, { include: ORDER_INCLUDES });
     if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    await attachEtaToOrders(order);
+
     res.json(order);
   } catch (error) {
     console.error('[orders.show]', error);
@@ -181,6 +340,8 @@ exports.create = async (req, res) => {
     }
 
     const createdOrder = await Order.findByPk(order.id, { include: ORDER_INCLUDES });
+    await attachEtaToOrders(createdOrder);
+
     req.app.get('io')?.emit('orderCreated', createdOrder);
 
     res.status(201).json(createdOrder);
@@ -216,6 +377,9 @@ exports.track = async (req, res) => {
       include: ORDER_INCLUDES
     });
     if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    await attachEtaToOrders(order);
+
     res.json(order);
   } catch (error) {
     console.error('[orders.track]', error);
@@ -241,6 +405,7 @@ exports.cancelByTracking = async (req, res) => {
 
     if (order.status === 'cancelado') {
       await transaction.commit();
+      await attachEtaToOrders(order);
       return res.json(order);
     }
 
@@ -261,12 +426,15 @@ exports.cancelByTracking = async (req, res) => {
     await order.save({ transaction });
     await transaction.commit();
 
+    await attachEtaToOrders(order);
+
     req.app.get('io')?.emit('orderUpdated', {
       id: order.id,
       trackingCode: order.trackingCode,
       status: order.status,
       paymentStatus: order.paymentStatus,
-      receiptUrl: order.receiptUrl
+      receiptUrl: order.receiptUrl,
+      eta: order.eta,
     });
 
     return res.json(order);
@@ -289,6 +457,8 @@ exports.updateStatus = async (req, res) => {
     if (paymentStatus) order.paymentStatus = paymentStatus;
     await order.save();
 
+    await attachEtaToOrders(order);
+
     const io = req.app.get('io');
     io?.emit('orderUpdated', order);
 
@@ -303,6 +473,7 @@ exports.updateStatus = async (req, res) => {
         try {
           order.status = 'finalizado';
           await order.save();
+          await attachEtaToOrders(order);
           io?.emit('orderUpdated', order);
           notifyCustomer(order, 'finalizado');
         } catch (e) {
@@ -333,6 +504,7 @@ exports.cancelOrder = async (req, res) => {
 
     if (order.status === 'cancelado') {
       await transaction.commit();
+      await attachEtaToOrders(order);
       return res.json(order);
     }
 
@@ -346,6 +518,8 @@ exports.cancelOrder = async (req, res) => {
     order.status = 'cancelado';
     await order.save({ transaction });
     await transaction.commit();
+
+    await attachEtaToOrders(order);
 
     req.app.get('io')?.emit('orderUpdated', order);
     notifyCustomer(order, 'cancelado');
@@ -369,6 +543,7 @@ exports.confirmDeliveryByTracking = async (req, res) => {
 
     order.status = 'entregue';
     await order.save();
+    await attachEtaToOrders(order);
 
     const io = req.app.get('io');
     io?.emit('orderUpdated', order);
@@ -380,6 +555,7 @@ exports.confirmDeliveryByTracking = async (req, res) => {
       try {
         order.status = 'finalizado';
         await order.save();
+        await attachEtaToOrders(order);
         io?.emit('orderUpdated', order);
         notifyCustomer(order, 'finalizado');
       } catch (e) {
@@ -409,12 +585,15 @@ exports.uploadReceipt = async (req, res) => {
 
     order.receiptUrl = await uploadFile(Buffer.from(data, 'base64'), key, contentType);
     await order.save();
+    await attachEtaToOrders(order);
 
     req.app.get('io')?.emit('orderUpdated', {
+      id: order.id,
       trackingCode: order.trackingCode,
       status: order.status,
       paymentStatus: order.paymentStatus,
-      receiptUrl: order.receiptUrl
+      receiptUrl: order.receiptUrl,
+      eta: order.eta,
     });
 
     res.json(order);

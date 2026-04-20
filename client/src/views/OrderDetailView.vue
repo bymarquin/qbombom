@@ -72,6 +72,12 @@
               {{ order.paymentStatus }} ({{ order.paymentMethod }})
             </p>
           </div>
+          <div v-if="order.eta?.inQueue">
+            <p class="text-xs text-neutral-500 dark:text-neutral-500 font-medium">Previsão de preparo</p>
+            <p class="text-sm font-semibold text-yellow-700 dark:text-yellow-400">
+              {{ formatEta(order.eta.etaMinutes) }} (fila #{{ order.eta.queuePosition }})
+            </p>
+          </div>
           <div v-if="order.type === 'Entrega'" class="col-span-2">
             <p class="text-xs text-neutral-500 dark:text-neutral-500 font-medium">Endereço de Entrega</p>
             <p class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
@@ -295,4 +301,12 @@ const getReceiptUrl = (url) => {
 
 const formatMoney = (val) =>
   Number(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+
+const formatEta = (minutes) => {
+  const value = Math.max(Number(minutes) || 0, 0)
+  if (value < 60) return `${value} min`
+  const hours = Math.floor(value / 60)
+  const remaining = value % 60
+  return remaining === 0 ? `${hours}h` : `${hours}h ${remaining}min`
+}
 </script>
