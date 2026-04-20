@@ -198,8 +198,13 @@
                       <button type="button" @click="addSelectedStorageImages" class="px-5 py-2 text-sm font-semibold bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 rounded-lg hover:bg-neutral-300 dark:hover:bg-neutral-700 active:scale-95 transition-all">
                         Adicionar sem recorte
                       </button>
-                      <button type="button" @click="startCroppingSelectedStorageImages" class="px-5 py-2 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 active:scale-95 transition-all">
-                        Recortar e adicionar
+                      <button
+                        type="button"
+                        @click="startCroppingSelectedStorageImages"
+                        :disabled="isPreparingCrop"
+                        class="px-5 py-2 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        {{ isPreparingCrop ? 'Preparando...' : 'Recortar e adicionar' }}
                       </button>
                     </div>
                   </div>
@@ -336,7 +341,7 @@
 </template>
 
 <script setup>
-import { ref, shallowRef, computed, onMounted } from 'vue'
+import { ref, shallowRef, computed, onMounted, onUnmounted } from 'vue'
 import { Plus, X, Image as ImageIcon } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import { Cropper, RectangleStencil } from 'vue-advanced-cropper'
@@ -371,6 +376,7 @@ const cropQueue = ref([])
 const cropQueueIdx = ref(0)
 const cropperRef = ref(null)
 const cropAspect = ref('free')
+const isPreparingCrop = ref(false)
 
 const cropAspectOptions = [
   { value: 'free', label: 'Livre' },
@@ -428,6 +434,10 @@ onMounted(async () => {
   }
 })
 
+onUnmounted(() => {
+  clearCropQueue()
+})
+
 const openStoragePicker = async () => {
   showStoragePicker.value = true
   storageSelection.value = []
@@ -483,20 +493,44 @@ const addSelectedStorageImages = () => {
   closeStoragePicker()
 }
 
-const startCroppingSelectedStorageImages = () => {
+const startCroppingSelectedStorageImages = async () => {
   const selectedFiles = storageFiles.value.filter((file) => storageSelection.value.includes(file.key))
   if (!selectedFiles.length) {
     toast.warning('Selecione pelo menos uma imagem.')
     return
   }
 
-  cropQueue.value = selectedFiles.map((file) => ({
-    ...file,
-    cropUrl: R2Service.getProxyUrl(file.key),
-  }))
-  cropQueueIdx.value = 0
-  cropAspect.value = 'free'
-  showStoragePicker.value = false
+  isPreparingCrop.value = true
+
+  try {
+    const queueWithBlobs = (await Promise.all(selectedFiles.map(loadFileForCrop))).filter(Boolean)
+
+    if (!queueWithBlobs.length) {
+      toast.error('Nao foi possivel carregar as imagens para recorte.')
+      return
+    }
+
+    cropQueue.value = queueWithBlobs
+    cropQueueIdx.value = 0
+    cropAspect.value = 'free'
+    showStoragePicker.value = false
+  } finally {
+    isPreparingCrop.value = false
+  }
+}
+
+const loadFileForCrop = async (file) => {
+  try {
+    const response = await R2Service.getFileBlob(file.key)
+    const cropUrl = URL.createObjectURL(response.data)
+    return {
+      ...file,
+      cropUrl,
+    }
+  } catch {
+    toast.error(`Nao foi possivel abrir para recorte: ${file.key}`)
+    return null
+  }
 }
 
 const confirmCrop = () => {
@@ -530,6 +564,15 @@ const skipCrop = () => {
 }
 
 const cancelCrop = () => {
+  clearCropQueue()
+}
+
+const clearCropQueue = () => {
+  cropQueue.value.forEach((item) => {
+    if (item?.cropUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(item.cropUrl)
+    }
+  })
   cropQueue.value = []
   cropQueueIdx.value = 0
 }
@@ -540,8 +583,7 @@ const advanceCropQueue = () => {
     return
   }
 
-  cropQueue.value = []
-  cropQueueIdx.value = 0
+  clearCropQueue()
   storageSelection.value = []
   toast.success('Imagens adicionadas ao produto.')
 }

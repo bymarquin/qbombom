@@ -357,6 +357,12 @@ export const R2Service = {
     const base = String(api.defaults.baseURL || '').replace(/\/+$/, '')
     return `${base}/r2/files/proxy?key=${encodeURIComponent(key)}`
   },
+  getFileBlob(key) {
+    return api.get('/r2/files/proxy', {
+      params: { key },
+      responseType: 'blob',
+    })
+  },
   uploadFile({ file, prefix = '' }, config = {}) {
     const formData = new FormData()
     formData.append('file', file)
