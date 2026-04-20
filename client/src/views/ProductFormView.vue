@@ -69,11 +69,14 @@
               <h2 class="text-sm font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Imagens</h2>
               <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">Primeira imagem é a capa · Arraste para reordenar</p>
             </div>
-            <label class="cursor-pointer flex items-center gap-1.5 text-xs font-semibold text-red-600 hover:text-red-700 transition-colors">
+            <button
+              type="button"
+              @click="openStoragePicker"
+              class="cursor-pointer flex items-center gap-1.5 text-xs font-semibold text-red-600 hover:text-red-700 transition-colors"
+            >
               <Plus class="w-4 h-4" />
-              Adicionar
-              <input type="file" accept="image/*" multiple class="sr-only" @change="onFilesSelected" />
-            </label>
+              Selecionar do Storage
+            </button>
           </div>
 
           <!-- Grid de thumbnails -->
@@ -91,7 +94,7 @@
                 dragOverIdx === idx ? 'scale-105 border-indigo-500' : '',
               ]"
             >
-              <img :src="img.preview" class="w-full h-full object-cover" draggable="false" />
+              <img :src="img.imageUrl" class="w-full h-full object-cover" draggable="false" />
               <div v-if="idx === 0" class="absolute top-1.5 left-1.5 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide">Capa</div>
               <button
                 type="button"
@@ -103,14 +106,19 @@
             </div>
 
             <!-- Botão adicionar inline -->
-            <label class="aspect-square rounded-xl border-2 border-dashed border-neutral-300 dark:border-neutral-700 hover:border-red-400 dark:hover:border-red-600 cursor-pointer flex items-center justify-center transition-colors bg-neutral-50 dark:bg-neutral-950/30">
+            <button
+              type="button"
+              @click="openStoragePicker"
+              class="aspect-square rounded-xl border-2 border-dashed border-neutral-300 dark:border-neutral-700 hover:border-red-400 dark:hover:border-red-600 cursor-pointer flex items-center justify-center transition-colors bg-neutral-50 dark:bg-neutral-950/30"
+            >
               <Plus class="w-6 h-6 text-neutral-400" />
-              <input type="file" accept="image/*" multiple class="sr-only" @change="onFilesSelected" />
-            </label>
+            </button>
           </div>
 
           <!-- Dropzone vazio -->
-          <label
+          <button
+            type="button"
+            @click="openStoragePicker"
             v-else
             class="flex flex-col items-center justify-center gap-3 w-full h-48 border-2 border-dashed border-neutral-300 dark:border-neutral-700 hover:border-red-400 dark:hover:border-red-600 rounded-xl cursor-pointer transition-colors bg-neutral-50 dark:bg-neutral-950/30 text-center px-6"
           >
@@ -118,56 +126,77 @@
               <ImageIcon class="w-7 h-7 text-neutral-400" />
             </div>
             <div>
-              <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Clique para selecionar imagens</p>
-              <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">JPG, PNG, WEBP · Pode selecionar várias de uma vez</p>
+              <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Clique para selecionar imagens do storage</p>
+              <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">Escolha arquivos já enviados no Cloudflare R2</p>
             </div>
-            <input type="file" accept="image/*" multiple class="sr-only" @change="onFilesSelected" />
-          </label>
+          </button>
 
-          <!-- Crop modal (com fila) -->
+          <!-- Seletor do Storage -->
           <Teleport to="body">
             <Transition name="crop-modal">
-              <div v-if="cropQueue.length > 0" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div class="absolute inset-0 bg-black/75 backdrop-blur-sm" @click="cancelCrop" />
-                <div class="relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden">
+              <div v-if="showStoragePicker" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-black/75 backdrop-blur-sm" @click="closeStoragePicker" />
+                <div class="relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden">
                   <div class="px-6 py-4 flex items-center justify-between shrink-0">
                     <div>
-                      <h4 class="font-bold text-neutral-900 dark:text-neutral-100">
-                        Ajustar imagem
-                        <span v-if="cropQueue.length > 1" class="ml-2 text-xs font-normal text-neutral-400">({{ cropQueueIdx + 1 }} de {{ cropQueue.length }})</span>
-                      </h4>
-                      <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">Arraste para reposicionar · Scroll para zoom</p>
+                      <h4 class="font-bold text-neutral-900 dark:text-neutral-100">Selecionar imagens do storage</h4>
+                      <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">Marque uma ou mais imagens para adicionar ao produto</p>
                     </div>
-                    <button type="button" @click="cancelCrop" class="p-2 rounded-lg text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                    <button type="button" @click="closeStoragePicker" class="p-2 rounded-lg text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
                       <X class="w-5 h-5" />
                     </button>
                   </div>
-                  <div class="bg-neutral-950 relative" style="height: 380px">
-                    <Cropper
-                      ref="cropperRef"
-                      :src="cropQueue[cropQueueIdx]"
-                      :stencil-component="GuidedStencil"
-                      :stencil-props="{ aspectRatio: 1 }"
-                      :default-size="{ width: 300, height: 300 }"
-                      class="w-full h-full"
+
+                  <div class="px-6 pb-3 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3">
+                    <input
+                      v-model="storagePrefix"
+                      type="text"
+                      placeholder="Prefixo (ex: products)"
+                      class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15"
+                      @keyup.enter="loadStorageFiles"
                     />
+                    <button
+                      type="button"
+                      @click="loadStorageFiles"
+                      :disabled="isLoadingStorage"
+                      class="px-4 py-2 text-sm font-medium rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50"
+                    >
+                      {{ isLoadingStorage ? 'Carregando...' : 'Buscar' }}
+                    </button>
                   </div>
-                  <div class="px-6 py-4 flex items-center justify-between gap-4 border-t border-neutral-100 dark:border-neutral-800">
-                    <div class="flex items-center gap-2">
-                      <button type="button" @click="cropperRef.rotate(-90)" class="p-2 rounded-lg border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors" title="Girar esquerda">
-                        <RotateCcw class="w-4 h-4" />
-                      </button>
-                      <button type="button" @click="cropperRef.rotate(90)" class="p-2 rounded-lg border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors" title="Girar direita">
-                        <RotateCw class="w-4 h-4 scale-x-[-1]" />
-                      </button>
+
+                  <div class="px-6 pb-6 flex-1 overflow-auto">
+                    <div v-if="storageFiles.length === 0" class="h-full min-h-44 rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700 flex items-center justify-center text-sm text-neutral-500 dark:text-neutral-400">
+                      Nenhuma imagem encontrada neste prefixo.
                     </div>
+
+                    <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                      <label
+                        v-for="file in storageFiles"
+                        :key="file.key"
+                        class="group relative rounded-xl overflow-hidden border-2 cursor-pointer transition-all"
+                        :class="storageSelection.includes(file.key) ? 'border-red-500 ring-2 ring-red-500/25' : 'border-neutral-200 dark:border-neutral-700 hover:border-red-400'"
+                      >
+                        <input
+                          type="checkbox"
+                          class="absolute top-2 left-2 z-10 w-4 h-4 accent-red-600"
+                          :checked="storageSelection.includes(file.key)"
+                          @change="toggleStorageSelection(file.key)"
+                        />
+                        <img :src="file.url" :alt="file.key" class="w-full aspect-square object-cover" loading="lazy" />
+                        <div class="absolute bottom-0 inset-x-0 bg-black/55 text-white text-[10px] px-2 py-1 truncate">{{ file.key }}</div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="px-6 py-4 flex items-center justify-between gap-4 border-t border-neutral-100 dark:border-neutral-800">
+                    <p class="text-xs text-neutral-500 dark:text-neutral-400">{{ storageSelection.length }} selecionada(s)</p>
                     <div class="flex gap-3 ml-auto">
-                      <button type="button" @click="skipCrop" class="px-4 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
-                        {{ cropQueueIdx + 1 < cropQueue.length ? 'Pular' : 'Cancelar' }}
+                      <button type="button" @click="closeStoragePicker" class="px-4 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
+                        Cancelar
                       </button>
-                      <button type="button" @click="confirmCrop" class="px-5 py-2 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 active:scale-95 transition-all flex items-center gap-2">
-                        <Check class="w-4 h-4" />
-                        {{ cropQueueIdx + 1 < cropQueue.length ? 'Usar e continuar' : 'Usar imagem' }}
+                      <button type="button" @click="addSelectedStorageImages" class="px-5 py-2 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 active:scale-95 transition-all">
+                        Adicionar selecionadas
                       </button>
                     </div>
                   </div>
@@ -244,25 +273,11 @@
 </template>
 
 <script setup>
-import { ref, shallowRef, computed, onMounted, defineComponent, h } from 'vue'
-import { Plus, X, Image as ImageIcon, RotateCcw, RotateCw, Check } from 'lucide-vue-next'
+import { ref, shallowRef, computed, onMounted } from 'vue'
+import { Plus, X, Image as ImageIcon } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
-import { Cropper, RectangleStencil } from 'vue-advanced-cropper'
-import 'vue-advanced-cropper/dist/style.css'
-import { CatalogService } from '@/services/http'
+import { CatalogService, R2Service } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
-
-const GuidedStencil = defineComponent({
-  inheritAttrs: false,
-  setup(_, { attrs }) {
-    return () => h(RectangleStencil, attrs, {
-      default: () => h('div', { class: 'absolute inset-0 pointer-events-none' }, [
-        h('div', { style: 'position:absolute;top:50%;left:0;right:0;height:0;border-top:1.5px dashed rgba(255,255,255,0.4)' }),
-        h('div', { style: 'position:absolute;left:50%;top:0;bottom:0;width:0;border-left:1.5px dashed rgba(255,255,255,0.4)' }),
-      ])
-    })
-  }
-})
 
 const route = useRoute()
 const router = useRouter()
@@ -278,14 +293,15 @@ const form = ref({
   weightBased: false, pricePerKg: 0, minPrice: 0,
 })
 
-// imageList: [{_key, preview, id?, imageBase64?}]
+// imageList: [{_key, imageUrl, id?}]
 // _key = único por item para o v-for
 // id = presente se imagem já existe no servidor
-// imageBase64 = presente se é nova (ainda não salva)
 const imageList = ref([])
-const cropQueue = ref([])   // base64 das imagens aguardando crop
-const cropQueueIdx = ref(0)
-const cropperRef = ref(null)
+const showStoragePicker = ref(false)
+const isLoadingStorage = ref(false)
+const storagePrefix = ref('products')
+const storageFiles = ref([])
+const storageSelection = ref([])
 
 let _keyCounter = 0
 const makeKey = () => ++_keyCounter
@@ -299,11 +315,11 @@ onMounted(async () => {
       const { data } = await CatalogService.getProduct(route.params.id, { all: true })
       imageList.value = (data.images || [])
         .sort((a, b) => a.position - b.position)
-        .map((img) => ({ _key: makeKey(), id: img.id, preview: img.imageUrl }))
+        .map((img) => ({ _key: makeKey(), id: img.id, imageUrl: img.imageUrl }))
 
       // fallback: se não tem images mas tem imageUrl legado
       if (imageList.value.length === 0 && data.imageUrl) {
-        imageList.value = [{ _key: makeKey(), preview: data.imageUrl }]
+        imageList.value = [{ _key: makeKey(), imageUrl: data.imageUrl }]
       }
 
       form.value = {
@@ -327,41 +343,62 @@ onMounted(async () => {
   }
 })
 
-// Selecionar arquivos → fila de crop
-const onFilesSelected = (e) => {
-  const files = Array.from(e.target.files)
-  if (!files.length) return
-  const readers = files.map((file) => new Promise((resolve) => {
-    const reader = new FileReader()
-    reader.onload = (ev) => resolve(ev.target.result)
-    reader.readAsDataURL(file)
-  }))
-  Promise.all(readers).then((results) => {
-    cropQueue.value = results
-    cropQueueIdx.value = 0
-  })
-  e.target.value = ''
+const openStoragePicker = async () => {
+  showStoragePicker.value = true
+  storageSelection.value = []
+  await loadStorageFiles()
 }
 
-const confirmCrop = () => {
-  const { canvas } = cropperRef.value.getResult()
-  const base64 = canvas.toDataURL('image/jpeg', 0.9)
-  imageList.value.push({ _key: makeKey(), preview: base64, imageBase64: base64 })
-  advanceCropQueue()
+const closeStoragePicker = () => {
+  showStoragePicker.value = false
 }
 
-const skipCrop = () => { advanceCropQueue() }
-
-const cancelCrop = () => { cropQueue.value = []; cropQueueIdx.value = 0 }
-
-const advanceCropQueue = () => {
-  if (cropQueueIdx.value + 1 < cropQueue.value.length) {
-    cropQueueIdx.value++
-  } else {
-    cropQueue.value = []
-    cropQueueIdx.value = 0
+const loadStorageFiles = async () => {
+  isLoadingStorage.value = true
+  try {
+    const { data } = await R2Service.listFiles({ prefix: storagePrefix.value, maxKeys: 200 })
+    storageFiles.value = (data.files || []).filter((file) => file.url && isImageUrl(file.url))
+  } catch (error) {
+    toast.error(error.response?.data?.error || 'Erro ao carregar imagens do storage')
+  } finally {
+    isLoadingStorage.value = false
   }
 }
+
+const toggleStorageSelection = (key) => {
+  if (storageSelection.value.includes(key)) {
+    storageSelection.value = storageSelection.value.filter((item) => item !== key)
+  } else {
+    storageSelection.value = [...storageSelection.value, key]
+  }
+}
+
+const addSelectedStorageImages = () => {
+  const selectedFiles = storageFiles.value.filter((file) => storageSelection.value.includes(file.key))
+  if (!selectedFiles.length) {
+    toast.warning('Selecione pelo menos uma imagem.')
+    return
+  }
+
+  let addedCount = 0
+
+  selectedFiles.forEach((file) => {
+    const alreadyAdded = imageList.value.some((img) => img.imageUrl === file.url)
+    if (alreadyAdded) return
+    imageList.value.push({ _key: makeKey(), imageUrl: file.url })
+    addedCount += 1
+  })
+
+  if (addedCount === 0) {
+    toast.warning('As imagens selecionadas já estão no produto.')
+    return
+  }
+
+  toast.success(`${addedCount} imagem(ns) adicionada(s).`)
+  closeStoragePicker()
+}
+
+const isImageUrl = (url) => /\.(png|jpe?g|gif|webp|avif|bmp|svg)(\?.*)?$/i.test(url)
 
 const removeImage = (idx) => { imageList.value.splice(idx, 1) }
 
@@ -388,8 +425,8 @@ const saveProduct = async () => {
   salvando.value = true
   try {
     const images = imageList.value.map((img) => {
-      if (img.id) return { id: img.id, imageUrl: img.preview }
-      return { imageBase64: img.imageBase64 }
+      if (img.id) return { id: img.id, imageUrl: img.imageUrl }
+      return { imageUrl: img.imageUrl }
     })
     const payload = { ...form.value, images }
     if (isEditing.value) {

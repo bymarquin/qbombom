@@ -1,5 +1,5 @@
 const { Product, ProductVariation, ProductImage, AdditionalGroup, AdditionalItem } = require('../models');
-const { uploadFile, deleteFile } = require('../services/storageService');
+const { uploadFile } = require('../services/storageService');
 
 async function extractAndUploadImage(imageBase64) {
   if (!imageBase64) return null;
@@ -10,12 +10,6 @@ async function extractAndUploadImage(imageBase64) {
   const buffer = Buffer.from(matches[2], 'base64');
   const key = `products/product_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
   return uploadFile(buffer, key, contentType);
-}
-
-function deleteFromR2(imageUrl) {
-  if (!imageUrl) return;
-  const key = imageUrl.replace(`${process.env.R2_CDN_URL}/`, '');
-  deleteFile(key).catch(() => {});
 }
 
 const imagesInclude = {
@@ -70,7 +64,7 @@ exports.show = async (req, res) => {
 };
 
 // Sincroniza o array de imagens para um produto.
-// Cada item pode ser: { imageBase64 } (novo) ou { id, imageUrl } (existente).
+// Cada item pode ser: { imageUrl } (novo) ou { id, imageUrl } (existente).
 async function syncImages(productId, imagesPayload) {
   if (!Array.isArray(imagesPayload)) return null;
 
@@ -84,7 +78,6 @@ async function syncImages(productId, imagesPayload) {
   // Delete images removed from the list
   for (const img of existing) {
     if (!incomingIds.has(img.id)) {
-      deleteFromR2(img.imageUrl);
       await img.destroy();
     }
   }
@@ -96,7 +89,11 @@ async function syncImages(productId, imagesPayload) {
     if (item.id && existingMap.has(item.id)) {
       await existingMap.get(item.id).update({ position: i });
       results.push(existingMap.get(item.id));
+    } else if (item.imageUrl) {
+      const created = await ProductImage.create({ productId, imageUrl: item.imageUrl, position: i });
+      results.push(created);
     } else if (item.imageBase64) {
+      // Compatibilidade com payload legado
       const url = await extractAndUploadImage(item.imageBase64);
       if (url) {
         const created = await ProductImage.create({ productId, imageUrl: url, position: i });
@@ -177,7 +174,6 @@ exports.destroy = async (req, res) => {
   try {
     const product = await Product.findByPk(req.params.id, { include: [imagesInclude] });
     if (!product) return res.status(404).json({ error: 'Product not found' });
-    (product.images || []).forEach((img) => deleteFromR2(img.imageUrl));
     await product.destroy();
     res.json({ message: 'Product deleted successfully' });
   } catch (error) {
