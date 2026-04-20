@@ -51,6 +51,19 @@
         </div>
       </div>
 
+      <div class="mt-3 flex items-center justify-between gap-3">
+        <p class="text-xs text-neutral-500 dark:text-neutral-400">
+          {{ selectedKeys.length }} selecionado(s)
+        </p>
+        <button
+          @click="removeSelectedFiles"
+          :disabled="!hasSelectedFiles || isBulkDeleting"
+          class="px-3 py-2 rounded-lg text-xs font-semibold bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {{ isBulkDeleting ? 'Excluindo...' : 'Excluir selecionados' }}
+        </button>
+      </div>
+
       <div v-if="uploadQueue.length" class="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-800 space-y-2">
         <div
           v-for="item in uploadQueue"
@@ -78,6 +91,15 @@
             <tr
               class="text-xs uppercase text-neutral-500 dark:text-neutral-400 border-b border-neutral-100 dark:border-neutral-800/50 bg-neutral-50/50 dark:bg-neutral-800/30"
             >
+              <th class="py-4 px-4 font-medium w-10">
+                <input
+                  type="checkbox"
+                  :checked="allVisibleSelected"
+                  @change="toggleSelectAll"
+                  class="w-4 h-4 rounded border-neutral-300 accent-red-600"
+                  title="Selecionar todos"
+                />
+              </th>
               <th class="py-4 px-6 font-medium">Arquivo</th>
               <th class="py-4 px-6 font-medium">Tamanho</th>
               <th class="py-4 px-6 font-medium">Atualizado em</th>
@@ -86,7 +108,7 @@
           </thead>
           <tbody class="text-sm">
             <tr v-if="files.length === 0 && !isLoading">
-              <td colspan="4" class="py-8 text-center text-neutral-500 dark:text-neutral-500">
+              <td colspan="5" class="py-8 text-center text-neutral-500 dark:text-neutral-500">
                 Nenhum arquivo encontrado para esse prefixo.
               </td>
             </tr>
@@ -101,6 +123,15 @@
                   : 'hover:bg-neutral-50/50 dark:hover:bg-neutral-800/30'
               "
             >
+              <td class="py-4 px-4" @click.stop>
+                <input
+                  type="checkbox"
+                  :checked="isSelected(file.key)"
+                  @change="toggleSelectFile(file.key)"
+                  class="w-4 h-4 rounded border-neutral-300 accent-red-600"
+                  :aria-label="`Selecionar ${file.key}`"
+                />
+              </td>
               <td class="py-4 px-6">
                 <div class="font-medium text-neutral-900 dark:text-neutral-100 break-all">{{ file.key }}</div>
                 <a
@@ -109,6 +140,7 @@
                   target="_blank"
                   rel="noopener noreferrer"
                   class="text-xs text-red-600 hover:text-red-700"
+                  @click.stop
                 >
                   Abrir URL
                 </a>
@@ -122,6 +154,7 @@
                     :disabled="!file.url"
                     title="Copiar URL"
                     class="p-1.5 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    @click.stop
                   >
                     <Copy class="w-4 h-4" />
                   </button>
@@ -129,6 +162,7 @@
                     @click="renameFile(file.key)"
                     title="Renomear ou mover"
                     class="p-1.5 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-800 rounded-md transition-colors"
+                    @click.stop
                   >
                     <Pencil class="w-4 h-4" />
                   </button>
@@ -136,6 +170,7 @@
                     @click="removeFile(file.key)"
                     title="Excluir"
                     class="p-1.5 text-red-600 hover:bg-red-50 hover:text-red-800 rounded-md transition-colors"
+                    @click.stop
                   >
                     <Trash2 class="w-4 h-4" />
                   </button>
@@ -224,12 +259,18 @@ const prefix = ref('')
 const files = ref([])
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
+const isBulkDeleting = ref(false)
 const uploadQueue = ref([])
 const continuationToken = ref(null)
 const hasMore = ref(false)
 const selectedFileKey = ref(null)
+const selectedKeys = ref([])
 
 const selectedFile = computed(() => files.value.find((file) => file.key === selectedFileKey.value) || null)
+const hasSelectedFiles = computed(() => selectedKeys.value.length > 0)
+const allVisibleSelected = computed(
+  () => files.value.length > 0 && files.value.every((file) => selectedKeys.value.includes(file.key)),
+)
 
 onMounted(loadFiles)
 
@@ -259,6 +300,7 @@ async function loadFiles() {
     files.value = res.data.files || []
     continuationToken.value = res.data.nextContinuationToken || null
     hasMore.value = !!res.data.isTruncated
+    syncSelectedKeysWithFiles()
     ensureSelectedFile()
   } catch (error) {
     toast.error(error.response?.data?.error || 'Erro ao listar arquivos no R2.')
@@ -281,6 +323,7 @@ async function loadMoreFiles() {
     files.value = [...files.value, ...(res.data.files || [])]
     continuationToken.value = res.data.nextContinuationToken || null
     hasMore.value = !!res.data.isTruncated
+    syncSelectedKeysWithFiles()
     ensureSelectedFile()
   } catch (error) {
     toast.error(error.response?.data?.error || 'Erro ao paginar arquivos.')
@@ -299,6 +342,32 @@ function ensureSelectedFile() {
   if (!selectedFileKey.value || !stillExists) {
     selectedFileKey.value = files.value[0].key
   }
+}
+
+function syncSelectedKeysWithFiles() {
+  const visibleKeys = new Set(files.value.map((file) => file.key))
+  selectedKeys.value = selectedKeys.value.filter((key) => visibleKeys.has(key))
+}
+
+function isSelected(key) {
+  return selectedKeys.value.includes(key)
+}
+
+function toggleSelectFile(key) {
+  if (isSelected(key)) {
+    selectedKeys.value = selectedKeys.value.filter((item) => item !== key)
+    return
+  }
+  selectedKeys.value = [...selectedKeys.value, key]
+}
+
+function toggleSelectAll(event) {
+  if (event.target.checked) {
+    selectedKeys.value = Array.from(new Set([...selectedKeys.value, ...files.value.map((file) => file.key)]))
+    return
+  }
+  const visibleKeys = new Set(files.value.map((file) => file.key))
+  selectedKeys.value = selectedKeys.value.filter((key) => !visibleKeys.has(key))
 }
 
 function isImageFile(file) {
@@ -363,6 +432,40 @@ async function removeFile(key) {
     await loadFiles()
   } catch (error) {
     toast.error(error.response?.data?.error || 'Falha ao remover arquivo.')
+  }
+}
+
+async function removeSelectedFiles() {
+  if (!selectedKeys.value.length) return
+
+  const confirmed = await dialog.confirm({
+    title: 'Excluir arquivos selecionados?',
+    message: `Deseja realmente excluir ${selectedKeys.value.length} arquivo(s)? Essa acao nao pode ser desfeita.`,
+    confirmLabel: 'Excluir todos',
+    cancelLabel: 'Cancelar',
+  })
+
+  if (!confirmed) return
+
+  isBulkDeleting.value = true
+
+  try {
+    const keysToDelete = [...selectedKeys.value]
+    const results = await Promise.allSettled(keysToDelete.map((key) => R2Service.deleteFile(key)))
+    const failedCount = results.filter((result) => result.status === 'rejected').length
+    const successCount = keysToDelete.length - failedCount
+
+    if (successCount > 0) {
+      toast.success(`${successCount} arquivo(s) removido(s) com sucesso.`)
+    }
+    if (failedCount > 0) {
+      toast.error(`${failedCount} arquivo(s) nao puderam ser removidos.`)
+    }
+
+    selectedKeys.value = []
+    await loadFiles()
+  } finally {
+    isBulkDeleting.value = false
   }
 }
 
