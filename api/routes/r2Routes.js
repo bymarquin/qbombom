@@ -11,7 +11,7 @@ const upload = multer({
 });
 
 router.get('/files', auth, checkPermission('users.manage'), r2Controller.list);
-router.get('/files/proxy', auth, checkPermission('users.manage'), r2Controller.proxy);
+router.get('/files/proxy', r2Controller.proxy);
 router.post('/files', auth, checkPermission('users.manage'), upload.single('file'), r2Controller.upload);
 router.delete('/files', auth, checkPermission('users.manage'), r2Controller.destroy);
 router.patch('/files/move', auth, checkPermission('users.manage'), r2Controller.move);
