@@ -68,11 +68,12 @@
       </div>
     </section>
 
-    <div
-      class="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl dark:shadow-none shadow-red-900/5 border border-neutral-100 dark:border-neutral-800/50 flex-1 overflow-hidden flex flex-col"
-    >
-      <div class="flex-1 overflow-auto">
-        <table class="w-full text-left border-collapse">
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 flex-1 min-h-0">
+      <div
+        class="xl:col-span-2 bg-white dark:bg-neutral-900 rounded-2xl shadow-xl dark:shadow-none shadow-red-900/5 border border-neutral-100 dark:border-neutral-800/50 overflow-hidden flex flex-col min-h-0"
+      >
+        <div class="flex-1 overflow-auto">
+          <table class="w-full text-left border-collapse">
           <thead>
             <tr
               class="text-xs uppercase text-neutral-500 dark:text-neutral-400 border-b border-neutral-100 dark:border-neutral-800/50 bg-neutral-50/50 dark:bg-neutral-800/30"
@@ -92,7 +93,13 @@
             <tr
               v-for="file in files"
               :key="file.key"
-              class="border-b border-neutral-100 dark:border-neutral-800/50 last:border-0 hover:bg-neutral-50/50 dark:hover:bg-neutral-800/30 transition-colors"
+              @click="selectedFileKey = file.key"
+              class="border-b border-neutral-100 dark:border-neutral-800/50 last:border-0 transition-colors cursor-pointer"
+              :class="
+                selectedFileKey === file.key
+                  ? 'bg-red-50/70 dark:bg-red-500/10'
+                  : 'hover:bg-neutral-50/50 dark:hover:bg-neutral-800/30'
+              "
             >
               <td class="py-4 px-6">
                 <div class="font-medium text-neutral-900 dark:text-neutral-100 break-all">{{ file.key }}</div>
@@ -136,24 +143,75 @@
               </td>
             </tr>
           </tbody>
-        </table>
+          </table>
+        </div>
+
+        <div v-if="hasMore && files.length > 0" class="p-3 border-t border-neutral-100 dark:border-neutral-800 flex justify-center">
+          <button
+            @click="loadMoreFiles"
+            :disabled="isLoadingMore"
+            class="px-4 py-2 rounded-lg text-sm font-medium border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {{ isLoadingMore ? 'Carregando...' : 'Carregar mais' }}
+          </button>
+        </div>
       </div>
 
-      <div v-if="hasMore && files.length > 0" class="p-3 border-t border-neutral-100 dark:border-neutral-800 flex justify-center">
-        <button
-          @click="loadMoreFiles"
-          :disabled="isLoadingMore"
-          class="px-4 py-2 rounded-lg text-sm font-medium border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {{ isLoadingMore ? 'Carregando...' : 'Carregar mais' }}
-        </button>
+      <div class="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-100 dark:border-neutral-800/50 p-4 flex flex-col min-h-0">
+        <h3 class="text-sm font-semibold text-neutral-800 dark:text-neutral-200 mb-3">Preview</h3>
+
+        <div v-if="!selectedFile" class="flex-1 rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 text-sm flex items-center justify-center p-6 text-center">
+          Selecione um arquivo para visualizar.
+        </div>
+
+        <template v-else>
+          <div class="text-xs text-neutral-500 dark:text-neutral-400 mb-2 break-all">{{ selectedFile.key }}</div>
+
+          <div
+            v-if="isImageFile(selectedFile)"
+            class="flex-1 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950/40 overflow-hidden min-h-[220px] flex items-center justify-center"
+          >
+            <img
+              :src="selectedFile.url"
+              :alt="selectedFile.key"
+              class="max-h-[48vh] w-full h-full object-contain"
+              loading="lazy"
+            />
+          </div>
+
+          <div
+            v-else
+            class="flex-1 rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 text-sm flex items-center justify-center p-6 text-center min-h-[220px]"
+          >
+            Esse arquivo nao e uma imagem. Use "Abrir URL" para visualizar em uma nova aba.
+          </div>
+
+          <div class="mt-3 grid grid-cols-2 gap-2">
+            <button
+              @click="copyUrl(selectedFile.url)"
+              :disabled="!selectedFile.url"
+              class="px-3 py-2 rounded-lg text-sm font-medium border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Copiar URL
+            </button>
+            <a
+              v-if="selectedFile.url"
+              :href="selectedFile.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="px-3 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 text-center"
+            >
+              Abrir
+            </a>
+          </div>
+        </template>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { Copy, Pencil, Trash2, Upload } from 'lucide-vue-next'
 import { R2Service } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
@@ -169,6 +227,9 @@ const isLoadingMore = ref(false)
 const uploadQueue = ref([])
 const continuationToken = ref(null)
 const hasMore = ref(false)
+const selectedFileKey = ref(null)
+
+const selectedFile = computed(() => files.value.find((file) => file.key === selectedFileKey.value) || null)
 
 onMounted(loadFiles)
 
@@ -198,6 +259,7 @@ async function loadFiles() {
     files.value = res.data.files || []
     continuationToken.value = res.data.nextContinuationToken || null
     hasMore.value = !!res.data.isTruncated
+    ensureSelectedFile()
   } catch (error) {
     toast.error(error.response?.data?.error || 'Erro ao listar arquivos no R2.')
   } finally {
@@ -219,11 +281,30 @@ async function loadMoreFiles() {
     files.value = [...files.value, ...(res.data.files || [])]
     continuationToken.value = res.data.nextContinuationToken || null
     hasMore.value = !!res.data.isTruncated
+    ensureSelectedFile()
   } catch (error) {
     toast.error(error.response?.data?.error || 'Erro ao paginar arquivos.')
   } finally {
     isLoadingMore.value = false
   }
+}
+
+function ensureSelectedFile() {
+  if (!files.value.length) {
+    selectedFileKey.value = null
+    return
+  }
+
+  const stillExists = files.value.some((item) => item.key === selectedFileKey.value)
+  if (!selectedFileKey.value || !stillExists) {
+    selectedFileKey.value = files.value[0].key
+  }
+}
+
+function isImageFile(file) {
+  if (!file?.url && !file?.key) return false
+  const raw = String(file.url || file.key).split('?')[0].toLowerCase()
+  return /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/.test(raw)
 }
 
 async function onPickFiles(event) {
