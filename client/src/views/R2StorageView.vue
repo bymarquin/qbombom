@@ -242,12 +242,89 @@
         </template>
       </div>
     </div>
+
+    <Teleport to="body">
+      <Transition name="crop-modal">
+        <div v-if="cropQueue.length > 0" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div class="absolute inset-0 bg-black/75 backdrop-blur-sm" @click="cancelCropQueue" />
+          <div class="relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden">
+            <div class="px-6 py-4 flex items-center justify-between shrink-0">
+              <div>
+                <h4 class="font-bold text-neutral-900 dark:text-neutral-100">
+                  Recortar antes do upload
+                  <span class="ml-2 text-xs font-normal text-neutral-400">({{ cropQueueIdx + 1 }} de {{ cropQueue.length }})</span>
+                </h4>
+                <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">
+                  Escolha o formato ou mantenha livre
+                </p>
+              </div>
+              <button
+                type="button"
+                @click="cancelCropQueue"
+                class="p-2 rounded-lg text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              >
+                <X class="w-5 h-5" />
+              </button>
+            </div>
+
+            <div class="px-6 pb-3 flex gap-2 flex-wrap">
+              <button
+                v-for="option in cropAspectOptions"
+                :key="option.value"
+                type="button"
+                @click="cropAspect = option.value"
+                class="px-2.5 py-1.5 text-xs rounded-lg border transition-colors"
+                :class="
+                  cropAspect === option.value
+                    ? 'border-red-500 bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300'
+                    : 'border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                "
+              >
+                {{ option.label }}
+              </button>
+            </div>
+
+            <div class="bg-neutral-950 relative" style="height: 380px">
+              <Cropper
+                ref="cropperRef"
+                :src="currentCropItem?.preview"
+                :stencil-component="RectangleStencil"
+                :stencil-props="cropStencilProps"
+                :default-size="{ width: 280, height: 280 }"
+                class="w-full h-full"
+              />
+            </div>
+
+            <div class="px-6 py-4 flex items-center justify-end gap-3 border-t border-neutral-100 dark:border-neutral-800">
+              <button
+                type="button"
+                @click="uploadCurrentOriginal"
+                :disabled="isCropUploading"
+                class="px-4 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors disabled:opacity-50"
+              >
+                {{ isCropUploading ? 'Enviando...' : 'Enviar original' }}
+              </button>
+              <button
+                type="button"
+                @click="uploadCurrentCropped"
+                :disabled="isCropUploading"
+                class="px-5 py-2 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 active:scale-95 transition-all disabled:opacity-50"
+              >
+                {{ isCropUploading ? 'Enviando...' : 'Recortar e enviar' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { Copy, Pencil, Trash2, Upload } from 'lucide-vue-next'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { Copy, Pencil, Trash2, Upload, X } from 'lucide-vue-next'
+import { Cropper, RectangleStencil } from 'vue-advanced-cropper'
+import 'vue-advanced-cropper/dist/style.css'
 import { R2Service } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 import { useDialogStore } from '@/stores/dialog'
@@ -260,19 +337,39 @@ const files = ref([])
 const isLoading = ref(false)
 const isLoadingMore = ref(false)
 const isBulkDeleting = ref(false)
+const isCropUploading = ref(false)
 const uploadQueue = ref([])
 const continuationToken = ref(null)
 const hasMore = ref(false)
 const selectedFileKey = ref(null)
 const selectedKeys = ref([])
+const cropQueue = ref([])
+const cropQueueIdx = ref(0)
+const cropperRef = ref(null)
+const cropAspect = ref('free')
+
+const cropAspectOptions = [
+  { value: 'free', label: 'Livre' },
+  { value: '1:1', label: '1:1' },
+  { value: '9:16', label: '9:16' },
+  { value: '16:9', label: '16:9' },
+]
 
 const selectedFile = computed(() => files.value.find((file) => file.key === selectedFileKey.value) || null)
 const hasSelectedFiles = computed(() => selectedKeys.value.length > 0)
 const allVisibleSelected = computed(
   () => files.value.length > 0 && files.value.every((file) => selectedKeys.value.includes(file.key)),
 )
+const currentCropItem = computed(() => cropQueue.value[cropQueueIdx.value] || null)
+const cropStencilProps = computed(() => {
+  if (cropAspect.value === 'free') return {}
+  const [w, h] = cropAspect.value.split(':').map(Number)
+  if (!w || !h) return {}
+  return { aspectRatio: w / h }
+})
 
 onMounted(loadFiles)
+onUnmounted(clearCropQueue)
 
 function formatBytes(value = 0) {
   const units = ['B', 'KB', 'MB', 'GB']
@@ -381,37 +478,116 @@ async function onPickFiles(event) {
   event.target.value = ''
   if (!selected.length) return
 
-  for (const file of selected) {
-    const queueItem = {
-      id: `${Date.now()}_${Math.random()}`,
-      name: file.name,
-      progress: 0,
-    }
-    uploadQueue.value.push(queueItem)
+  clearCropQueue()
+  cropQueue.value = selected.map((file) => ({
+    file,
+    name: file.name,
+    preview: URL.createObjectURL(file),
+  }))
+  cropQueueIdx.value = 0
+  cropAspect.value = 'free'
+}
 
-    try {
-      await R2Service.uploadFile(
-        {
-          file,
-          prefix: prefix.value,
-        },
-        {
-          onUploadProgress: (progressEvent) => {
-            if (!progressEvent.total) return
-            queueItem.progress = Math.min(
-              100,
-              Math.round((progressEvent.loaded * 100) / progressEvent.total),
-            )
-          },
-        },
-      )
-      queueItem.progress = 100
-      toast.success(`Arquivo enviado: ${file.name}`)
-    } catch (error) {
-      toast.error(error.response?.data?.error || `Falha ao enviar: ${file.name}`)
-    }
+function clearCropQueue() {
+  cropQueue.value.forEach((item) => {
+    if (item.preview) URL.revokeObjectURL(item.preview)
+  })
+  cropQueue.value = []
+  cropQueueIdx.value = 0
+}
+
+function cancelCropQueue() {
+  if (isCropUploading.value) return
+  clearCropQueue()
+}
+
+async function uploadCurrentOriginal() {
+  const item = currentCropItem.value
+  if (!item) return
+  await uploadAndAdvance(item.file, item.name)
+}
+
+async function uploadCurrentCropped() {
+  const item = currentCropItem.value
+  if (!item) return
+
+  const result = cropperRef.value?.getResult?.()
+  const canvas = result?.canvas
+  if (!canvas) {
+    toast.error('Nao foi possivel aplicar o recorte.')
+    return
   }
 
+  const croppedFile = await canvasToFile(canvas, item.file)
+  await uploadAndAdvance(croppedFile, item.name)
+}
+
+function canvasToFile(canvas, originalFile) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error('Falha ao gerar imagem recortada'))
+          return
+        }
+
+        const file = new File([blob], originalFile.name, {
+          type: originalFile.type || 'image/jpeg',
+          lastModified: Date.now(),
+        })
+
+        resolve(file)
+      },
+      originalFile.type || 'image/jpeg',
+      0.92,
+    )
+  })
+}
+
+async function uploadAndAdvance(file, displayName) {
+  isCropUploading.value = true
+
+  const queueItem = {
+    id: `${Date.now()}_${Math.random()}`,
+    name: displayName,
+    progress: 0,
+  }
+  uploadQueue.value.push(queueItem)
+
+  try {
+    await R2Service.uploadFile(
+      {
+        file,
+        prefix: prefix.value,
+      },
+      {
+        onUploadProgress: (progressEvent) => {
+          if (!progressEvent.total) return
+          queueItem.progress = Math.min(
+            100,
+            Math.round((progressEvent.loaded * 100) / progressEvent.total),
+          )
+        },
+      },
+    )
+    queueItem.progress = 100
+    toast.success(`Arquivo enviado: ${displayName}`)
+  } catch (error) {
+    toast.error(error.response?.data?.error || `Falha ao enviar: ${displayName}`)
+  } finally {
+    isCropUploading.value = false
+  }
+
+  await nextCropItem()
+}
+
+async function nextCropItem() {
+  if (cropQueueIdx.value + 1 < cropQueue.value.length) {
+    cropQueueIdx.value += 1
+    return
+  }
+
+  clearCropQueue()
   uploadQueue.value = []
   await loadFiles()
 }

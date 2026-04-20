@@ -386,7 +386,7 @@ const cropStencilProps = computed(() => {
   return { aspectRatio: w / h }
 })
 
-const currentCropImage = computed(() => cropQueue.value[cropQueueIdx.value]?.url || null)
+const currentCropImage = computed(() => cropQueue.value[cropQueueIdx.value]?.cropUrl || null)
 
 let _keyCounter = 0
 const makeKey = () => ++_keyCounter
@@ -490,7 +490,10 @@ const startCroppingSelectedStorageImages = () => {
     return
   }
 
-  cropQueue.value = selectedFiles
+  cropQueue.value = selectedFiles.map((file) => ({
+    ...file,
+    cropUrl: R2Service.getProxyUrl(file.key),
+  }))
   cropQueueIdx.value = 0
   cropAspect.value = 'free'
   showStoragePicker.value = false

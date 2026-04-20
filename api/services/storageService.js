@@ -4,6 +4,7 @@ const {
   DeleteObjectCommand,
   ListObjectsV2Command,
   CopyObjectCommand,
+  GetObjectCommand,
 } = require('@aws-sdk/client-s3');
 
 const r2 = new S3Client({
@@ -96,4 +97,19 @@ async function moveFile(sourceKey, destinationKey) {
   };
 }
 
-module.exports = { uploadFile, deleteFile, listFiles, moveFile };
+async function getFile(key) {
+  const response = await r2.send(new GetObjectCommand({
+    Bucket: BUCKET,
+    Key: key,
+  }));
+
+  const bytes = await response.Body.transformToByteArray();
+
+  return {
+    buffer: Buffer.from(bytes),
+    contentType: response.ContentType || 'application/octet-stream',
+    cacheControl: response.CacheControl || 'public, max-age=86400',
+  };
+}
+
+module.exports = { uploadFile, deleteFile, listFiles, moveFile, getFile };

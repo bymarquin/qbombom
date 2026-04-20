@@ -1,5 +1,5 @@
 const path = require('path');
-const { uploadFile, deleteFile, listFiles, moveFile } = require('../services/storageService');
+const { uploadFile, deleteFile, listFiles, moveFile, getFile } = require('../services/storageService');
 
 function normalizePrefix(input = '') {
   return String(input)
@@ -112,6 +112,23 @@ exports.move = async (req, res) => {
   } catch (error) {
     console.error('[r2 move]', error);
     res.status(500).json({ error: 'Falha ao mover arquivo no R2.' });
+  }
+};
+
+exports.proxy = async (req, res) => {
+  try {
+    const key = normalizePrefix(req.query?.key || '');
+    if (!key) {
+      return res.status(400).json({ error: 'key e obrigatoria.' });
+    }
+
+    const file = await getFile(key);
+    res.setHeader('Content-Type', file.contentType);
+    res.setHeader('Cache-Control', file.cacheControl);
+    res.send(file.buffer);
+  } catch (error) {
+    console.error('[r2 proxy]', error);
+    res.status(500).json({ error: 'Falha ao carregar arquivo do R2.' });
   }
 };
 

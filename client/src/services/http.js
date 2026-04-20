@@ -353,6 +353,10 @@ export const R2Service = {
   listFiles(params = {}) {
     return api.get('/r2/files', { params })
   },
+  getProxyUrl(key) {
+    const base = String(api.defaults.baseURL || '').replace(/\/+$/, '')
+    return `${base}/r2/files/proxy?key=${encodeURIComponent(key)}`
+  },
   uploadFile({ file, prefix = '' }, config = {}) {
     const formData = new FormData()
     formData.append('file', file)
