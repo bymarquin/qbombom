@@ -430,7 +430,9 @@ exports.create = async (req, res) => {
 
     res.status(201).json(createdOrder);
   } catch (error) {
-    await transaction.rollback();
+    if (!transaction.finished) {
+      await transaction.rollback();
+    }
     console.error('[orders.create]', error);
     const status = error.status || 500;
     res.status(status).json({ error: status === 500 ? 'Internal server error' : error.message });
@@ -478,7 +480,6 @@ exports.cancelByTracking = async (req, res) => {
   try {
     const order = await Order.findOne({
       where: { trackingCode: req.params.code },
-      include: [{ model: OrderItem, as: 'items' }],
       transaction,
       lock: transaction.LOCK.UPDATE
     });
@@ -505,7 +506,12 @@ exports.cancelByTracking = async (req, res) => {
       return res.status(409).json({ error: 'Pedido já consta como pago e não pode ser cancelado por aqui.' });
     }
 
-    await restoreStock(order.items || [], transaction);
+    const items = await OrderItem.findAll({
+      where: { orderId: order.id },
+      transaction
+    });
+
+    await restoreStock(items, transaction);
 
     order.status = 'cancelado';
     await order.save({ transaction });
@@ -524,7 +530,9 @@ exports.cancelByTracking = async (req, res) => {
 
     return res.json(order);
   } catch (error) {
-    await transaction.rollback();
+    if (!transaction.finished) {
+      await transaction.rollback();
+    }
     console.error('[orders.cancelByTracking]', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
@@ -577,7 +585,6 @@ exports.cancelOrder = async (req, res) => {
 
   try {
     const order = await Order.findByPk(req.params.id, {
-      include: [{ model: OrderItem, as: 'items' }],
       transaction,
       lock: transaction.LOCK.UPDATE
     });
@@ -598,7 +605,12 @@ exports.cancelOrder = async (req, res) => {
       return res.status(400).json({ error: 'Não é possível cancelar um pedido já finalizado.' });
     }
 
-    await restoreStock(order.items || [], transaction);
+    const items = await OrderItem.findAll({
+      where: { orderId: order.id },
+      transaction
+    });
+
+    await restoreStock(items, transaction);
 
     order.status = 'cancelado';
     await order.save({ transaction });
@@ -611,7 +623,9 @@ exports.cancelOrder = async (req, res) => {
 
     return res.json(order);
   } catch (error) {
-    await transaction.rollback();
+    if (!transaction.finished) {
+      await transaction.rollback();
+    }
     console.error('[orders.cancelOrder]', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
