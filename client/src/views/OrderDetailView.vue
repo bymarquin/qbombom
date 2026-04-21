@@ -2,12 +2,13 @@
   <div class="h-full flex flex-col font-sans">
     <header class="flex items-center justify-between mb-6 shrink-0">
       <div>
-        <RouterLink
-          to="/app/pedidos"
+        <button
+          type="button"
+          @click="voltar"
           class="text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors mb-1 inline-flex items-center gap-1"
         >
-          <ChevronLeft class="w-4 h-4" /> Pedidos
-        </RouterLink>
+          <ChevronLeft class="w-4 h-4" /> Voltar
+        </button>
         <h1 class="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
           Pedido #{{ order?.trackingCode || route.params.id.slice(0, 8) }}
         </h1>
@@ -211,6 +212,15 @@ const userRole = AuthService.getRole()
 
 const order = ref(null)
 const loading = ref(true)
+
+const voltar = () => {
+  if (window.history.length > 1) {
+    router.back()
+    return
+  }
+
+  router.push('/app/pedidos')
+}
 
 const statusOptions = [
   { value: 'novo', label: 'Novo', activeClass: 'bg-blue-600 text-white ring-2 ring-offset-2 ring-blue-600/30' },
