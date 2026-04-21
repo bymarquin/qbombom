@@ -153,11 +153,11 @@
                       type="text"
                       placeholder="Prefixo (ex: products)"
                       class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15"
-                      @keyup.enter="loadStorageFiles"
+                      @keyup.enter="loadStorageFiles({ force: true })"
                     />
                     <button
                       type="button"
-                      @click="loadStorageFiles"
+                      @click="loadStorageFiles({ force: true })"
                       :disabled="isLoadingStorage"
                       class="px-4 py-2 text-sm font-medium rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50"
                     >
@@ -183,10 +183,18 @@
                           :checked="storageSelection.includes(file.key)"
                           @change="toggleStorageSelection(file.key)"
                         />
-                        <img :src="file.url" :alt="file.key" class="w-full aspect-square object-cover" loading="lazy" />
+                        <img
+                          :src="file.url"
+                          :alt="file.key"
+                          class="w-full aspect-square object-cover"
+                          loading="lazy"
+                          decoding="async"
+                          fetchpriority="low"
+                        />
                         <div class="absolute bottom-0 inset-x-0 bg-black/55 text-white text-[10px] px-2 py-1 truncate">{{ file.key }}</div>
                       </label>
                     </div>
+
                   </div>
 
                   <div class="px-6 py-4 flex items-center justify-between gap-4 border-t border-neutral-100 dark:border-neutral-800">
@@ -406,6 +414,10 @@ const currentCropImage = computed(() => cropQueue.value[cropQueueIdx.value]?.cro
 let _keyCounter = 0
 const makeKey = () => ++_keyCounter
 
+const storageCache = new Map()
+
+const normalizeStoragePrefix = (value) => String(value || '').trim().replace(/^\/+/, '').replace(/\/+$/, '')
+
 onMounted(async () => {
   const catRes = await CatalogService.getCategories({ all: true })
   categories.value = catRes.data
@@ -451,6 +463,14 @@ onUnmounted(() => {
 const openStoragePicker = async () => {
   showStoragePicker.value = true
   storageSelection.value = []
+
+  const cacheKey = normalizeStoragePrefix(storagePrefix.value)
+  const cached = storageCache.get(cacheKey)
+  if (cached) {
+    storageFiles.value = cached
+    return
+  }
+
   await loadStorageFiles()
 }
 
@@ -458,11 +478,23 @@ const closeStoragePicker = () => {
   showStoragePicker.value = false
 }
 
-const loadStorageFiles = async () => {
+const loadStorageFiles = async ({ force = false } = {}) => {
+  if (isLoadingStorage.value) return
+
+  const cacheKey = normalizeStoragePrefix(storagePrefix.value)
+  const cached = storageCache.get(cacheKey)
+  if (cached && !force) {
+    storageFiles.value = cached
+    return
+  }
+
   isLoadingStorage.value = true
+
   try {
-    const { data } = await R2Service.listFiles({ prefix: storagePrefix.value, maxKeys: 200 })
-    storageFiles.value = (data.files || []).filter((file) => file.url && isImageUrl(file.url))
+    const { data } = await R2Service.listFiles({ prefix: cacheKey, maxKeys: 200 })
+    const files = (data.files || []).filter((file) => file.url && isImageUrl(file.url))
+    storageFiles.value = files
+    storageCache.set(cacheKey, files)
   } catch (error) {
     toast.error(error.response?.data?.error || 'Erro ao carregar imagens do storage')
   } finally {

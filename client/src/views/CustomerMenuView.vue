@@ -294,6 +294,7 @@
       :produto-detalhado="produtoDetalhado"
       :is-store-open="isStoreOpen"
       @add-item="adicionarItemAoCarrinho"
+      @add-item-and-checkout="adicionarItemAoCarrinhoEFinalizar"
     />
 
     <!-- SLIDE OVER DA SACOLA/CHECKOUT -->
@@ -784,6 +785,13 @@ const adicionarItemAoCarrinho = (item) => {
   carrinho.value.push(item);
   toast.success("Adicionado à sacola!");
   modalProduto.value = false;
+};
+
+const adicionarItemAoCarrinhoEFinalizar = (item) => {
+  carrinho.value.push(item);
+  toast.success("Item adicionado! Complete os dados para finalizar.");
+  modalProduto.value = false;
+  sacolaAberta.value = true;
 };
 
 // --- Lógica Sacola ---

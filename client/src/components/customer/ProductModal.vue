@@ -324,13 +324,22 @@
               </div>
               <span class="text-xl font-bold text-red-600 dark:text-red-400">{{ formatarMoeda(totalItemAtual * quantidade) }}</span>
             </div>
-            <button
-              @click="confirmarItem"
-              :disabled="!podeProsseguir || !isStoreOpen || isOutOfStock"
-              class="w-full py-3 bg-red-600 text-white rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-red-700 active:scale-[0.98] shadow-sm hover:shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              {{ isOutOfStock ? 'Esgotado no momento' : 'Adicionar à Sacola' }}
-            </button>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                @click="confirmarItem"
+                :disabled="!podeProsseguir || !isStoreOpen || isOutOfStock"
+                class="w-full py-3 bg-red-600 text-white rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-red-700 active:scale-[0.98] shadow-sm hover:shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {{ isOutOfStock ? 'Esgotado no momento' : 'Adicionar à Sacola' }}
+              </button>
+              <button
+                @click="confirmarItemEFinalizar"
+                :disabled="!podeProsseguir || !isStoreOpen || isOutOfStock"
+                class="w-full py-3 bg-white dark:bg-neutral-950 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {{ isOutOfStock ? 'Esgotado no momento' : 'Adicionar e Finalizar' }}
+              </button>
+            </div>
           </footer>
         </div>
       </Transition>
@@ -352,7 +361,7 @@ const props = defineProps({
   isStoreOpen: { type: Boolean, default: true }
 });
 
-const emit = defineEmits(['add-item']);
+const emit = defineEmits(['add-item', 'add-item-and-checkout']);
 
 const tamanhoSelecionado = ref(null);
 const adicionaisSelecionados = ref([]);
@@ -507,9 +516,7 @@ const totalItemAtual = computed(() => {
   return base + casquinhaTotal.value + adicionaisComPreco.value.reduce((acc, item) => acc + item.price, 0);
 });
 
-const confirmarItem = () => {
-  if (!podeProsseguir.value) return;
-
+const montarItemPayload = () => {
   const casquinhaAdds = [];
   if (isSorvete.value) {
     const grupo = props.produtoDetalhado.additionalGroups?.find(g => g.name === 'Casquinha');
@@ -519,7 +526,7 @@ const confirmarItem = () => {
     });
   }
 
-  emit('add-item', {
+  return {
     productId: props.produtoDetalhado.id,
     productName: props.produtoDetalhado.name,
     variationId: (isSorvete.value || isWeightBased.value) ? null : (tamanhoSelecionado.value?.id || null),
@@ -532,7 +539,19 @@ const confirmarItem = () => {
     selectedAdditionals: [...adicionaisComPreco.value, ...casquinhaAdds],
     observation: observacaoProduto.value,
     totalPrice: totalItemAtual.value,
-  });
+  };
+};
+
+const confirmarItem = () => {
+  if (!podeProsseguir.value) return;
+  emit('add-item', montarItemPayload());
+
+  fechar();
+};
+
+const confirmarItemEFinalizar = () => {
+  if (!podeProsseguir.value) return;
+  emit('add-item-and-checkout', montarItemPayload());
 
   fechar();
 };
