@@ -75,7 +75,7 @@
               class="cursor-pointer flex items-center gap-1.5 text-xs font-semibold text-red-600 hover:text-red-700 transition-colors"
             >
               <Plus class="w-4 h-4" />
-              Selecionar do Storage
+              Selecionar do Armazenamento
             </button>
           </div>
 
@@ -126,12 +126,12 @@
               <ImageIcon class="w-7 h-7 text-neutral-400" />
             </div>
             <div>
-              <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Clique para selecionar imagens do storage</p>
+              <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Clique para selecionar imagens do armazenamento</p>
               <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">Escolha arquivos já enviados no Cloudflare R2</p>
             </div>
           </button>
 
-          <!-- Seletor do Storage -->
+          <!-- Seletor de armazenamento -->
           <Teleport to="body">
             <Transition name="crop-modal">
               <div v-if="showStoragePicker" class="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -139,7 +139,7 @@
                 <div class="relative bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden">
                   <div class="px-6 py-4 flex items-center justify-between shrink-0">
                     <div>
-                      <h4 class="font-bold text-neutral-900 dark:text-neutral-100">Selecionar imagens do storage</h4>
+                      <h4 class="font-bold text-neutral-900 dark:text-neutral-100">Selecionar imagens do armazenamento</h4>
                       <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">Marque uma ou mais imagens para adicionar ao produto</p>
                     </div>
                     <button type="button" @click="closeStoragePicker" class="p-2 rounded-lg text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
@@ -496,7 +496,7 @@ const loadStorageFiles = async ({ force = false } = {}) => {
     storageFiles.value = files
     storageCache.set(cacheKey, files)
   } catch (error) {
-    toast.error(error.response?.data?.error || 'Erro ao carregar imagens do storage')
+    toast.error(error.response?.data?.error || 'Erro ao carregar imagens do armazenamento')
   } finally {
     isLoadingStorage.value = false
   }

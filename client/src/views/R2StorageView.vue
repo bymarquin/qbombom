@@ -3,10 +3,10 @@
     <header class="flex flex-col lg:flex-row lg:items-center justify-between mb-6 gap-4 shrink-0">
       <div>
         <h1 class="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-1 tracking-tight">
-          Cloudflare R2
+          Armazenamento
         </h1>
         <p class="text-sm text-neutral-500 dark:text-neutral-500">
-          Liste, envie e remova arquivos do bucket sem sair do painel.
+          Liste, envie e remova arquivos sem sair do painel.
         </p>
       </div>
 
@@ -30,8 +30,8 @@
     </header>
 
     <section class="mb-4 bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div class="md:col-span-2">
+      <div class="grid grid-cols-1 gap-3">
+        <div>
           <label class="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Prefixo/Pasta</label>
           <input
             v-model="prefix"
@@ -40,14 +40,6 @@
             class="w-full px-3.5 py-2.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 placeholder-neutral-400 transition-all"
             @keyup.enter="loadFiles"
           />
-        </div>
-        <div class="flex items-end">
-          <button
-            @click="loadFiles"
-            class="w-full px-4 py-2.5 bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-          >
-            Filtrar
-          </button>
         </div>
       </div>
 
@@ -321,7 +313,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Copy, Pencil, Trash2, Upload, X } from 'lucide-vue-next'
 import { Cropper, RectangleStencil } from 'vue-advanced-cropper'
 import 'vue-advanced-cropper/dist/style.css'
@@ -347,6 +339,7 @@ const cropQueue = ref([])
 const cropQueueIdx = ref(0)
 const cropperRef = ref(null)
 const cropAspect = ref('free')
+let prefixDebounceTimer = null
 
 const cropAspectOptions = [
   { value: 'free', label: 'Livre' },
@@ -369,7 +362,20 @@ const cropStencilProps = computed(() => {
 })
 
 onMounted(loadFiles)
-onUnmounted(clearCropQueue)
+onUnmounted(() => {
+  clearCropQueue()
+  if (prefixDebounceTimer) {
+    clearTimeout(prefixDebounceTimer)
+    prefixDebounceTimer = null
+  }
+})
+
+watch(prefix, () => {
+  if (prefixDebounceTimer) clearTimeout(prefixDebounceTimer)
+  prefixDebounceTimer = setTimeout(() => {
+    loadFiles()
+  }, 300)
+})
 
 function formatBytes(value = 0) {
   const units = ['B', 'KB', 'MB', 'GB']
