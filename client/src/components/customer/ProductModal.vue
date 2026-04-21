@@ -5,13 +5,22 @@
       class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4"
     >
       <Transition name="slide-up" appear>
-        <div class="flex flex-col bg-neutral-50 dark:bg-neutral-950 w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-xl sm:rounded-2xl shadow-2xl overflow-hidden relative">
+        <div
+          ref="dialogRef"
+          class="flex flex-col bg-neutral-50 dark:bg-neutral-950 w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-xl sm:rounded-2xl shadow-2xl overflow-hidden relative"
+          role="dialog"
+          aria-modal="true"
+          :aria-labelledby="dialogTitleId"
+          tabindex="-1"
+          @keydown.esc.prevent="fechar"
+        >
           <header class="bg-white dark:bg-neutral-900 px-4 py-4 flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 shrink-0 sticky top-0 z-10 shadow-sm dark:shadow-none">
-            <h2 class="font-bold text-neutral-900 dark:text-neutral-100 tracking-tight truncate pr-4">
+            <h2 :id="dialogTitleId" class="font-bold text-neutral-900 dark:text-neutral-100 tracking-tight truncate pr-4">
               Montar: {{ produtoDetalhado.name }}
             </h2>
             <button
               @click="fechar"
+              aria-label="Fechar montagem do produto"
               class="text-sm font-medium text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors"
             >
               Fechar
@@ -70,11 +79,13 @@
                   <button
                     @click="bolaCount > 1 && bolaCount--"
                     :disabled="bolaCount <= 1"
+                    aria-label="Diminuir quantidade de bolas"
                     class="px-3 py-1.5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-lg leading-none font-medium disabled:opacity-40"
                   >−</button>
                   <span class="px-3 text-sm font-bold text-neutral-900 dark:text-neutral-100 min-w-[2rem] text-center">{{ bolaCount }}</span>
                   <button
                     @click="bolaCount++"
+                    aria-label="Aumentar quantidade de bolas"
                     class="px-3 py-1.5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-lg leading-none font-medium"
                   >+</button>
                 </div>
@@ -224,11 +235,13 @@
                     <button
                       @click="decrementarItem(add.id)"
                       :disabled="(itemQuantidades[add.id] || 0) === 0"
+                      :aria-label="`Diminuir ${add.name}`"
                       class="px-3 py-1.5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-lg leading-none font-medium disabled:opacity-40"
                     >−</button>
                     <span class="px-3 text-sm font-bold text-neutral-900 dark:text-neutral-100 min-w-[2rem] text-center">{{ itemQuantidades[add.id] || 0 }}</span>
                     <button
                       @click="incrementarItem(add.id)"
+                      :aria-label="`Aumentar ${add.name}`"
                       class="px-3 py-1.5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-lg leading-none font-medium"
                     >+</button>
                   </div>
@@ -263,11 +276,11 @@
               </div>
 
               <!-- Múltipla escolha (checkbox) -->
-              <div v-else class="flex flex-col gap-3">
+              <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label
                   v-for="add in grupo.items"
                   :key="add.id"
-                  class="flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer"
+                  class="flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer h-full"
                   :class="[
                     isAdicionalSelecionado(add)
                       ? 'border-red-600 bg-red-50/30 dark:bg-red-900/20 ring-1 ring-red-600'
@@ -280,7 +293,7 @@
                       type="checkbox"
                       :value="{ ...add, grupoId: grupo.id }"
                       v-model="adicionaisSelecionados"
-                      class="w-4 h-4 accent-red-600 dark:accent-red-500 rounded cursor-pointer"
+                      class="sr-only"
                       :disabled="estaBloqueado(add, grupo)"
                     />
                     <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">{{ add.name }}</span>
@@ -313,11 +326,13 @@
                 <div class="flex items-center border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden">
                   <button
                     @click="quantidade = Math.max(1, quantidade - 1)"
+                    aria-label="Diminuir quantidade do item"
                     class="px-3 py-1.5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-lg leading-none font-medium"
                   >−</button>
                   <span class="px-3 text-sm font-bold text-neutral-900 dark:text-neutral-100 min-w-[2rem] text-center">{{ quantidade }}</span>
                   <button
                     @click="quantidade++"
+                    aria-label="Aumentar quantidade do item"
                     class="px-3 py-1.5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-lg leading-none font-medium"
                   >+</button>
                 </div>
@@ -348,7 +363,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, nextTick } from "vue";
 import ImageCarousel from "@/components/ImageCarousel.vue";
 import { formatarMoeda } from "@/utils/formatters";
 import { useToastStore } from "@/stores/toast";
@@ -370,6 +385,7 @@ const quantidade = ref(1);
 const bolaCount = ref(1);
 const itemQuantidades = ref({});
 const pesoGramas = ref(null);
+const dialogRef = ref(null);
 
 watch(() => props.produtoDetalhado, () => {
   tamanhoSelecionado.value = null;
@@ -382,6 +398,7 @@ watch(() => props.produtoDetalhado, () => {
 });
 
 const isWeightBased = computed(() => props.produtoDetalhado?.weightBased ?? false);
+const dialogTitleId = computed(() => `product-modal-title-${props.produtoDetalhado?.id || 'default'}`)
 const isOutOfStock = computed(() => {
   if (!props.produtoDetalhado?.manageStock) return false
   return Number(props.produtoDetalhado?.stock || 0) <= 0
@@ -453,6 +470,12 @@ watch(tamanhoSelecionado, () => {
   if (max !== null && adicionaisSelecionados.value.length > max) {
     adicionaisSelecionados.value = adicionaisSelecionados.value.slice(0, max);
   }
+});
+
+watch(modelValue, async (open) => {
+  if (!open) return;
+  await nextTick();
+  dialogRef.value?.focus();
 });
 
 watch(totalSelecionado, (novo, anterior) => {
