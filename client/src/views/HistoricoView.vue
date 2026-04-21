@@ -57,11 +57,12 @@
               <th class="px-5 py-3 text-right font-semibold">Total</th>
               <th class="px-5 py-3 text-center font-semibold">Status</th>
               <th class="px-5 py-3 text-right font-semibold hidden lg:table-cell">Data</th>
+              <th class="px-5 py-3 text-center font-semibold">Info</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="paginados.length === 0">
-              <td colspan="7" class="px-5 py-12 text-center text-neutral-400">
+              <td colspan="8" class="px-5 py-12 text-center text-neutral-400">
                 <div class="flex flex-col items-center gap-2">
                   <History class="w-8 h-8 opacity-50" />
                   Nenhum pedido encontrado.
@@ -109,6 +110,15 @@
               <td class="px-5 py-3 text-right text-neutral-400 text-xs hidden lg:table-cell">
                 {{ formatarData(order.createdAt) }}
               </td>
+              <td class="px-5 py-3 text-center">
+                <button
+                  @click="abrirDetalhes(order)"
+                  class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                  title="Ver detalhes do pedido"
+                >
+                  <Info class="w-4 h-4" />
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -140,11 +150,13 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { Search, RefreshCw, History, ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
+import { Search, RefreshCw, History, ChevronLeft, ChevronRight, Info } from 'lucide-vue-next'
 import { OrderService } from '@/services/http'
 import { formatarMoeda } from '@/utils/formatters'
 
 const POR_PAGINA = 20
+const router = useRouter()
 
 const loading = ref(true)
 const orders = ref([])
@@ -164,6 +176,10 @@ const formatarData = (iso) => {
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   })
+}
+
+const abrirDetalhes = (order) => {
+  router.push({ name: 'pedido-detalhe', params: { id: order.id } })
 }
 
 const filtrados = computed(() => {
