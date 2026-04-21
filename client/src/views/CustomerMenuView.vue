@@ -875,7 +875,7 @@ const enviarPedido = async () => {
     historico.value = getHistorico()
 
     sacolaAberta.value = false;
-    telaSucesso.value = true;
+    rastreioAberto.value = true;
     carrinho.value = [];
 
     // TODO: Se checkout.value.pagamento === 'PIX_ONLINE', devemos redirecionar
