@@ -642,7 +642,7 @@
                     type="checkbox"
                     :value="{ ...add, grupoId: grupo.id }"
                     v-model="adicionaisSelecionados"
-                    class="sr-only"
+                    class="w-4 h-4 accent-red-600 rounded cursor-pointer"
                     :disabled="estaBloqueado(add, grupo)"
                   />
                   <span class="text-sm font-medium" :class="isAdicionalSelecionado(add) ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-700 dark:text-neutral-300'">
