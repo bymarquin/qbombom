@@ -53,17 +53,23 @@
     <!-- KANBAN BOARD -->
     <div class="flex-1 overflow-x-auto overflow-y-hidden pb-4">
       <div class="flex h-full gap-4 min-w-full items-start">
-        <!-- Coluna 1: Novos & Pendentes -->
+        <!-- Coluna 1: Novos -->
         <div
-          class="flex flex-col flex-1 min-w-[300px] max-h-full bg-neutral-100/50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-200/50 dark:border-neutral-800/50 p-4"
+          class="flex flex-col flex-1 min-w-[300px] max-h-full rounded-2xl border p-4"
+          :class="colNovos.length > 0
+            ? 'bg-red-50/60 dark:bg-red-950/20 border-red-300 dark:border-red-800/60'
+            : 'bg-neutral-100/50 dark:bg-neutral-900/50 border-neutral-200/50 dark:border-neutral-800/50'"
         >
           <div class="flex items-center justify-between mb-4 px-1 shrink-0">
             <h2 class="font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-2">
-              <div class="w-2 h-2 rounded-full bg-blue-500"></div>
-              Entrando
+              <div class="w-2 h-2 rounded-full bg-red-500" :class="colNovos.length > 0 ? 'animate-pulse' : ''"></div>
+              Novos
             </h2>
             <span
-              class="bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-xs font-bold px-2 py-1 rounded-full"
+              class="text-xs font-bold px-2 py-1 rounded-full"
+              :class="colNovos.length > 0
+                ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
+                : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'"
             >
               {{ colNovos.length }}
             </span>
@@ -78,7 +84,7 @@
             <div
               v-for="order in colNovos"
               :key="order.id"
-              class="bg-white dark:bg-neutral-900 p-4 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-800 transition-all hover:shadow-md cursor-pointer group"
+              class="bg-white dark:bg-neutral-900 p-4 rounded-xl shadow-sm border border-red-200 dark:border-red-900/50 transition-all hover:shadow-md cursor-pointer group ring-1 ring-red-300/40 dark:ring-red-800/30"
               @click="router.push({ name: 'pedido-detalhe', params: { id: order.id } })"
             >
               <div class="flex justify-between items-start mb-2">
@@ -128,27 +134,9 @@
 
               <!-- Quick Actions -->
               <div class="flex flex-col gap-2" @click.stop>
-                <div
-                  v-if="order.status === 'aguardando_pagamento'"
-                  class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-900/50 rounded-lg p-2 flex flex-col gap-2"
-                >
-                  <span
-                    class="text-xs font-bold text-orange-700 dark:text-orange-400 text-center uppercase tracking-wider animate-pulse"
-                    >Aguardando PIX</span
-                  >
-                  <button
-                    v-if="order.receiptUrl"
-                    @click="router.push({ name: 'pedido-detalhe', params: { id: order.id } })"
-                    class="w-full py-1.5 bg-orange-600 text-white rounded-md text-xs font-bold hover:bg-orange-700 transition"
-                  >
-                    Conferir Comprovante
-                  </button>
-                </div>
-
                 <button
-                  v-if="order.status === 'novo'"
                   @click="printAndMoveToPrep(order)"
-                  class="w-full py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                  class="w-full py-2 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition flex items-center justify-center gap-2"
                 >
                   <Printer class="w-4 h-4" /> Imprimir e Preparar
                 </button>
@@ -157,7 +145,73 @@
           </div>
         </div>
 
-        <!-- Coluna 2: Em Preparo -->
+        <!-- Coluna 2: Aguardando PIX -->
+        <div
+          class="flex flex-col flex-1 min-w-[300px] max-h-full bg-orange-50/40 dark:bg-orange-950/10 rounded-2xl border border-orange-200/60 dark:border-orange-800/40 p-4"
+        >
+          <div class="flex items-center justify-between mb-4 px-1 shrink-0">
+            <h2 class="font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-orange-400"></div>
+              Aguardando PIX
+            </h2>
+            <span
+              class="bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-xs font-bold px-2 py-1 rounded-full"
+            >
+              {{ colAguardandoPix.length }}
+            </span>
+          </div>
+
+          <div class="flex-1 overflow-y-auto no-scrollbar space-y-3 pr-1">
+            <div v-if="colAguardandoPix.length === 0" class="flex flex-col items-center py-10 gap-2 text-sm text-neutral-400">
+              <Inbox class="w-8 h-8 opacity-50" />
+              Nenhum aguardando pagamento.
+            </div>
+
+            <div
+              v-for="order in colAguardandoPix"
+              :key="order.id"
+              class="bg-white dark:bg-neutral-900 p-4 rounded-xl shadow-sm border border-orange-200 dark:border-orange-900/40 transition-all hover:shadow-md cursor-pointer group"
+              @click="router.push({ name: 'pedido-detalhe', params: { id: order.id } })"
+            >
+              <div class="flex justify-between items-start mb-2">
+                <span class="text-xs font-bold text-neutral-500"
+                  >#{{ order.trackingCode || order.id.slice(0, 8) }}</span
+                >
+                <span class="text-xs font-medium text-neutral-400">{{
+                  formatDateOnlyTime(order.createdAt)
+                }}</span>
+              </div>
+              <h3 class="font-bold text-neutral-900 dark:text-neutral-100 truncate">
+                {{ order.customerName || "Cliente Balcão" }}
+              </h3>
+              <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-3">{{ order.type }}</p>
+
+              <div class="flex items-center gap-2 mb-4">
+                <span
+                  class="px-2 py-1 bg-neutral-100 dark:bg-neutral-800 rounded text-xs font-semibold text-neutral-700 dark:text-neutral-300"
+                >
+                  {{ formatMoney(order.total) }}
+                </span>
+                <span class="px-2 py-1 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 rounded text-xs font-semibold animate-pulse">
+                  Aguardando PIX
+                </span>
+              </div>
+
+              <!-- Quick Actions -->
+              <div class="flex flex-col gap-2" @click.stop>
+                <button
+                  v-if="order.receiptUrl"
+                  @click="router.push({ name: 'pedido-detalhe', params: { id: order.id } })"
+                  class="w-full py-2 bg-orange-500 text-white rounded-lg text-xs font-bold hover:bg-orange-600 transition flex items-center justify-center gap-2"
+                >
+                  Conferir Comprovante
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coluna 3: Em Preparo -->
         <div
           class="flex flex-col flex-1 min-w-[300px] max-h-full bg-neutral-100/50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-200/50 dark:border-neutral-800/50 p-4"
         >
@@ -236,7 +290,7 @@
           </div>
         </div>
 
-        <!-- Coluna 3: Prontos & Entrega -->
+        <!-- Coluna 4: Prontos & Entrega -->
         <div
           class="flex flex-col flex-1 min-w-[300px] max-h-full bg-neutral-100/50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-200/50 dark:border-neutral-800/50 p-4"
         >
@@ -407,7 +461,11 @@ const { statusLabel } = useOrderStatus();
 onMounted(loadData);
 
 const colNovos = computed(() => {
-  return orders.value.filter((o) => ["novo", "aguardando_pagamento"].includes(o.status));
+  return orders.value.filter((o) => o.status === "novo");
+});
+
+const colAguardandoPix = computed(() => {
+  return orders.value.filter((o) => o.status === "aguardando_pagamento");
 });
 
 const colPreparo = computed(() => {

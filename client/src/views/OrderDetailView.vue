@@ -277,6 +277,7 @@ onUnmounted(() => {
 
 const updateStatus = async (newStatus) => {
   if (!order.value || order.value.status === newStatus) return
+  if (newStatus === 'cancelado') { cancelOrder(); return }
   try {
     await OrderService.updateOrderStatus(order.value.id, newStatus)
     order.value.status = newStatus
