@@ -23,7 +23,7 @@ exports.index = async (req, res) => {
         }
       ],
       order: [
-        ['name', 'ASC'],
+        ['position', 'ASC'],
         [{ model: Product, as: 'products' }, 'id', 'ASC'],
         [{ model: Product, as: 'products' }, { model: ProductVariation, as: 'variations' }, 'price', 'ASC']
       ]
@@ -70,8 +70,8 @@ exports.update = async (req, res) => {
     const category = await Category.findByPk(req.params.id);
     if (!category) return res.status(404).json({ error: 'Category not found' });
     
-    const { name, status } = req.body;
-    await category.update({ name, status });
+    const { name, status, position } = req.body;
+    await category.update({ name, status, ...(position !== undefined && { position }) });
     res.json(category);
   } catch (error) {
     res.status(500).json({ error: 'Failed to update category' });
