@@ -699,6 +699,30 @@ exports.confirmDeliveryByTracking = async (req, res) => {
   }
 };
 
+exports.claimPaid = async (req, res) => {
+  try {
+    const order = await Order.findOne({ where: { trackingCode: req.params.code } });
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    if (order.paymentMethod !== 'PIX') return res.status(400).json({ error: 'Only PIX orders' });
+    if (order.paymentStatus !== 'pendente') return res.status(400).json({ error: 'Payment already processed' });
+
+    order.paymentStatus = 'alegado';
+    await order.save();
+
+    req.app.get('io')?.emit('orderUpdated', {
+      id: order.id,
+      trackingCode: order.trackingCode,
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+    });
+
+    res.json({ paymentStatus: order.paymentStatus });
+  } catch (error) {
+    console.error('[orders.claimPaid]', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 exports.uploadReceipt = async (req, res) => {
   try {
     const order = await Order.findOne({ where: { trackingCode: req.params.code } });

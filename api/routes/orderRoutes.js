@@ -12,6 +12,7 @@ router.post('/public', checkStoreOpen, orderController.create);
 // Permite o cliente consultar o andamento do pedido com base no código secreto
 router.get('/track/:code', orderController.track);
 router.post('/track/:code/receipt', orderController.uploadReceipt);
+router.patch('/track/:code/claim-paid', orderController.claimPaid);
 router.patch('/track/:code/cancel', orderController.cancelByTracking);
 router.patch('/track/:code/confirm', orderController.confirmDeliveryByTracking);
 router.patch('/track/:code/whatsapp-optout', orderController.optOutWhatsappByTracking);

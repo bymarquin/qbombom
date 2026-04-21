@@ -267,6 +267,9 @@ export const OrderService = {
   uploadReceipt(trackingCode, payload) {
     return api.post(`/orders/track/${trackingCode}/receipt`, payload)
   },
+  claimPaid(trackingCode) {
+    return api.patch(`/orders/track/${trackingCode}/claim-paid`)
+  },
   cancelPublicOrder(trackingCode) {
     return api.patch(`/orders/track/${trackingCode}/cancel`)
   },

@@ -23,9 +23,24 @@
     </div>
 
     <div v-else-if="order" class="flex-1 overflow-y-auto flex flex-col gap-6">
-      <!-- Receipt Viewer -->
+      <!-- Aviso: cliente disse que pagou -->
       <div
-        v-if="order.paymentMethod === 'PIX' && order.receiptUrl"
+        v-if="order.paymentMethod === 'PIX' && order.paymentStatus === 'alegado'"
+        class="p-4 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-300 dark:border-yellow-700/50 rounded-xl flex items-center justify-between gap-4"
+      >
+        <div>
+          <p class="text-sm font-bold text-yellow-800 dark:text-yellow-300">Cliente avisou que pagou</p>
+          <p class="text-xs text-yellow-700 dark:text-yellow-400">Confira o extrato do PIX e confirme.</p>
+        </div>
+        <button
+          @click="confirmPayment"
+          class="shrink-0 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition"
+        >Confirmar</button>
+      </div>
+
+      <!-- Receipt Viewer (legado) -->
+      <div
+        v-else-if="order.paymentMethod === 'PIX' && order.receiptUrl"
         class="p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30 rounded-xl flex items-center justify-between"
       >
         <div>
