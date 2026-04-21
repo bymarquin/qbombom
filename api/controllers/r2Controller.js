@@ -21,6 +21,34 @@ function sanitizeFileName(fileName = '') {
   return `${safeBase}${ext}`;
 }
 
+function splitNameAndExt(fileName = '') {
+  const parsed = path.parse(String(fileName || ''));
+  return {
+    dir: parsed.dir || '',
+    name: parsed.name || 'arquivo',
+    ext: parsed.ext || '',
+  };
+}
+
+async function resolveAvailableKey(initialKey) {
+  const { dir, name, ext } = splitNameAndExt(initialKey);
+  let attempt = 0;
+
+  while (attempt < 1000) {
+    const fileName = attempt === 0 ? `${name}${ext}` : `${name}-${attempt}${ext}`;
+    const candidateKey = dir ? `${dir}/${fileName}` : fileName;
+    const listed = await listFiles({ prefix: candidateKey, maxKeys: 1 });
+    const exists = (listed.files || []).some((file) => file.key === candidateKey);
+
+    if (!exists) return candidateKey;
+    attempt += 1;
+  }
+
+  const fallback = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const fallbackName = `${name}-${fallback}${ext}`;
+  return dir ? `${dir}/${fallbackName}` : fallbackName;
+}
+
 function parseBase64Payload(fileBase64 = '') {
   const value = String(fileBase64 || '');
 
@@ -66,8 +94,8 @@ exports.upload = async (req, res) => {
     const safePrefix = normalizePrefix(prefix);
     const incomingName = multipartFile?.originalname || fileName;
     const safeFileName = sanitizeFileName(incomingName);
-    const uniquePrefix = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    const key = safePrefix ? `${safePrefix}/${uniquePrefix}_${safeFileName}` : `${uniquePrefix}_${safeFileName}`;
+    const requestedKey = safePrefix ? `${safePrefix}/${safeFileName}` : safeFileName;
+    const key = await resolveAvailableKey(requestedKey);
 
     let buffer = multipartFile?.buffer;
     let detectedContentType = multipartFile?.mimetype || contentType || 'application/octet-stream';
