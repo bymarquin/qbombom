@@ -101,9 +101,33 @@
               </td>
               <td class="py-4 px-6">
                 <span v-if="!prod.manageStock" class="text-neutral-400 dark:text-neutral-600 text-xs italic">-</span>
-                <span v-else :class="prod.stock > 10 ? 'text-green-600 font-bold' : (prod.stock > 0 ? 'text-orange-500 font-bold' : 'text-red-600 font-bold')">
-                  {{ prod.stock }} un
-                </span>
+                <div v-else class="flex items-center gap-2">
+                  <button
+                    @click="adjustStock(prod, -1)"
+                    :disabled="isSavingStock(prod.id) || getStockDraft(prod) <= 0"
+                    class="w-7 h-7 rounded-md border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    -
+                  </button>
+                  <input
+                    :value="getStockDraft(prod)"
+                    type="number"
+                    min="0"
+                    inputmode="numeric"
+                    class="w-16 px-2 py-1.5 text-sm text-center rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-red-500/25 focus:border-red-500"
+                    @focus="primeStockDraft(prod)"
+                    @input="onStockInput(prod, $event.target.value)"
+                    @blur="commitStock(prod)"
+                    @keyup.enter="commitStock(prod)"
+                  />
+                  <button
+                    @click="adjustStock(prod, 1)"
+                    :disabled="isSavingStock(prod.id)"
+                    class="w-7 h-7 rounded-md border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    +
+                  </button>
+                </div>
               </td>
               <td class="py-4 px-6">
                 <span
@@ -165,6 +189,8 @@ const categories = shallowRef([])
 const searchTerm = ref('')
 const selectedCategoryId = ref('all')
 const selectedStatus = ref('all')
+const stockDrafts = ref({})
+const stockSaving = ref({})
 
 const minPriceLabel = (prod) => {
   const prices = (prod.variations || []).map((v) => Number(v.price)).filter((p) => p > 0)
@@ -182,9 +208,92 @@ const loadData = async () => {
     ])
     categories.value = catRes.data
     products.value = prodRes.data
+    stockDrafts.value = Object.fromEntries(
+      (prodRes.data || [])
+        .filter((prod) => prod.manageStock)
+        .map((prod) => [prod.id, normalizeStock(prod.stock)]),
+    )
   } catch (error) {
     console.error(error)
   }
+}
+
+const normalizeStock = (value) => {
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) return 0
+  return Math.max(0, Math.floor(numeric))
+}
+
+const isSavingStock = (productId) => !!stockSaving.value[productId]
+
+const primeStockDraft = (prod) => {
+  if (stockDrafts.value[prod.id] !== undefined) return
+  stockDrafts.value = {
+    ...stockDrafts.value,
+    [prod.id]: normalizeStock(prod.stock),
+  }
+}
+
+const getStockDraft = (prod) => {
+  const draft = stockDrafts.value[prod.id]
+  if (draft === undefined) return normalizeStock(prod.stock)
+  return normalizeStock(draft)
+}
+
+const onStockInput = (prod, value) => {
+  stockDrafts.value = {
+    ...stockDrafts.value,
+    [prod.id]: normalizeStock(value),
+  }
+}
+
+const setProductStockLocally = (productId, stock) => {
+  const idx = products.value.findIndex((item) => item.id === productId)
+  if (idx === -1) return
+
+  const next = [...products.value]
+  next[idx] = { ...next[idx], stock }
+  products.value = next
+}
+
+const saveStock = async (prod, value) => {
+  if (!prod.manageStock) return
+
+  const nextStock = normalizeStock(value)
+  const currentStock = normalizeStock(prod.stock)
+
+  if (nextStock === currentStock) {
+    stockDrafts.value = { ...stockDrafts.value, [prod.id]: nextStock }
+    return
+  }
+
+  if (isSavingStock(prod.id)) return
+  stockSaving.value = { ...stockSaving.value, [prod.id]: true }
+
+  try {
+    await CatalogService.updateProduct(prod.id, { stock: nextStock, manageStock: true })
+    setProductStockLocally(prod.id, nextStock)
+    stockDrafts.value = { ...stockDrafts.value, [prod.id]: nextStock }
+  } catch {
+    toast.error('Nao foi possivel atualizar o estoque.')
+    stockDrafts.value = { ...stockDrafts.value, [prod.id]: currentStock }
+  } finally {
+    const rest = { ...stockSaving.value }
+    delete rest[prod.id]
+    stockSaving.value = rest
+  }
+}
+
+const adjustStock = async (prod, delta) => {
+  primeStockDraft(prod)
+  const next = normalizeStock(getStockDraft(prod) + delta)
+  stockDrafts.value = { ...stockDrafts.value, [prod.id]: next }
+  await saveStock(prod, next)
+}
+
+const commitStock = async (prod) => {
+  primeStockDraft(prod)
+  await saveStock(prod, getStockDraft(prod))
 }
 
 const getCategoryName = (id) => {
