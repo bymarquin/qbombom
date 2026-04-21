@@ -21,6 +21,42 @@
     <div
       class="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl dark:shadow-none shadow-red-900/5 border border-neutral-100 dark:border-neutral-800/50 flex-1 overflow-hidden flex flex-col"
     >
+      <div class="p-4 border-b border-neutral-100 dark:border-neutral-800/50 bg-neutral-50/50 dark:bg-neutral-900/40">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <input
+            v-model.trim="searchTerm"
+            type="search"
+            placeholder="Buscar por nome ou descricao..."
+            class="w-full px-3 py-2.5 text-sm rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500"
+          />
+
+          <select
+            v-model="selectedCategoryId"
+            class="w-full px-3 py-2.5 text-sm rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500"
+          >
+            <option value="all">Todas categorias</option>
+            <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+          </select>
+
+          <select
+            v-model="selectedStatus"
+            class="w-full px-3 py-2.5 text-sm rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500"
+          >
+            <option value="all">Todos status</option>
+            <option value="active">Ativos</option>
+            <option value="inactive">Inativos</option>
+          </select>
+
+          <button
+            @click="resetFilters"
+            :disabled="!hasActiveFilters"
+            class="px-3 py-2.5 text-sm font-medium rounded-lg border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Limpar filtros
+          </button>
+        </div>
+      </div>
+
       <div class="flex-1 overflow-auto">
         <table class="w-full text-left border-collapse">
           <thead>
@@ -36,13 +72,13 @@
             </tr>
           </thead>
           <tbody class="text-sm">
-            <tr v-if="products.length === 0">
+            <tr v-if="filteredProducts.length === 0">
               <td colspan="6" class="py-8 text-center text-neutral-500 dark:text-neutral-500">
-                Nenhum produto encontrado.
+                {{ products.length === 0 ? 'Nenhum produto encontrado.' : 'Nenhum produto corresponde aos filtros.' }}
               </td>
             </tr>
             <tr
-              v-for="prod in products"
+              v-for="prod in filteredProducts"
               :key="prod.id"
               class="border-b border-neutral-100 dark:border-neutral-800/50 last:border-0 hover:bg-neutral-50/50 dark:hover:bg-neutral-800/30 transition-colors"
             >
@@ -116,7 +152,7 @@
 </template>
 
 <script setup>
-import { shallowRef, onMounted } from 'vue'
+import { shallowRef, ref, computed, onMounted } from 'vue'
 import { Pencil, Trash2, ListPlus, Plus } from 'lucide-vue-next'
 import { CatalogService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
@@ -126,6 +162,9 @@ const toast = useToastStore()
 const dialog = useDialogStore()
 const products = shallowRef([])
 const categories = shallowRef([])
+const searchTerm = ref('')
+const selectedCategoryId = ref('all')
+const selectedStatus = ref('all')
 
 const minPriceLabel = (prod) => {
   const prices = (prod.variations || []).map((v) => Number(v.price)).filter((p) => p > 0)
@@ -151,6 +190,39 @@ const loadData = async () => {
 const getCategoryName = (id) => {
   const cat = categories.value.find((c) => c.id === id)
   return cat ? cat.name : 'Desconhecida'
+}
+
+const filteredProducts = computed(() => {
+  const term = searchTerm.value.toLowerCase()
+
+  return products.value.filter((prod) => {
+    const categoryName = getCategoryName(prod.categoryId).toLowerCase()
+    const matchesTerm =
+      !term ||
+      prod.name?.toLowerCase().includes(term) ||
+      prod.description?.toLowerCase().includes(term) ||
+      categoryName.includes(term)
+
+    const matchesCategory =
+      selectedCategoryId.value === 'all' ||
+      prod.categoryId === selectedCategoryId.value
+
+    const matchesStatus =
+      selectedStatus.value === 'all' ||
+      (selectedStatus.value === 'active' ? !!prod.status : !prod.status)
+
+    return matchesTerm && matchesCategory && matchesStatus
+  })
+})
+
+const hasActiveFilters = computed(() =>
+  searchTerm.value.length > 0 || selectedCategoryId.value !== 'all' || selectedStatus.value !== 'all'
+)
+
+const resetFilters = () => {
+  searchTerm.value = ''
+  selectedCategoryId.value = 'all'
+  selectedStatus.value = 'all'
 }
 
 const deleteProduct = async (id) => {
