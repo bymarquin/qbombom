@@ -58,7 +58,9 @@ exports.show = async (req, res) => {
 exports.create = async (req, res) => {
   try {
     const { name, status } = req.body;
-    const category = await Category.create({ name, status });
+    const last = await Category.max('position');
+    const position = (last || 0) + 1;
+    const category = await Category.create({ name, status, position });
     res.status(201).json(category);
   } catch (error) {
     res.status(500).json({ error: 'Failed to create category' });
