@@ -244,18 +244,20 @@ const loadOrder = async () => {
   }
 }
 
+function onOrderUpdated(updated) {
+  if (!order.value) return
+  if (order.value.id !== updated.id && order.value.trackingCode !== updated.trackingCode) return
+  updated.receiptUrl = toMediaProxyUrl(updated.receiptUrl)
+  Object.assign(order.value, updated)
+}
+
 onMounted(() => {
   loadOrder()
-  socket.on('orderUpdated', (updated) => {
-    if (order.value && (order.value.id === updated.id || order.value.trackingCode === updated.trackingCode)) {
-      updated.receiptUrl = toMediaProxyUrl(updated.receiptUrl)
-      Object.assign(order.value, updated)
-    }
-  })
+  socket.on('orderUpdated', onOrderUpdated)
 })
 
 onUnmounted(() => {
-  socket.off('orderUpdated')
+  socket.off('orderUpdated', onOrderUpdated)
 })
 
 const updateStatus = async (newStatus) => {

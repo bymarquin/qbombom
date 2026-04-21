@@ -10,9 +10,40 @@ const MIN_SEND_INTERVAL_MS = Number(process.env.WHATSAPP_MIN_SEND_INTERVAL_MS ||
 const JITTER_MIN_MS = Number(process.env.WHATSAPP_JITTER_MIN_MS || 3_000)
 const JITTER_MAX_MS = Number(process.env.WHATSAPP_JITTER_MAX_MS || 12_000)
 
-const lastSentAtByPhone = new Map()
-const sentStatusByOrder = new Set()
+const lastSentAtByPhone = new Map()   // phone → timestamp último envio
+const sentStatusByOrder = new Map()   // statusKey → timestamp quando foi marcado
 let sendQueue = Promise.resolve()
+
+// Purga entradas do rate-limit mais antigas que 2x o intervalo mínimo (1 vez por hora)
+setInterval(() => {
+  const cutoff = Date.now() - MIN_SEND_INTERVAL_MS * 2
+  for (const [phone, ts] of lastSentAtByPhone) {
+    if (ts < cutoff) lastSentAtByPhone.delete(phone)
+  }
+}, 60 * 60 * 1000).unref()
+
+const STATUS_TTL_MS = 24 * 60 * 60 * 1000 // 24h
+
+const markStatusSent = (key) => {
+  sentStatusByOrder.set(key, Date.now())
+  // Purga entradas antigas para evitar crescimento ilimitado
+  if (sentStatusByOrder.size > 2000) {
+    const cutoff = Date.now() - STATUS_TTL_MS
+    for (const [k, ts] of sentStatusByOrder) {
+      if (ts < cutoff) sentStatusByOrder.delete(k)
+    }
+  }
+}
+
+const isStatusSent = (key) => {
+  const ts = sentStatusByOrder.get(key)
+  if (!ts) return false
+  if (Date.now() - ts > STATUS_TTL_MS) {
+    sentStatusByOrder.delete(key)
+    return false
+  }
+  return true
+}
 
 const client = axios.create({
   baseURL: BASE_URL,
@@ -50,11 +81,30 @@ const normalizeStatus = (rawStatus) => {
 }
 
 const DEFAULT_MESSAGES = {
-  em_preparo: '🍧 Seu pedido está sendo preparado! Em breve ficará pronto.',
-  pronto: '✅ Seu pedido está pronto! Pode retirar ou aguardar a entrega.',
-  em_rota: '🛵 Seu pedido saiu para entrega! Acompanhe e confirme o recebimento pelo link abaixo:',
-  finalizado: '🎉 Pedido finalizado. Obrigado pela preferência! Volte sempre 😊',
-  cancelado: '❌ Seu pedido foi cancelado. Entre em contato se tiver dúvidas.',
+  em_preparo: [
+    '🍧 Seu pedido está sendo preparado! Em breve ficará pronto.',
+    '🍧 Já estamos preparando seu pedido! Logo logo fica prontinho.',
+    '🍧 Seu pedido entrou em preparo! Não vai demorar muito.',
+  ],
+  pronto: [
+    '✅ Seu pedido está pronto! Pode retirar ou aguardar a entrega.',
+    '✅ Prontinho! Seu pedido já está te esperando.',
+    '✅ Tudo certo! Seu pedido está pronto para retirada ou entrega.',
+  ],
+  em_rota: [
+    '🛵 Seu pedido saiu para entrega! Acompanhe e confirme o recebimento pelo link abaixo:',
+    '🛵 A entrega do seu pedido está a caminho! Confirme o recebimento pelo link:',
+    '🛵 Seu pedido está na estrada! Acompanhe pelo link abaixo:',
+  ],
+  finalizado: [
+    '🎉 Pedido finalizado. Obrigado pela preferência! Volte sempre 😊',
+    '🎉 Tudo certo! Pedido finalizado. Até a próxima! 😊',
+    '🎉 Obrigado pela preferência! Esperamos te ver em breve 😊',
+  ],
+  cancelado: [
+    '❌ Seu pedido foi cancelado. Entre em contato se tiver dúvidas.',
+    '❌ Infelizmente seu pedido foi cancelado. Qualquer dúvida estamos à disposição.',
+  ],
 }
 
 const formatPhone = (phone) => {
@@ -64,6 +114,17 @@ const formatPhone = (phone) => {
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const greeting = () => {
+  const hour = new Date().getHours()
+  if (hour >= 6 && hour < 12) return 'Bom dia'
+  if (hour >= 12 && hour < 18) return 'Boa tarde'
+  return 'Boa noite'
+}
+
+const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)]
+
+const firstWord = (name) => (name || '').trim().split(/\s+/)[0]
 
 const randomDelay = () => {
   const min = Math.max(0, JITTER_MIN_MS)
@@ -154,7 +215,7 @@ const canSendToPhone = async (phone) => {
   return optedIn.has(normalized) && !optedOut.has(normalized)
 }
 
-exports.sendStatusMessage = async (phone, status, orderNumber, trackingUrl = null, orderId = null) => {
+exports.sendStatusMessage = async (phone, status, orderNumber, trackingUrl = null, orderId = null, customerName = null) => {
   if (!phone) return
   const normalizedPhone = formatPhone(phone)
   if (!normalizedPhone) return
@@ -166,23 +227,46 @@ exports.sendStatusMessage = async (phone, status, orderNumber, trackingUrl = nul
   let messages = DEFAULT_MESSAGES
   try {
     const setting = await Setting.findOne({ where: { key: 'whatsapp_messages' } })
-    if (setting?.value) messages = { ...DEFAULT_MESSAGES, ...setting.value }
+    if (setting?.value) {
+      // Suporte a templates salvos como string ou array
+      const merged = {}
+      for (const key of Object.keys(DEFAULT_MESSAGES)) {
+        merged[key] = setting.value[key] ?? DEFAULT_MESSAGES[key]
+      }
+      messages = merged
+    }
   } catch {}
-  const message = messages[status]
-  if (!message) return
 
-  let text = `*Qbombom Sorvetes* — Pedido #${orderNumber}\n\n${message}`
+  const pool = messages[status]
+  if (!pool) return
+  const messageBody = pickRandom(Array.isArray(pool) ? pool : [pool])
+
+  const name = firstWord(customerName)
+  const salutation = name ? `${greeting()}, ${name}!` : `${greeting()}!`
+
+  let text = `*Qbombom Sorvetes* — Pedido #${orderNumber}\n\n${salutation}\n${messageBody}`
   if (trackingUrl) text += `\n${trackingUrl}`
 
   const statusKey = `${orderId || orderNumber}:${status}`
-  if (sentStatusByOrder.has(statusKey)) return
+  if (isStatusSent(statusKey)) return
+  // Reserva imediatamente para evitar race condition entre chamadas concorrentes
+  markStatusSent(statusKey)
 
   try {
     await enqueueSend(async () => {
       const lastSentAt = lastSentAtByPhone.get(normalizedPhone) || 0
       if (Date.now() - lastSentAt < MIN_SEND_INTERVAL_MS) {
+        console.warn(`[WhatsApp] Rate-limit ativo para ${normalizedPhone}, mensagem descartada (pedido ${orderNumber} — ${status})`)
         return
       }
+
+      // Simula digitação por ~2-4s antes de enviar
+      try {
+        await client.post(`/chat/sendPresence/${INSTANCE}`, {
+          number: normalizedPhone,
+          options: { presence: 'composing', delay: Math.floor(Math.random() * 2000) + 2000 },
+        })
+      } catch {}
 
       await client.post(`/message/sendText/${INSTANCE}`, {
         number: normalizedPhone,
@@ -190,7 +274,6 @@ exports.sendStatusMessage = async (phone, status, orderNumber, trackingUrl = nul
       })
 
       lastSentAtByPhone.set(normalizedPhone, Date.now())
-      sentStatusByOrder.add(statusKey)
     })
   } catch (error) {
     // Falha no WhatsApp não deve derrubar a operação principal

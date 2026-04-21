@@ -216,8 +216,8 @@ watch([search, filtroStatus], () => {
 onMounted(async () => {
   try {
     const [finalizados, cancelados] = await Promise.all([
-      OrderService.getOrders('finalizado'),
-      OrderService.getOrders('cancelado'),
+      OrderService.getOrders({ status: 'finalizado' }),
+      OrderService.getOrders({ status: 'cancelado' }),
     ])
     orders.value = [...(finalizados.data || []), ...(cancelados.data || [])].sort(
       (a, b) => new Date(b.createdAt) - new Date(a.createdAt),

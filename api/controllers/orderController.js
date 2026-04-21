@@ -3,6 +3,19 @@ const { Op } = require('sequelize');
 const { uploadFile } = require('../services/storageService');
 const whatsappService = require('../services/whatsappService');
 
+// Transições permitidas por updateStatus.
+// Cancelamento não está aqui — tem endpoint e lógica própria (restaura estoque).
+const VALID_TRANSITIONS = {
+  aguardando_pagamento: new Set(['novo']),
+  novo:                 new Set(['em_preparo', 'pronto']),
+  em_preparo:           new Set(['pronto']),
+  pronto:               new Set(['em_rota', 'finalizado']),
+  em_rota:              new Set(['entregue']),
+  entregue:             new Set(['finalizado']),
+  finalizado:           new Set(),
+  cancelado:            new Set(),
+};
+
 const ETA_ACTIVE_STATUSES = new Set(['novo', 'em_preparo']);
 const ETA_FINISHED_STATUSES = ['pronto', 'em_rota', 'entregue', 'finalizado'];
 const ETA_DEFAULT_SECONDS_PER_UNIT = 210;
@@ -273,14 +286,33 @@ async function reserveStockAtomically(items, transaction) {
 
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
+// Re-busca o pedido no banco antes de finalizar para não sobrescrever
+// uma mudança concorrente (ex.: cancelamento ocorrido nos 3s de espera).
+function scheduleAutoFinalize(orderId, io) {
+  setTimeout(async () => {
+    try {
+      const fresh = await Order.findByPk(orderId);
+      if (!fresh || fresh.status !== 'entregue') return;
+
+      fresh.status = 'finalizado';
+      await fresh.save();
+      await attachEtaToOrders(fresh);
+      io?.emit('orderUpdated', fresh);
+      notifyCustomer(fresh, 'finalizado');
+    } catch (e) {
+      console.error('[auto-finalizar]', e);
+    }
+  }, 3000);
+}
+
 async function notifyCustomer(order, status) {
   if (!order.customerId) return;
-  const customer = await Customer.findByPk(order.customerId, { attributes: ['phone'] });
+  const customer = await Customer.findByPk(order.customerId, { attributes: ['phone', 'name'] });
   if (customer?.phone) {
     const trackingUrl = status === 'em_rota' && order.trackingCode
       ? `${CLIENT_URL}/cardapio?track=${order.trackingCode}`
       : null;
-    whatsappService.sendStatusMessage(customer.phone, status, order.id.slice(-6).toUpperCase(), trackingUrl, order.id);
+    whatsappService.sendStatusMessage(customer.phone, status, order.id.slice(-6).toUpperCase(), trackingUrl, order.id, customer.name);
   }
 }
 
@@ -342,7 +374,13 @@ exports.create = async (req, res) => {
       let customer = await Customer.findOne({ where: { phone } });
 
       if (!customer && customerName) {
-        customer = await Customer.create({ name: customerName, phone, address: deliveryAddress }, { transaction });
+        customer = await Customer.create({
+          name: customerName,
+          phone,
+          address: deliveryAddress,
+          totalOrders: 1,
+          totalSpent: parseFloat(total),
+        }, { transaction });
       } else if (customer) {
         if (deliveryAddress) customer.address = deliveryAddress;
         if (customerName) customer.name = customerName;
@@ -543,8 +581,22 @@ exports.updateStatus = async (req, res) => {
     const order = await Order.findByPk(req.params.id);
     if (!order) return res.status(404).json({ error: 'Order not found' });
 
-    const previousStatus = order.status;
     const { status, paymentStatus } = req.body;
+
+    if (status) {
+      if (status === 'cancelado') {
+        return res.status(400).json({ error: 'Use o endpoint de cancelamento para cancelar um pedido.' });
+      }
+
+      const allowed = VALID_TRANSITIONS[order.status];
+      if (!allowed || !allowed.has(status)) {
+        return res.status(400).json({
+          error: `Transição inválida: ${order.status} → ${status}.`,
+        });
+      }
+    }
+
+    const previousStatus = order.status;
 
     if (status) order.status = status;
     if (paymentStatus) order.paymentStatus = paymentStatus;
@@ -562,17 +614,7 @@ exports.updateStatus = async (req, res) => {
     res.json(order);
 
     if (status === 'entregue') {
-      setTimeout(async () => {
-        try {
-          order.status = 'finalizado';
-          await order.save();
-          await attachEtaToOrders(order);
-          io?.emit('orderUpdated', order);
-          notifyCustomer(order, 'finalizado');
-        } catch (e) {
-          console.error('[auto-finalizar]', e);
-        }
-      }, 3000);
+      scheduleAutoFinalize(order.id, io);
     }
   } catch (error) {
     console.error('[orders.updateStatus]', error);
@@ -650,17 +692,7 @@ exports.confirmDeliveryByTracking = async (req, res) => {
 
     res.json(order);
 
-    setTimeout(async () => {
-      try {
-        order.status = 'finalizado';
-        await order.save();
-        await attachEtaToOrders(order);
-        io?.emit('orderUpdated', order);
-        notifyCustomer(order, 'finalizado');
-      } catch (e) {
-        console.error('[auto-finalizar confirmDelivery]', e);
-      }
-    }, 3000);
+    scheduleAutoFinalize(order.id, io);
   } catch (error) {
     console.error('[orders.confirmDeliveryByTracking]', error);
     res.status(500).json({ error: 'Internal server error' });
