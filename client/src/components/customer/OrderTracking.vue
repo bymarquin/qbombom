@@ -377,6 +377,15 @@ watch(
   },
 );
 
+watch(
+  () => props.pedidoRastreado,
+  (pedido) => {
+    if (props.modelValue && pedido?.paymentMethod === "PIX" && !chavePixLoja.value && !pixLoadError.value) {
+      carregarConfiguracoes();
+    }
+  },
+);
+
 onMounted(() => {
   if (props.modelValue && props.pedidoRastreado?.paymentMethod === "PIX") {
     carregarConfiguracoes();

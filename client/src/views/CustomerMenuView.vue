@@ -641,7 +641,7 @@ onMounted(() => {
   if (trackParam) {
     localStorage.setItem("qbombom_tracking", trackParam);
     rastreioAtual.value = trackParam;
-    carregarRastreio();
+    await carregarRastreio();
     rastreioAberto.value = true;
     // Limpa o query param da URL sem recarregar
     window.history.replaceState({}, "", window.location.pathname);
@@ -863,7 +863,7 @@ const enviarPedido = async () => {
     if (trackingCode) {
       localStorage.setItem("qbombom_tracking", trackingCode);
       rastreioAtual.value = trackingCode;
-      carregarRastreio();
+      await carregarRastreio();
     }
 
     // Sucesso UI
