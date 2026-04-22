@@ -606,7 +606,7 @@ const carregarCatalogo = async () => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
   carregarCatalogo();
 
   // Ghost Login Load
