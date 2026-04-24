@@ -538,7 +538,7 @@ const statusFluxo = computed(() => {
     );
   }
 
-  base.push({ id: "finalizado", label: "Concluído", activeMsg: "Obrigado pela preferência! 🎉" });
+  base.push({ id: "finalizado", label: "Finalizado", activeMsg: "Obrigado pela preferência! 🎉" });
 
   return base;
 });
@@ -688,7 +688,7 @@ onMounted(async () => {
           toast.success("Pedido entregue! Bom apetite 😋");
           showNotification("Pedido Entregue! 😋", { body: "Bom apetite! Agradecemos a preferência." });
         } else if (updatedOrder.status === "finalizado") {
-          showNotification("Pedido Concluído! 🎉", { body: "Agradecemos a preferência. Até a próxima!" });
+          showNotification("Pedido Finalizado! 🎉", { body: "Agradecemos a preferência. Até a próxima!" });
           limparRastreio();
         }
       }
