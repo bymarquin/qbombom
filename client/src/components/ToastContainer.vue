@@ -1,8 +1,8 @@
 <template>
   <div
-    class="fixed z-[99999] flex flex-col gap-2 pointer-events-none
-           bottom-4 left-4 right-4
-           sm:bottom-auto sm:top-4 sm:left-auto sm:right-4 sm:w-full sm:max-w-sm"
+    class="fixed z-[99999] top-4 left-1/2 -translate-x-1/2
+           w-[calc(100%-2rem)] max-w-md
+           flex flex-col gap-2 pointer-events-none"
   >
     <TransitionGroup name="toast" tag="div" class="flex flex-col gap-2">
       <div
@@ -47,16 +47,32 @@ const { toasts } = storeToRefs(toastStore)
 </script>
 
 <style scoped>
-.toast-enter-active,
+/* Entrada: cai de cima com overshoot leve */
+@keyframes toast-in {
+  0%   { opacity: 0; transform: translateY(-28px) scale(0.96); }
+  65%  { opacity: 1; transform: translateY(6px)   scale(1.01); }
+  100% { opacity: 1; transform: translateY(0)     scale(1);    }
+}
+
+/* Saída: puxada para baixo primeiro, depois sobe e some */
+@keyframes toast-out {
+  0%   { opacity: 1; transform: translateY(0)     scale(1);    }
+  35%  { opacity: 1; transform: translateY(8px)   scale(1.01); }
+  100% { opacity: 0; transform: translateY(-38px) scale(0.96); }
+}
+
+.toast-enter-active {
+  animation: toast-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 .toast-leave-active {
-  transition: all 0.3s ease;
+  animation: toast-out 380ms cubic-bezier(0.4, 0, 0.6, 1) both;
+  position: absolute;
+  width: 100%;
 }
-.toast-enter-from {
-  opacity: 0;
-  transform: translateX(30px) scale(0.95);
-}
-.toast-leave-to {
-  opacity: 0;
-  transform: translateX(30px) scale(0.95);
+
+/* Reposicionamento suave dos toasts restantes */
+.toast-move {
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 </style>
