@@ -370,20 +370,39 @@ exports.create = async (req, res) => {
       paymentStatus, paymentMethod, subtotal, discount, total, observation, items, whatsappOptIn
     } = req.body;
 
+    const orderType = type || 'Mesa';
+    const hasDeliveryLatitude = deliveryLatitude != null && String(deliveryLatitude).trim() !== '';
+    const hasDeliveryLongitude = deliveryLongitude != null && String(deliveryLongitude).trim() !== '';
+
+    if (hasDeliveryLatitude !== hasDeliveryLongitude) {
+      const mismatchError = new Error('Coordenadas incompletas. Envie latitude e longitude.');
+      mismatchError.status = 422;
+      throw mismatchError;
+    }
+
     // Validate geolocation fields when provided
     let geoLat = null, geoLng = null, geoAccuracy = null, geoCapturedAt = null;
-    if (deliveryLatitude != null && deliveryLongitude != null) {
+    if (hasDeliveryLatitude && hasDeliveryLongitude) {
       const lat = parseFloat(deliveryLatitude);
       const lng = parseFloat(deliveryLongitude);
       if (isNaN(lat) || lat < -90 || lat > 90 || isNaN(lng) || lng < -180 || lng > 180) {
-        return res.status(422).json({ error: 'Coordenadas de entrega inválidas.' });
+        const invalidGeoError = new Error('Coordenadas de entrega inválidas.');
+        invalidGeoError.status = 422;
+        throw invalidGeoError;
       }
       geoLat = lat;
       geoLng = lng;
       geoAccuracy = deliveryAccuracyMeters != null ? parseFloat(deliveryAccuracyMeters) : null;
+      if (!Number.isFinite(geoAccuracy) || geoAccuracy < 0) geoAccuracy = null;
       geoCapturedAt = deliveryLocationCapturedAt ? new Date(deliveryLocationCapturedAt) : null;
       if (geoCapturedAt && isNaN(geoCapturedAt.getTime())) geoCapturedAt = null;
     }
+
+    const resolvedDeliveryAddress = deliveryAddress || (
+      geoLat != null && geoLng != null
+        ? `GPS: ${Number(geoLat).toFixed(6)}, ${Number(geoLng).toFixed(6)}`
+        : null
+    );
 
     let customerId = null;
     if (customerPhone) {
@@ -394,12 +413,12 @@ exports.create = async (req, res) => {
         customer = await Customer.create({
           name: customerName,
           phone,
-          address: deliveryAddress,
+          address: resolvedDeliveryAddress,
           totalOrders: 1,
           totalSpent: parseFloat(total),
         }, { transaction });
       } else if (customer) {
-        if (deliveryAddress) customer.address = deliveryAddress;
+        if (resolvedDeliveryAddress) customer.address = resolvedDeliveryAddress;
         if (customerName) customer.name = customerName;
         customer.totalOrders = (customer.totalOrders || 0) + 1;
         customer.totalSpent = parseFloat(customer.totalSpent || 0) + parseFloat(total);
@@ -424,11 +443,11 @@ exports.create = async (req, res) => {
 
     const order = await Order.create({
       trackingCode,
-      type: type || 'Mesa',
+      type: orderType,
       customerName,
       customerId,
       customerPhone,
-      deliveryAddress,
+      deliveryAddress: resolvedDeliveryAddress,
       deliveryLatitude: geoLat,
       deliveryLongitude: geoLng,
       deliveryAccuracyMeters: geoAccuracy,

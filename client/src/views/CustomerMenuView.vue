@@ -805,6 +805,31 @@ const removerItem = (index) => {
   if (carrinho.value.length === 0) sacolaAberta.value = false;
 };
 
+const capturarGeolocalizacaoEmSegundoPlano = async () => {
+  if (typeof navigator === "undefined" || !navigator.geolocation) return null;
+  if (!navigator.permissions?.query) return null;
+
+  try {
+    const permissionStatus = await navigator.permissions.query({ name: "geolocation" });
+    if (permissionStatus.state !== "granted") return null;
+  } catch {
+    return null;
+  }
+
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => resolve({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracyMeters: position.coords.accuracy,
+        capturedAt: new Date().toISOString(),
+      }),
+      () => resolve(null),
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 120000 },
+    );
+  });
+};
+
 const enviarPedido = async () => {
   if (!podeFinalizarPedido.value) return;
 
@@ -817,6 +842,7 @@ const enviarPedido = async () => {
 
     let obsAdicional = "";
     let endEntrega = "";
+    let geo = null;
 
     if (checkout.value.tipo === "Entrega") {
       const end = checkout.value.endereco;
@@ -824,6 +850,9 @@ const enviarPedido = async () => {
       if (end.complemento) {
         endEntrega += ` (${end.complemento})`;
       }
+
+      geo = await capturarGeolocalizacaoEmSegundoPlano();
+      checkout.value.geolocacao = geo;
 
       if (checkout.value.pagamento === "Dinheiro") {
         if (checkout.value.precisaTroco) {
@@ -833,8 +862,6 @@ const enviarPedido = async () => {
         }
       }
     }
-
-    const geo = checkout.value.tipo === 'Entrega' ? checkout.value.geolocacao : null;
 
     const payload = {
       type: checkout.value.tipo,
