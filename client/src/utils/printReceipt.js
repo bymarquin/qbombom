@@ -74,7 +74,7 @@ const buildReceiptHtml = (order, paperSize) => {
           body {
             font-family: 'Courier New', Courier, monospace;
             font-size: 13px;
-            font-weight: 500;
+            font-weight: 800;
             width: ${paperSize};
             color: #000;
             background: #fff;
@@ -96,7 +96,7 @@ const buildReceiptHtml = (order, paperSize) => {
           .total-row,
           .footer {
             color: #000;
-            font-weight: 500;
+            font-weight: 800;
           }
 
           /* Texto em negrito */
