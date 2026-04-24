@@ -23,38 +23,38 @@
     </div>
 
     <div v-else-if="order" class="flex-1 overflow-y-auto flex flex-col gap-6">
-      <!-- Aviso: cliente disse que pagou -->
+      <!-- Confirmação PIX pendente -->
       <div
-        v-if="order.paymentMethod === 'PIX' && order.paymentStatus === 'alegado'"
-        class="p-4 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-300 dark:border-yellow-700/50 rounded-xl flex items-center justify-between gap-4"
+        v-if="order.paymentMethod === 'PIX' && order.paymentStatus !== 'pago'"
+        class="p-4 rounded-xl flex items-center justify-between gap-4"
+        :class="order.paymentStatus === 'alegado'
+          ? 'bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-300 dark:border-yellow-700/50'
+          : 'bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800/40'"
       >
         <div>
-          <p class="text-sm font-bold text-yellow-800 dark:text-yellow-300">Cliente avisou que pagou</p>
-          <p class="text-xs text-yellow-700 dark:text-yellow-400">Confira o extrato do PIX e confirme.</p>
+          <p class="text-sm font-bold"
+            :class="order.paymentStatus === 'alegado'
+              ? 'text-yellow-800 dark:text-yellow-300'
+              : 'text-orange-800 dark:text-orange-300'"
+          >
+            {{ order.paymentStatus === 'alegado' ? 'Cliente avisou que pagou' : 'Aguardando pagamento PIX' }}
+          </p>
+          <p class="text-xs"
+            :class="order.paymentStatus === 'alegado'
+              ? 'text-yellow-700 dark:text-yellow-400'
+              : 'text-orange-700 dark:text-orange-400'"
+          >
+            {{ order.paymentStatus === 'alegado' ? 'Confira o extrato do PIX e confirme.' : 'Confirme quando o pagamento chegar.' }}
+          </p>
         </div>
-        <button
-          @click="confirmPayment"
-          class="shrink-0 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition"
-        >Confirmar</button>
-      </div>
-
-      <!-- Receipt Viewer (legado) -->
-      <div
-        v-else-if="order.paymentMethod === 'PIX' && order.receiptUrl"
-        class="p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30 rounded-xl flex items-center justify-between"
-      >
-        <div>
-          <p class="text-sm font-bold text-blue-800 dark:text-blue-300">Comprovante de Pagamento</p>
-          <p class="text-xs text-blue-600 dark:text-blue-400">O cliente enviou um comprovante de PIX.</p>
-        </div>
-        <div class="flex gap-2">
+        <div class="flex gap-2 shrink-0">
           <a
+            v-if="order.receiptUrl"
             :href="getReceiptUrl(order.receiptUrl)"
             target="_blank"
             class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition"
           >Ver Foto</a>
           <button
-            v-if="order.paymentStatus === 'pendente'"
             @click="confirmPayment"
             class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition"
           >Confirmar</button>
@@ -291,11 +291,9 @@ const updateStatus = async (newStatus) => {
 const confirmPayment = async () => {
   if (!order.value) return
   try {
-    await OrderService.updateOrderStatus(order.value.id, undefined, 'pago')
-    order.value.paymentStatus = 'pago'
-    if (order.value.status === 'aguardando_pagamento') {
-      await updateStatus('novo')
-    }
+    const res = await OrderService.confirmPix(order.value.id)
+    Object.assign(order.value, res.data)
+    toast.success('Pagamento PIX confirmado.')
   } catch (error) {
     toast.error('Erro ao confirmar pagamento')
     console.error(error)

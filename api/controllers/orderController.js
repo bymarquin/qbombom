@@ -699,6 +699,54 @@ exports.confirmDeliveryByTracking = async (req, res) => {
   }
 };
 
+exports.confirmPixPayment = async (req, res) => {
+  const transaction = await sequelize.transaction();
+
+  try {
+    const order = await Order.findByPk(req.params.id, {
+      include: ORDER_INCLUDES,
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+
+    if (!order) {
+      await transaction.rollback();
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    if (order.paymentMethod !== 'PIX') {
+      await transaction.rollback();
+      return res.status(400).json({ error: 'Pedido não é PIX.' });
+    }
+
+    if (order.paymentStatus === 'pago') {
+      await transaction.commit();
+      await attachEtaToOrders(order);
+      return res.json(order);
+    }
+
+    order.paymentStatus = 'pago';
+
+    if (order.status === 'aguardando_pagamento') {
+      order.status = 'novo';
+    }
+
+    await order.save({ transaction });
+    await transaction.commit();
+
+    await attachEtaToOrders(order);
+    req.app.get('io')?.emit('orderUpdated', order);
+
+    return res.json(order);
+  } catch (error) {
+    if (!transaction.finished) {
+      await transaction.rollback();
+    }
+    console.error('[orders.confirmPixPayment]', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 exports.claimPaid = async (req, res) => {
   try {
     const order = await Order.findOne({ where: { trackingCode: req.params.code } });

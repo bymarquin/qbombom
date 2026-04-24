@@ -283,6 +283,9 @@ export const OrderService = {
     // Rota pública para consultar status do pedido por código
     return api.get(`/orders/track/${trackingCode}`)
   },
+  confirmPix(id) {
+    return api.patch(`/orders/${id}/confirm-pix`)
+  },
   updateOrderStatus(id, status, paymentStatus) {
     const payload = {};
     if (status) payload.status = status;

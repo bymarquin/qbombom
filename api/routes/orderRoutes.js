@@ -31,4 +31,7 @@ router.patch('/:id/status', auth, checkPermission('orders.change_status'), order
 // Cancelar pedido (Permissão: orders.cancel — disponível também para CASHIER)
 router.patch('/:id/cancel', auth, checkPermission('orders.cancel'), orderController.cancelOrder);
 
+// Confirmar pagamento PIX manualmente (Permissão: orders.change_status)
+router.patch('/:id/confirm-pix', auth, checkPermission('orders.change_status'), orderController.confirmPixPayment);
+
 module.exports = router;
