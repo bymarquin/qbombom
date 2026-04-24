@@ -472,6 +472,7 @@ const checkout = ref(
       bairro: "",
       complemento: "",
     },
+    geolocacao: null,
   }),
 );
 
@@ -833,12 +834,20 @@ const enviarPedido = async () => {
       }
     }
 
+    const geo = checkout.value.tipo === 'Entrega' ? checkout.value.geolocacao : null;
+
     const payload = {
       type: checkout.value.tipo,
       customerName: finalCustomerName,
       customerPhone: limparTelefone(checkout.value.telefone),
       whatsappOptIn: Boolean(checkout.value.whatsappOptIn),
       deliveryAddress: endEntrega || undefined,
+      ...(geo?.latitude != null && geo?.longitude != null ? {
+        deliveryLatitude: geo.latitude,
+        deliveryLongitude: geo.longitude,
+        deliveryAccuracyMeters: geo.accuracyMeters ?? undefined,
+        deliveryLocationCapturedAt: geo.capturedAt ?? undefined,
+      } : {}),
       paymentStatus: "pendente", // Pedido online nasce como pagamento pendente sempre
       paymentMethod: checkout.value.pagamento,
       subtotal: subtotal.value,
@@ -877,6 +886,7 @@ const enviarPedido = async () => {
     sacolaAberta.value = false;
     rastreioAberto.value = true;
     carrinho.value = [];
+    checkout.value.geolocacao = null;
 
     // TODO: Se checkout.value.pagamento === 'PIX_ONLINE', devemos redirecionar
     // para uma nova tela de pagamento ou exibir o QR Code retornado pela API aqui mesmo.

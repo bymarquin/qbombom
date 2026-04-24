@@ -99,6 +99,31 @@
             <p class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
               {{ order.deliveryAddress || 'Não informado' }}
             </p>
+            <!-- Coordinates and navigation links -->
+            <template v-if="order.deliveryLatitude != null && order.deliveryLongitude != null">
+              <p class="text-xs text-neutral-400 dark:text-neutral-600 mt-1 font-mono">
+                {{ Number(order.deliveryLatitude).toFixed(6) }}, {{ Number(order.deliveryLongitude).toFixed(6) }}
+                <span v-if="order.deliveryAccuracyMeters != null" class="ml-1">(±{{ Math.round(order.deliveryAccuracyMeters) }}m)</span>
+              </p>
+              <div class="flex gap-2 mt-2 flex-wrap">
+                <a
+                  :href="`https://www.google.com/maps/dir/?api=1&destination=${order.deliveryLatitude},${order.deliveryLongitude}`"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                >
+                  <Navigation class="w-3.5 h-3.5" /> Google Maps
+                </a>
+                <a
+                  :href="`https://waze.com/ul?ll=${order.deliveryLatitude},${order.deliveryLongitude}&navigate=yes`"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-600 text-white transition-colors"
+                >
+                  <Navigation class="w-3.5 h-3.5" /> Waze
+                </a>
+              </div>
+            </template>
           </div>
         </div>
 
@@ -211,7 +236,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ChevronLeft, Printer } from 'lucide-vue-next'
+import { ChevronLeft, Navigation, Printer } from 'lucide-vue-next'
 import { OrderService, AuthService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 import { useOrderStatus } from '@/composables/useOrderStatus'

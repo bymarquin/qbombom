@@ -221,6 +221,51 @@
 
             <div v-if="checkout.tipo === 'Entrega'" class="flex flex-col gap-3">
               <label class="text-sm font-bold text-neutral-900 dark:text-neutral-100">Endereço de Entrega</label>
+
+              <!-- Geolocation capture -->
+              <div>
+                <button
+                  type="button"
+                  @click="capturarLocalizacao"
+                  :disabled="geoStatus === 'loading'"
+                  class="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border text-sm font-semibold transition-all duration-200"
+                  :class="{
+                    'border-red-600 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30': geoStatus === 'idle' || geoStatus === 'denied' || geoStatus === 'error',
+                    'border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-neutral-400 cursor-not-allowed': geoStatus === 'loading',
+                    'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400': geoStatus === 'success',
+                  }"
+                >
+                  <MapPin class="w-4 h-4 shrink-0" />
+                  <span v-if="geoStatus === 'loading'">Obtendo localização...</span>
+                  <span v-else-if="geoStatus === 'success'">Localização capturada ✓</span>
+                  <span v-else>Usar minha localização</span>
+                </button>
+
+                <!-- Feedback messages -->
+                <p v-if="geoStatus === 'success' && checkout.geolocacao?.accuracyMeters != null" class="text-xs mt-1.5 font-medium"
+                  :class="checkout.geolocacao.accuracyMeters > 100 ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400'"
+                >
+                  <span v-if="checkout.geolocacao.accuracyMeters > 100">
+                    ⚠ Precisão baixa (~{{ Math.round(checkout.geolocacao.accuracyMeters) }}m). Confirme o endereço abaixo.
+                  </span>
+                  <span v-else>
+                    Precisão: ~{{ Math.round(checkout.geolocacao.accuracyMeters) }}m
+                  </span>
+                </p>
+                <p v-if="geoStatus === 'denied'" class="text-xs text-amber-600 dark:text-amber-400 mt-1.5">
+                  Permissão negada. Preencha o endereço manualmente abaixo.
+                </p>
+                <p v-if="geoStatus === 'error'" class="text-xs text-amber-600 dark:text-amber-400 mt-1.5">
+                  Não foi possível obter a localização. Preencha o endereço abaixo.
+                </p>
+                <p v-if="geoStatus === 'unsupported'" class="text-xs text-amber-600 dark:text-amber-400 mt-1.5">
+                  GPS não disponível neste dispositivo. Preencha o endereço manualmente.
+                </p>
+                <p class="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1.5">
+                  Ao tocar em "Usar minha localização", você autoriza usar seu GPS apenas para esta entrega.
+                </p>
+              </div>
+
               <input
                 v-model="checkout.endereco.rua"
                 type="text"
@@ -356,12 +401,45 @@
 </template>
 
 <script setup>
-import { ShoppingBag, Trash2 } from "lucide-vue-next";
+import { ref } from "vue";
+import { ShoppingBag, Trash2, MapPin } from "lucide-vue-next";
 import { formatarMoeda, mascararTelefone } from "@/utils/formatters";
 
 const isOpen = defineModel("isOpen", { type: Boolean, required: true });
 const carrinho = defineModel("carrinho", { type: Array, required: true });
 const checkout = defineModel("checkout", { type: Object, required: true });
+
+// 'idle' | 'loading' | 'success' | 'denied' | 'error' | 'unsupported'
+const geoStatus = ref('idle');
+
+const capturarLocalizacao = () => {
+  if (!navigator.geolocation) {
+    geoStatus.value = 'unsupported';
+    return;
+  }
+  geoStatus.value = 'loading';
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      checkout.value.geolocacao = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracyMeters: position.coords.accuracy,
+        capturedAt: new Date().toISOString(),
+      };
+      geoStatus.value = 'success';
+    },
+    (err) => {
+      if (err.code === err.PERMISSION_DENIED) {
+        geoStatus.value = 'denied';
+      } else {
+        geoStatus.value = 'error';
+      }
+      // Clear any previous geo data on failure
+      if (checkout.value.geolocacao) checkout.value.geolocacao = null;
+    },
+    { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+  );
+};
 
 defineProps({
   subtotal: {

@@ -57,6 +57,10 @@ module.exports = (sequelize, DataTypes) => {
     customerId: DataTypes.UUID,
     customerPhone: DataTypes.STRING,
     deliveryAddress: DataTypes.TEXT,
+    deliveryLatitude: DataTypes.DECIMAL(10, 7),
+    deliveryLongitude: DataTypes.DECIMAL(10, 7),
+    deliveryAccuracyMeters: DataTypes.FLOAT,
+    deliveryLocationCapturedAt: DataTypes.DATE,
     receiptUrl: DataTypes.STRING
   }, {
     sequelize,

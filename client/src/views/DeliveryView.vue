@@ -87,12 +87,41 @@
               </div>
             </div>
 
-            <!-- Endereço (Mock / Futuro) -->
+            <!-- Endereço + Navegação -->
             <div class="bg-neutral-50 dark:bg-neutral-900/50 p-3 rounded-xl border border-neutral-100 dark:border-neutral-800/50 flex gap-3 items-start">
               <MapPin class="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-              <div>
+              <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium text-neutral-900 dark:text-neutral-100">{{ pedido.deliveryAddress || 'Endereço a combinar ou Retirada' }}</p>
-                <p v-if="pedido.deliveryReference" class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Ref: {{ pedido.deliveryReference }}</p>
+                <!-- Navigation buttons when coordinates are available -->
+                <div v-if="pedido.deliveryLatitude != null && pedido.deliveryLongitude != null" class="flex gap-2 mt-2 flex-wrap">
+                  <a
+                    :href="`https://www.google.com/maps/dir/?api=1&destination=${pedido.deliveryLatitude},${pedido.deliveryLongitude}`"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                  >
+                    <Navigation class="w-3.5 h-3.5" /> Google Maps
+                  </a>
+                  <a
+                    :href="`https://waze.com/ul?ll=${pedido.deliveryLatitude},${pedido.deliveryLongitude}&navigate=yes`"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-600 text-white transition-colors"
+                  >
+                    <Navigation class="w-3.5 h-3.5" /> Waze
+                  </a>
+                </div>
+                <!-- Fallback: address-based navigation when no coordinates -->
+                <div v-else-if="pedido.deliveryAddress" class="flex gap-2 mt-2">
+                  <a
+                    :href="`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pedido.deliveryAddress)}`"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-300 transition-colors"
+                  >
+                    <Navigation class="w-3.5 h-3.5" /> Navegar pelo endereço
+                  </a>
+                </div>
               </div>
             </div>
 
@@ -148,7 +177,7 @@ import { OrderService, AuthService } from '@/services/http';
 import { useOrderSocket } from '@/composables/useOrderSocket';
 import { formatarTempo, formatarMoeda } from '@/utils/formatters';
 import {
-  LogOut, Package, Bike as Motorcycle, MapPin, Phone,
+  LogOut, Package, Bike as Motorcycle, MapPin, Navigation, Phone,
   MapPinOff, CheckCircle2, CreditCard, Banknote
 } from 'lucide-vue-next';
 

@@ -366,8 +366,24 @@ exports.create = async (req, res) => {
   try {
     const {
       type, customerName, customerPhone, deliveryAddress,
+      deliveryLatitude, deliveryLongitude, deliveryAccuracyMeters, deliveryLocationCapturedAt,
       paymentStatus, paymentMethod, subtotal, discount, total, observation, items, whatsappOptIn
     } = req.body;
+
+    // Validate geolocation fields when provided
+    let geoLat = null, geoLng = null, geoAccuracy = null, geoCapturedAt = null;
+    if (deliveryLatitude != null && deliveryLongitude != null) {
+      const lat = parseFloat(deliveryLatitude);
+      const lng = parseFloat(deliveryLongitude);
+      if (isNaN(lat) || lat < -90 || lat > 90 || isNaN(lng) || lng < -180 || lng > 180) {
+        return res.status(422).json({ error: 'Coordenadas de entrega inválidas.' });
+      }
+      geoLat = lat;
+      geoLng = lng;
+      geoAccuracy = deliveryAccuracyMeters != null ? parseFloat(deliveryAccuracyMeters) : null;
+      geoCapturedAt = deliveryLocationCapturedAt ? new Date(deliveryLocationCapturedAt) : null;
+      if (geoCapturedAt && isNaN(geoCapturedAt.getTime())) geoCapturedAt = null;
+    }
 
     let customerId = null;
     if (customerPhone) {
@@ -413,6 +429,10 @@ exports.create = async (req, res) => {
       customerId,
       customerPhone,
       deliveryAddress,
+      deliveryLatitude: geoLat,
+      deliveryLongitude: geoLng,
+      deliveryAccuracyMeters: geoAccuracy,
+      deliveryLocationCapturedAt: geoCapturedAt,
       status: orderStatus,
       paymentStatus: paymentStatus || 'pendente',
       paymentMethod,
