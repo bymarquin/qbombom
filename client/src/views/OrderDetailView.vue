@@ -215,6 +215,7 @@ import { ChevronLeft, Printer } from 'lucide-vue-next'
 import { OrderService, AuthService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 import { useOrderStatus } from '@/composables/useOrderStatus'
+import { printReceipt } from '@/utils/printReceipt'
 import { toMediaProxyUrl } from '@/utils/mediaUrl'
 import socket from '@/services/socket'
 
@@ -314,15 +315,13 @@ const cancelOrder = async () => {
 const printOrder = async () => {
   if (!order.value) return
   try {
-    await OrderService.printOrder(order.value.id)
-    toast.success('Comanda enviada para impressão.')
-    if (order.value.status === 'novo') {
-      await updateStatus('em_preparo')
-    }
-  } catch (error) {
-    const msg = error.response?.data?.error || 'Falha na impressão. Verifique as configurações.'
-    toast.error(msg)
-    console.error(error)
+    await printReceipt(order.value)
+  } catch {
+    toast.error('Não foi possível abrir o diálogo de impressão.')
+    return
+  }
+  if (order.value.status === 'novo') {
+    await updateStatus('em_preparo')
   }
 }
 
