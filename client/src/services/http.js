@@ -286,6 +286,9 @@ export const OrderService = {
   confirmPix(id) {
     return api.patch(`/orders/${id}/confirm-pix`)
   },
+  printOrder(id) {
+    return api.post(`/orders/${id}/print`)
+  },
   updateOrderStatus(id, status, paymentStatus) {
     const payload = {};
     if (status) payload.status = status;

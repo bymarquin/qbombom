@@ -427,16 +427,87 @@
             Configurações de Impressão
           </h2>
 
-          <div class="space-y-4">
-            <div class="space-y-1 max-w-sm">
-              <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
-                >Tamanho da Bobina</label
+          <div class="space-y-6 max-w-lg">
+            <!-- Modo -->
+            <div class="space-y-1">
+              <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                Modo de Impressão
+              </label>
+              <select
+                v-model="form.print.mode"
+                class="w-full px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all"
               >
+                <option value="disabled">Desabilitada</option>
+                <option value="usb">USB (CUPS/local)</option>
+                <option value="network">Rede (TCP/IP)</option>
+              </select>
+              <p class="text-xs text-neutral-500 dark:text-neutral-400">
+                Para GT-710: use <strong>USB</strong> se estiver conectada no mesmo computador da API, ou <strong>Rede</strong> se ela tiver IP.
+              </p>
+            </div>
+
+            <!-- Configuração USB -->
+            <div v-if="form.print.mode === 'usb'" class="space-y-3 p-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/40">
+              <h3 class="text-sm font-semibold text-neutral-700 dark:text-neutral-300">Impressora USB (CUPS)</h3>
+              <div class="space-y-1">
+                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  Nome da Impressora (fila CUPS)
+                </label>
+                <input
+                  v-model.trim="form.print.usb.printerName"
+                  type="text"
+                  placeholder="Ex: GT710_USB"
+                  class="w-full px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all font-mono text-sm"
+                />
+              </div>
+              <p class="text-xs text-neutral-500 dark:text-neutral-400">
+                Descubra o nome com <code>lpstat -p</code> no computador onde a API roda.
+              </p>
+            </div>
+
+            <!-- Configuração de rede (visível só se mode = network) -->
+            <div v-if="form.print.mode === 'network'" class="space-y-4 p-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/40">
+              <h3 class="text-sm font-semibold text-neutral-700 dark:text-neutral-300">Impressora em Rede</h3>
+              <div class="grid grid-cols-3 gap-4">
+                <div class="col-span-2 space-y-1">
+                  <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                    IP da Impressora
+                  </label>
+                  <input
+                    v-model="form.print.network.host"
+                    type="text"
+                    placeholder="Ex: 192.168.1.100"
+                    class="w-full px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all font-mono text-sm"
+                  />
+                </div>
+                <div class="space-y-1">
+                  <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                    Porta
+                  </label>
+                  <input
+                    v-model.number="form.print.network.port"
+                    type="number"
+                    placeholder="9100"
+                    class="w-full px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all font-mono text-sm"
+                  />
+                </div>
+              </div>
+              <p class="text-xs text-neutral-500 dark:text-neutral-400">
+                Porta padrão para ESC/POS via rede: <strong>9100</strong>. Consulte o manual da GT-710 para confirmar o IP atribuído ao dispositivo.
+              </p>
+            </div>
+
+            <!-- Tamanho da bobina -->
+            <div class="space-y-1">
+              <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                Tamanho da Bobina
+              </label>
               <select
                 v-model="form.print.paperSize"
                 class="w-full px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all"
               >
-                <option value="80mm">80mm (Padrão)</option>
+                <option value="72mm">72mm (GT-710)</option>
+                <option value="80mm">80mm</option>
                 <option value="58mm">58mm</option>
               </select>
             </div>
@@ -924,7 +995,15 @@ const form = reactive({
   print: {
     autoPrint: true,
     deliverySlip: true,
-    paperSize: "80mm",
+    paperSize: "72mm",
+    mode: "disabled",
+    network: {
+      host: "",
+      port: 9100,
+    },
+    usb: {
+      printerName: "",
+    },
   },
 });
 
@@ -937,6 +1016,15 @@ const carregarConfiguracoes = async () => {
       Object.assign(form, res.data);
       if (form.profile?.phone) form.profile.phone = mascararTelefone(form.profile.phone);
       if (form.pix) form.pix.type = normalizePixType(form.pix.type);
+      if (!form.print) form.print = {
+        mode: 'disabled',
+        paperSize: '72mm',
+        network: { host: '', port: 9100 },
+        usb: { printerName: '' },
+      };
+      if (!form.print.network) form.print.network = { host: '', port: 9100 };
+      if (!form.print.usb) form.print.usb = { printerName: '' };
+      if (!form.print.mode) form.print.mode = 'disabled';
     }
   } catch (error) {
     console.error("Erro ao carregar configurações do banco:", error);

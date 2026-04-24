@@ -386,7 +386,6 @@ import { OrderService } from "@/services/http";
 import { useToastStore } from "@/stores/toast";
 import { useOrderSocket } from "@/composables/useOrderSocket";
 import { useOrderStatus } from "@/composables/useOrderStatus";
-import { printReceipt } from "@/utils/printReceipt";
 
 const pixLoadingIds = ref(new Set());
 
@@ -509,17 +508,16 @@ const updateStatusForOrder = async (order, newStatus) => {
 };
 
 const executePrint = async (order) => {
-  let fullOrder = order;
-  if (!fullOrder.items || fullOrder.items.length === 0) {
-    try {
-      const res = await OrderService.getOrder(order.id);
-      fullOrder = res.data;
-    } catch {
-      toast.error("Erro ao buscar itens para impressão.");
-      return;
-    }
+  try {
+    await OrderService.printOrder(order.id);
+    toast.success(`Comanda enviada para impressão: #${order.trackingCode || order.id.slice(0, 8)}`);
+    return true;
+  } catch (error) {
+    const msg = error.response?.data?.error || 'Falha na impressão. Verifique as configurações.';
+    toast.error(msg);
+    console.error(error);
+    return false;
   }
-  await printReceipt(fullOrder);
 };
 
 const confirmPixPayment = async (order) => {
@@ -546,7 +544,8 @@ const confirmPixPayment = async (order) => {
 };
 
 const printAndMoveToPrep = async (order) => {
-  await executePrint(order);
+  const printed = await executePrint(order);
+  if (!printed) return;
   await updateStatusForOrder(order, "em_preparo");
 };
 

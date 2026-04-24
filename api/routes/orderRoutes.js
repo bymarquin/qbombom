@@ -34,4 +34,7 @@ router.patch('/:id/cancel', auth, checkPermission('orders.cancel'), orderControl
 // Confirmar pagamento PIX manualmente (Permissão: orders.change_status)
 router.patch('/:id/confirm-pix', auth, checkPermission('orders.change_status'), orderController.confirmPixPayment);
 
+// Imprimir comanda via impressora térmica (Permissão: orders.view)
+router.post('/:id/print', auth, checkPermission('orders.view'), orderController.printOrder);
+
 module.exports = router;

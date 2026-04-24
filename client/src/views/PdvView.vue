@@ -861,7 +861,6 @@ import {
 import { CatalogService, OrderService, AuthService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 import { useDialogStore } from '@/stores/dialog'
-import { printReceipt } from '@/utils/printReceipt'
 import { formatarMoeda, mascararTelefone, limparTelefone } from '@/utils/formatters'
 
 const router = useRouter()
@@ -1058,8 +1057,10 @@ const finalizarPedido = async () => {
     fecharModalPagamento()
     
     // Automaticamente imprime a via da cozinha/balcão
-    if (res && res.data) {
-      printReceipt(res.data)
+    if (res && res.data?.id) {
+      OrderService.printOrder(res.data.id).catch(() => {
+        toast.info('Pedido criado. Impressão não disponível — verifique configurações.')
+      })
     }
   } catch (err) {
     console.error(err)

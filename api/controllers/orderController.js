@@ -1,7 +1,8 @@
-const { Order, OrderItem, Product, ProductVariation, Customer, sequelize } = require('../models');
+const { Order, OrderItem, Product, ProductVariation, Customer, Setting, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { uploadFile } = require('../services/storageService');
 const whatsappService = require('../services/whatsappService');
+const thermalPrinter = require('../services/print/thermalPrinterService');
 
 // Transições permitidas por updateStatus.
 // Cancelamento não está aqui — tem endpoint e lógica própria (restaura estoque).
@@ -704,7 +705,6 @@ exports.confirmPixPayment = async (req, res) => {
 
   try {
     const order = await Order.findByPk(req.params.id, {
-      include: ORDER_INCLUDES,
       transaction,
       lock: transaction.LOCK.UPDATE,
     });
@@ -721,8 +721,10 @@ exports.confirmPixPayment = async (req, res) => {
 
     if (order.paymentStatus === 'pago') {
       await transaction.commit();
-      await attachEtaToOrders(order);
-      return res.json(order);
+      const freshOrder = await Order.findByPk(order.id, { include: ORDER_INCLUDES });
+      if (!freshOrder) return res.status(404).json({ error: 'Order not found' });
+      await attachEtaToOrders(freshOrder);
+      return res.json(freshOrder);
     }
 
     order.paymentStatus = 'pago';
@@ -734,10 +736,12 @@ exports.confirmPixPayment = async (req, res) => {
     await order.save({ transaction });
     await transaction.commit();
 
-    await attachEtaToOrders(order);
-    req.app.get('io')?.emit('orderUpdated', order);
+    const freshOrder = await Order.findByPk(order.id, { include: ORDER_INCLUDES });
+    if (!freshOrder) return res.status(404).json({ error: 'Order not found' });
+    await attachEtaToOrders(freshOrder);
+    req.app.get('io')?.emit('orderUpdated', freshOrder);
 
-    return res.json(order);
+    return res.json(freshOrder);
   } catch (error) {
     if (!transaction.finished) {
       await transaction.rollback();
@@ -803,5 +807,36 @@ exports.uploadReceipt = async (req, res) => {
   } catch (error) {
     console.error('[orders.uploadReceipt]', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+exports.printOrder = async (req, res) => {
+  try {
+    const order = await Order.findByPk(req.params.id, { include: ORDER_INCLUDES });
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    const [setting] = await Setting.findOrCreate({
+      where: { key: 'store_config' },
+      defaults: { key: 'store_config', value: {} },
+    });
+
+    const meta = await thermalPrinter.printOrder(order, setting.value || {});
+
+    return res.json({ success: true, ...meta });
+  } catch (error) {
+    const operationalCodes = [
+      'PRINT_DISABLED',
+      'PRINT_NO_HOST',
+      'PRINT_NO_USB_PRINTER',
+      'PRINT_UNKNOWN_MODE',
+      'PRINT_USB_FAILED',
+    ];
+    if (operationalCodes.includes(error.code)) {
+      return res.status(422).json({ error: error.message });
+    }
+    console.error('[orders.printOrder]', error);
+    return res.status(422).json({
+      error: `Falha ao comunicar com a impressora: ${error.message}`,
+    });
   }
 };
