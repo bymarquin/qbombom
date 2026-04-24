@@ -82,11 +82,41 @@ const buildReceiptHtml = (order, paperSize) => {
 
           .center { text-align: center; }
           .right { text-align: right; }
-          .bold { font-weight: bold; }
+          .bold { color: #000; font-weight: 700; }
+
+          /* Texto normal */
+          .store-sub,
+          .datetime,
+          .customer-box,
+          .address-block,
+          .item,
+          .item-price,
+          .item-adds,
+          .total-row,
+          .footer {
+            color: #000;
+            font-weight: 400;
+          }
+
+          /* Texto em negrito */
+          .store-name,
+          .order-number,
+          .type-badge,
+          .customer-box .label,
+          .section-title,
+          .item-qty,
+          .item-name,
+          .item-obs,
+          .total-row.grand,
+          .obs-box,
+          .obs-box .label,
+          strong {
+            color: #000;
+            font-weight: 700;
+          }
 
           .store-name {
             font-size: 20px;
-            font-weight: bold;
             letter-spacing: 1px;
             text-align: center;
             text-transform: uppercase;
@@ -106,7 +136,6 @@ const buildReceiptHtml = (order, paperSize) => {
 
           .order-number {
             font-size: 22px;
-            font-weight: bold;
             text-align: center;
             letter-spacing: 2px;
             margin: 4px 0;
@@ -114,7 +143,6 @@ const buildReceiptHtml = (order, paperSize) => {
 
           .type-badge {
             font-size: 14px;
-            font-weight: bold;
             text-align: center;
             border: 2px solid #000;
             padding: 3px 0;
@@ -139,7 +167,6 @@ const buildReceiptHtml = (order, paperSize) => {
           .customer-box .label {
             font-size: 10px;
             text-transform: uppercase;
-            font-weight: bold;
           }
 
           .address-block {
@@ -152,7 +179,6 @@ const buildReceiptHtml = (order, paperSize) => {
 
           .section-title {
             font-size: 11px;
-            font-weight: bold;
             text-align: center;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -171,14 +197,12 @@ const buildReceiptHtml = (order, paperSize) => {
           }
 
           .item-qty {
-            font-weight: bold;
             min-width: 18px;
             flex-shrink: 0;
           }
 
           .item-name {
             flex: 1;
-            font-weight: bold;
           }
 
           .item-price {
@@ -189,7 +213,6 @@ const buildReceiptHtml = (order, paperSize) => {
           .item-adds {
             padding-left: 22px;
             font-size: 11px;
-            color: #333;
             line-height: 1.5;
           }
 
@@ -197,7 +220,6 @@ const buildReceiptHtml = (order, paperSize) => {
             padding-left: 22px;
             font-size: 11px;
             font-style: italic;
-            font-weight: bold;
           }
 
           .totals {
@@ -213,7 +235,6 @@ const buildReceiptHtml = (order, paperSize) => {
 
           .total-row.grand {
             font-size: 17px;
-            font-weight: bold;
             margin-top: 3px;
           }
 
@@ -222,13 +243,11 @@ const buildReceiptHtml = (order, paperSize) => {
             padding: 4px 5px;
             margin: 5px 0;
             font-size: 13px;
-            font-weight: bold;
           }
 
           .obs-box .label {
             font-size: 10px;
             text-transform: uppercase;
-            font-weight: bold;
             display: block;
             margin-bottom: 2px;
           }
