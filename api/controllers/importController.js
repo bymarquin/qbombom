@@ -185,6 +185,7 @@ exports.importCatalog = async (req, res) => {
                 freeChoices: groupData.freeChoices ?? 0,
                 stepperMode: groupData.stepperMode ?? false,
                 isSaborGroup: groupData.isSaborGroup ?? false,
+                countsTowardLimit: groupData.countsTowardLimit ?? true,
                 position: groupIndex,
               },
               transaction: t,

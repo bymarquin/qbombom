@@ -1297,7 +1297,7 @@ watch(tamanhoSelecionado, () => {
   }
 })
 
-watch(() => adicionaisSelecionados.value.length, (novo, anterior) => {
+watch(totalSelecionado, (novo, anterior) => {
   if (limiteGlobal.value !== null && novo === limiteGlobal.value && novo > anterior) {
     toast.info('Máximo de complementos atingido!')
   }
