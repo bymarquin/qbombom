@@ -38,7 +38,7 @@ const buildAdditionalsHtml = (additionals) => {
   const groups = groupAdditionals(additionals);
   const lines = [];
   for (const group of groups) {
-    if (group.name) lines.push(`  <em>${esc(group.name)}:</em>`);
+    if (group.name) lines.push(`  <span class="item-group">${esc(group.name)}:</span>`);
     for (const a of group.items) {
       const price = a.price > 0 ? ` +R$ ${Number(a.price).toFixed(2).replace('.', ',')}` : '';
       lines.push(`  ${esc(a.name)}${price}`);
@@ -237,6 +237,15 @@ const buildReceiptHtml = (order, paperSize) => {
             padding-left: 22px;
             font-size: 11px;
             line-height: 1.5;
+          }
+
+          .item-group {
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-block;
+            margin-top: 3px;
           }
 
           .item-obs {
