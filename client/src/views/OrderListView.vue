@@ -140,12 +140,6 @@
                 >
                   <Printer class="w-4 h-4" /> Imprimir e Preparar
                 </button>
-                <button
-                  @click="requestCancel(order)"
-                  class="w-full py-1.5 rounded-lg text-xs font-semibold text-neutral-500 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700 hover:border-red-300 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                >
-                  Cancelar pedido
-                </button>
               </div>
             </div>
           </div>
@@ -220,12 +214,6 @@
                   class="w-full py-2 bg-orange-500 text-white rounded-lg text-xs font-bold hover:bg-orange-600 transition flex items-center justify-center gap-2"
                 >
                   Conferir Comprovante
-                </button>
-                <button
-                  @click="requestCancel(order)"
-                  class="w-full py-1.5 rounded-lg text-xs font-semibold text-neutral-500 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700 hover:border-red-300 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                >
-                  Cancelar pedido
                 </button>
               </div>
             </div>
@@ -397,7 +385,6 @@ import { useRouter } from "vue-router";
 import { Printer, CheckCircle2, Package, Check, RefreshCw, Inbox, ChefHat, Truck } from "lucide-vue-next";
 import { OrderService } from "@/services/http";
 import { useToastStore } from "@/stores/toast";
-import { useDialogStore } from "@/stores/dialog";
 import { useOrderSocket } from "@/composables/useOrderSocket";
 import { useOrderStatus } from "@/composables/useOrderStatus";
 import { printReceipt } from "@/utils/printReceipt";
@@ -406,7 +393,6 @@ const pixLoadingIds = ref(new Set());
 
 const router = useRouter();
 const toast = useToastStore();
-const dialog = useDialogStore();
 const orders = shallowRef([]);
 const loadingData = ref(false);
 
@@ -565,42 +551,6 @@ const confirmPixPayment = async (order) => {
     pixLoadingIds.value = next;
   }
 };
-
-const requestCancel = async (order) => {
-  const codigo = order.trackingCode || order.id.slice(0, 8)
-  const nome = order.customerName || 'Não informado'
-
-  const step1 = await dialog.confirm({
-    title: `Cancelar pedido #${codigo}?`,
-    message: `O pedido de ${nome} no valor de ${formatMoney(order.total)} será cancelado.`,
-    confirmLabel: 'Sim, cancelar',
-    cancelLabel: 'Não, voltar',
-    confirmVariant: 'danger',
-  })
-  if (!step1) return
-
-  const step2 = await dialog.confirm({
-    title: 'Tem certeza mesmo?',
-    message: `Esta ação não pode ser desfeita. O pedido #${codigo} será cancelado permanentemente.`,
-    confirmLabel: 'Confirmar cancelamento',
-    cancelLabel: 'Não, voltar',
-    confirmVariant: 'danger',
-  })
-  if (!step2) return
-
-  try {
-    await OrderService.cancelOrder(order.id)
-    const idx = orders.value.findIndex((o) => o.id === order.id)
-    if (idx !== -1) {
-      const newOrders = [...orders.value]
-      newOrders[idx] = { ...newOrders[idx], status: 'cancelado' }
-      orders.value = newOrders
-    }
-    toast.success(`Pedido #${codigo} cancelado.`)
-  } catch {
-    toast.error('Erro ao cancelar pedido.')
-  }
-}
 
 const printAndMoveToPrep = async (order) => {
   const printed = await executePrint(order);
