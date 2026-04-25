@@ -7,9 +7,8 @@ const INSTANCE = process.env.EVOLUTION_INSTANCE || 'qbombom'
 const CONSENT_KEY = 'whatsapp_consent'
 
 const MIN_SEND_INTERVAL_MS = Number(process.env.WHATSAPP_MIN_SEND_INTERVAL_MS || 90_000)
-const JITTER_MIN_MS = Number(process.env.WHATSAPP_JITTER_MIN_MS || 3_000)
-const JITTER_MAX_MS = Number(process.env.WHATSAPP_JITTER_MAX_MS || 12_000)
-const WHATSAPP_TIMEZONE = process.env.WHATSAPP_TIMEZONE || 'America/Fortaleza'
+const JITTER_MIN_MS = Number(process.env.WHATSAPP_JITTER_MIN_MS || 500)
+const JITTER_MAX_MS = Number(process.env.WHATSAPP_JITTER_MAX_MS || 2_000)
 
 const lastSentAtByPhone = new Map()   // phone → timestamp último envio
 const sentStatusByOrder = new Map()   // statusKey → timestamp quando foi marcado
@@ -124,17 +123,6 @@ const formatPhone = (phone) => {
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-
-const greeting = () => {
-  const hour = Number(new Intl.DateTimeFormat('pt-BR', {
-    hour: '2-digit',
-    hour12: false,
-    timeZone: WHATSAPP_TIMEZONE,
-  }).format(new Date()))
-  if (hour >= 6 && hour < 12) return 'Bom dia'
-  if (hour >= 12 && hour < 18) return 'Boa tarde'
-  return 'Boa noite'
-}
 
 const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)]
 
@@ -260,9 +248,9 @@ exports.sendStatusMessage = async (phone, status, orderNumber, trackingUrl = nul
   const messageBody = pickRandom(Array.isArray(pool) ? pool : [pool])
 
   const name = firstWord(customerName)
-  const salutation = name ? `${greeting()}, ${name}!` : `${greeting()}!`
+  const salutation = name ? `Olá, ${name}!` : null
 
-  let text = `*Qbombom Sorvetes* — Pedido #${orderNumber}\n\n${salutation}\n${messageBody}`
+  let text = `*Qbombom Sorvetes* — Pedido #${orderNumber}\n\n${salutation ? `${salutation}\n` : ''}${messageBody}`
   if (trackingUrl) text += `\n${trackingUrl}`
 
   const statusKey = `${orderId || orderNumber}:${status}`
@@ -280,16 +268,6 @@ exports.sendStatusMessage = async (phone, status, orderNumber, trackingUrl = nul
       if (Date.now() - lastSentAt < MIN_SEND_INTERVAL_MS) {
         console.warn(`[WhatsApp] Rate-limit ativo para ${normalizedPhone}, mensagem descartada (pedido ${orderNumber} — ${status})`)
         return
-      }
-
-      // Simula digitação por ~2-4s antes de enviar
-      try {
-        await client.post(`/chat/sendPresence/${INSTANCE}`, {
-          number: normalizedPhone,
-          options: { presence: 'composing', delay: Math.floor(Math.random() * 2000) + 2000 },
-        })
-      } catch (e) {
-        console.warn(`[WhatsApp] Falha ao enviar 'presence': ${e.message}`)
       }
 
       console.log(`[WhatsApp] Enviando texto para ${normalizedPhone}...`)
