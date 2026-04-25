@@ -38,162 +38,95 @@
             <div
               class="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl dark:shadow-none shadow-red-900/5 border border-neutral-100 dark:border-neutral-800/50 p-5 mb-5 relative overflow-hidden"
             >
+              <!-- PIX Upload Section -->
               <div
-                v-if="pixFlowActive"
-                class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-xl p-4 mb-5 shadow-sm"
+                v-if="
+                  pedidoRastreado.paymentMethod === 'PIX' &&
+                  pedidoRastreado.paymentStatus === 'pendente' &&
+                  !pedidoRastreado.receiptUrl
+                "
+                class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-xl p-5 mb-6 text-center shadow-sm"
               >
-                <div class="text-center mb-4">
-                  <p class="text-xs font-bold uppercase tracking-wide text-red-600 dark:text-red-400 mb-1">
-                    Pagamento PIX
+                <h4 class="font-bold text-red-700 dark:text-red-400 mb-2">Aguardando Pagamento</h4>
+
+                <template v-if="chavePixLoja && pixPayload">
+                  <p class="text-sm text-neutral-700 dark:text-neutral-300 mb-4">
+                    Escaneie o QR Code abaixo ou copie a chave PIX Copia e Cola para pagar
+                    <strong>{{ formatarMoeda(pedidoRastreado.total) }}</strong
+                    >. Depois, anexe o comprovante para liberarmos seu pedido.
                   </p>
-                  <h4 class="font-bold text-neutral-900 dark:text-neutral-100 text-base">
-                    {{ pixStepTitle }}
-                  </h4>
-                  <p class="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-                    Pedido #{{ pedidoRastreado.trackingCode }} • {{ formatarMoeda(pedidoRastreado.total) }}
-                  </p>
-                </div>
 
-                <div class="grid grid-cols-3 gap-2 mb-4">
-                  <div
-                    v-for="step in pixSteps"
-                    :key="step.id"
-                    class="rounded-lg border px-2 py-1.5 text-center text-[10px] font-semibold"
-                    :class="
-                      pixCurrentStep >= step.id
-                        ? 'bg-red-600 border-red-600 text-white'
-                        : 'bg-white dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400'
-                    "
-                  >
-                    <div class="text-xs font-black leading-none mb-1">{{ step.id }}</div>
-                    {{ step.label }}
-                  </div>
-                </div>
-
-                <template v-if="pixCurrentStep === 1">
-                  <template v-if="chavePixLoja && pixPayload">
-                    <p class="text-sm text-neutral-700 dark:text-neutral-300 mb-4 text-center">
-                      Escaneie o QR Code no app do banco ou copie o código PIX.
-                    </p>
-
-                    <div class="flex justify-center mb-3">
-                      <div
-                        class="bg-white p-2 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-800"
-                      >
-                        <qrcode-vue :value="pixPayload" :size="140" level="M" />
-                      </div>
-                    </div>
-
+                  <!-- QR Code PIX -->
+                  <div class="flex justify-center mb-4">
                     <div
-                      class="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg p-3 font-mono text-neutral-900 dark:text-neutral-100 text-sm mb-3 break-all flex flex-col gap-2"
+                      class="bg-white p-3 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-800"
                     >
-                      <div class="text-left text-xs text-neutral-500 font-sans font-semibold">
-                        PIX Copia e Cola
-                      </div>
-                      <div class="max-h-20 overflow-y-auto text-left text-xs">{{ pixPayload }}</div>
-                      <button
-                        @click="copiarChave"
-                        class="mt-2 text-xs bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 font-bold px-3 py-2 rounded-md hover:bg-red-200 dark:hover:bg-red-900/60 transition flex items-center justify-center gap-1 w-full uppercase"
-                      >
-                        <Copy class="w-4 h-4" />
-                        Copiar Código PIX
-                      </button>
+                      <qrcode-vue :value="pixPayload" :size="180" level="M" />
                     </div>
+                  </div>
 
-                    <button
-                      type="button"
-                      @click="pixCurrentStep = 2"
-                      class="w-full py-3 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors"
-                    >
-                      Já paguei, enviar comprovante
-                    </button>
-                  </template>
-                  <template v-else>
-                    <div class="py-8 flex flex-col items-center justify-center text-center">
-                      <div
-                        v-if="!pixLoadError"
-                        class="w-8 h-8 border-4 border-red-200 border-t-red-600 rounded-full animate-spin mb-3"
-                      ></div>
-                      <p class="text-sm text-neutral-500">{{ pixLoadError || 'Gerando código PIX...' }}</p>
-                      <button
-                        v-if="pixLoadError"
-                        @click="carregarConfiguracoes"
-                        class="mt-3 px-3 py-2 text-xs font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
-                      >
-                        Tentar novamente
-                      </button>
+                  <div
+                    class="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg p-3 font-mono text-neutral-900 dark:text-neutral-100 text-sm mb-4 break-all flex flex-col gap-2"
+                  >
+                    <div class="text-left text-xs text-neutral-500 font-sans font-semibold">
+                      PIX Copia e Cola
                     </div>
-                  </template>
+                    <div class="max-h-20 overflow-y-auto text-left text-xs">{{ pixPayload }}</div>
+                    <button
+                      @click="copiarChave"
+                      class="mt-2 text-xs bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 font-bold px-3 py-2 rounded-md hover:bg-red-200 dark:hover:bg-red-900/60 transition flex items-center justify-center gap-1 w-full uppercase"
+                    >
+                      <Copy class="w-4 h-4" />
+                      Copiar Código PIX
+                    </button>
+                  </div>
+                </template>
+                <template v-else>
+                  <div class="py-8 flex flex-col items-center justify-center">
+                    <div
+                      v-if="!pixLoadError"
+                      class="w-8 h-8 border-4 border-red-200 border-t-red-600 rounded-full animate-spin mb-3"
+                    ></div>
+                    <p class="text-sm text-neutral-500">{{ pixLoadError || 'Gerando código PIX...' }}</p>
+                    <button
+                      v-if="pixLoadError"
+                      @click="carregarConfiguracoes"
+                      class="mt-3 px-3 py-2 text-xs font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                    >
+                      Tentar novamente
+                    </button>
+                  </div>
                 </template>
 
-                <template v-else-if="pixCurrentStep === 2">
-                  <p class="text-sm text-neutral-700 dark:text-neutral-300 mb-4 text-center">
-                    Envie uma foto ou PDF do comprovante para a Qbombom conferir seu pagamento.
-                  </p>
-
-                  <label
-                    class="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-red-200 dark:border-red-900/50 bg-white dark:bg-neutral-950 p-5 text-center cursor-pointer hover:border-red-400 transition-colors"
-                  >
-                    <CheckCircle class="w-7 h-7 text-red-600 dark:text-red-400" />
-                    <span class="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                      {{ uploadingReceipt ? 'Enviando comprovante...' : 'Clique aqui para selecionar o comprovante' }}
-                    </span>
-                    <span class="text-xs text-neutral-500 dark:text-neutral-400">
-                      Foto, imagem ou PDF
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/*,application/pdf"
-                      class="hidden"
-                      :disabled="uploadingReceipt"
-                      @change="enviarComprovante"
-                    />
-                  </label>
-
-                  <div class="mt-4 grid grid-cols-1 gap-2">
-                    <button
-                      type="button"
-                      @click="pixCurrentStep = 1"
-                      class="w-full py-3 bg-white dark:bg-neutral-950 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-800 rounded-lg text-sm font-semibold hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
-                    >
-                      Voltar ao QR Code
-                    </button>
-                  </div>
-
+                <div v-if="!wppSent">
                   <a
                     v-if="whatsappUrl"
                     :href="whatsappUrl"
                     target="_blank"
                     rel="noopener noreferrer"
-                    @click="pixCurrentStep = 3"
-                    class="flex items-center justify-center gap-2 w-full py-3 bg-green-600 text-white rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-green-700 shadow-md active:scale-95 mt-2"
+                    @click="wppSent = true"
+                    class="flex items-center justify-center gap-2 w-full py-3.5 bg-green-600 text-white rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-green-700 shadow-md active:scale-95 mt-2"
                   >
                     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                     </svg>
-                    Prefiro enviar pelo WhatsApp
+                    Enviar comprovante pelo WhatsApp
                   </a>
-                </template>
-
-                <template v-else>
-                  <div class="text-center py-4">
-                    <div
-                      class="w-12 h-12 bg-blue-100 dark:bg-blue-800/30 rounded-full flex items-center justify-center mx-auto mb-3 text-blue-600 dark:text-blue-400"
-                    >
-                      <CheckCircle class="w-6 h-6" />
-                    </div>
-                    <h4 class="font-bold text-blue-800 dark:text-blue-300 mb-1">
-                      Comprovante enviado
-                    </h4>
-                    <p class="text-sm text-neutral-600 dark:text-neutral-400">
-                      A Qbombom está conferindo seu pagamento. Assim que confirmar, seu pedido vai para preparo.
-                    </p>
-                  </div>
-                </template>
+                </div>
+                <div
+                  v-else
+                  class="flex items-center justify-center gap-2 w-full py-3.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 rounded-lg text-sm font-semibold mt-2"
+                >
+                  <CheckCircle class="w-5 h-5" />
+                  Comprovante enviado! Aguarde a confirmação.
+                </div>
               </div>
 
               <div
-                v-else-if="pixVerifying"
+                v-else-if="
+                  pedidoRastreado.paymentMethod === 'PIX' &&
+                  pedidoRastreado.paymentStatus === 'alegado'
+                "
                 class="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30 rounded-xl p-5 mb-6 text-center shadow-sm"
               >
                 <div
@@ -385,14 +318,7 @@ const cancellingOrder = ref(false);
 const confirmingDelivery = ref(false);
 const waOptingOut = ref(false);
 const pixLoadError = ref('');
-const uploadingReceipt = ref(false);
-const pixCurrentStep = ref(1);
-const pixSteps = [
-  { id: 1, label: 'Pagar' },
-  { id: 2, label: 'Comprovante' },
-  { id: 3, label: 'Conferência' },
-];
-const MAX_RECEIPT_FILE_SIZE = 7 * 1024 * 1024;
+const wppSent = ref(false);
 
 // Configurações da Loja (buscadas do backend)
 const chavePixLoja = ref("");
@@ -479,46 +405,6 @@ const pixPayload = computed(() => {
   );
 });
 
-const pixPending = computed(() =>
-  props.pedidoRastreado?.paymentMethod === "PIX" &&
-  props.pedidoRastreado?.paymentStatus === "pendente" &&
-  !props.pedidoRastreado?.receiptUrl
-);
-
-const pixVerifying = computed(() =>
-  props.pedidoRastreado?.paymentMethod === "PIX" &&
-  (
-    props.pedidoRastreado?.paymentStatus === "alegado" ||
-    Boolean(props.pedidoRastreado?.receiptUrl)
-  )
-);
-
-const pixFlowActive = computed(() => pixPending.value);
-
-const pixStepTitle = computed(() => {
-  if (pixCurrentStep.value === 1) return "1. Faça o pagamento";
-  if (pixCurrentStep.value === 2) return "2. Envie o comprovante";
-  return "3. Aguarde a confirmação";
-});
-
-watch(
-  () => [
-    props.modelValue,
-    props.pedidoRastreado?.trackingCode,
-    props.pedidoRastreado?.paymentStatus,
-    props.pedidoRastreado?.receiptUrl,
-  ],
-  () => {
-    if (!props.modelValue || props.pedidoRastreado?.paymentMethod !== "PIX") return;
-    if (pixVerifying.value) {
-      pixCurrentStep.value = 3;
-    } else if (pixPending.value && pixCurrentStep.value === 3) {
-      pixCurrentStep.value = 1;
-    }
-  },
-  { immediate: true },
-);
-
 const whatsappUrl = computed(() => {
   if (!telefoneLojaWhatsApp.value || !props.pedidoRastreado) return "";
   const numero = telefoneLojaWhatsApp.value.startsWith("55")
@@ -560,38 +446,6 @@ const copiarChave = async () => {
     toast.success("Código PIX copiado para a área de transferência!");
   } catch (err) {
     toast.error("Erro ao copiar código PIX: " + err.message);
-  }
-};
-
-const fileToBase64 = (file) => new Promise((resolve, reject) => {
-  const reader = new FileReader();
-  reader.onload = () => resolve(reader.result);
-  reader.onerror = () => reject(reader.error);
-  reader.readAsDataURL(file);
-});
-
-const enviarComprovante = async (event) => {
-  const file = event.target.files?.[0];
-  event.target.value = "";
-  if (!file || !props.pedidoRastreado?.trackingCode || uploadingReceipt.value) return;
-  if (file.size > MAX_RECEIPT_FILE_SIZE) {
-    toast.error("Arquivo muito grande. Envie uma imagem ou PDF de até 7 MB.");
-    return;
-  }
-
-  uploadingReceipt.value = true;
-  try {
-    const receiptBase64 = await fileToBase64(file);
-    await OrderService.uploadReceipt(props.pedidoRastreado.trackingCode, { receiptBase64 });
-    await OrderService.claimPaid(props.pedidoRastreado.trackingCode);
-    pixCurrentStep.value = 3;
-    toast.success("Comprovante enviado. Aguarde a confirmação da loja.");
-    emit("receipt-uploaded");
-  } catch (error) {
-    const msg = error?.response?.data?.error || "Não foi possível enviar o comprovante.";
-    toast.error(msg);
-  } finally {
-    uploadingReceipt.value = false;
   }
 };
 
