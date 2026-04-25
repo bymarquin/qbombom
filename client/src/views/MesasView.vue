@@ -43,6 +43,29 @@
     <!-- Grid de QR Codes -->
     <div class="flex-1 overflow-auto">
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <!-- Balcão (fixo, sem parâmetro de mesa) -->
+        <div class="bg-white dark:bg-neutral-900 rounded-2xl border-2 border-red-200 dark:border-red-900 p-4 flex flex-col items-center gap-3 shadow-sm">
+          <p class="text-sm font-bold text-neutral-800 dark:text-neutral-200">Balcão</p>
+          <div class="bg-white p-2 rounded-xl border border-neutral-200">
+            <img
+              v-if="balcaoQrUrl"
+              :src="balcaoQrUrl"
+              width="120"
+              height="120"
+              alt="QR Code Balcão"
+            />
+            <div v-else class="w-[120px] h-[120px] bg-neutral-100 rounded animate-pulse" />
+          </div>
+          <button
+            @click="imprimirBalcao"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-neutral-500 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+          >
+            <Printer class="w-3 h-3" />
+            Imprimir
+          </button>
+        </div>
+
+        <!-- Mesas -->
         <div
           v-for="n in qtdMesas"
           :key="n"
@@ -61,9 +84,6 @@
             />
             <div v-else class="w-[120px] h-[120px] bg-neutral-100 rounded animate-pulse" />
           </div>
-          <p class="text-xs text-neutral-400 font-mono text-center break-all">
-            {{ baseUrl }}?mesa={{ n }}
-          </p>
           <button
             @click="imprimirMesa(n)"
             class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-neutral-500 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
@@ -77,10 +97,9 @@
 
     <!-- Área de impressão (invisível na tela, visível apenas no print) -->
     <div id="print-area">
-      <div v-for="item in printItems" :key="item.n" class="print-card">
-        <p class="print-label">Mesa {{ String(item.n).padStart(2, '0') }}</p>
+      <div v-for="item in printItems" :key="item.label" class="print-card">
+        <p class="print-label">{{ item.label }}</p>
         <img :src="item.src" width="200" height="200" />
-        <p class="print-url">{{ baseUrl }}?mesa={{ item.n }}</p>
       </div>
     </div>
   </div>
@@ -94,16 +113,15 @@ import QRCode from 'qrcode'
 const qtdMesas = ref(10)
 const baseUrl = ref(`${window.location.origin}/cardapio`)
 const qrUrls = ref({})
+const balcaoQrUrl = ref('')
 const printItems = ref([])
 
 async function gerarQrs() {
+  const opts = { width: 120, margin: 1, errorCorrectionLevel: 'M' }
+  balcaoQrUrl.value = await QRCode.toDataURL(baseUrl.value, opts)
   const urls = {}
   for (let n = 1; n <= qtdMesas.value; n++) {
-    urls[n] = await QRCode.toDataURL(`${baseUrl.value}?mesa=${n}`, {
-      width: 120,
-      margin: 1,
-      errorCorrectionLevel: 'M',
-    })
+    urls[n] = await QRCode.toDataURL(`${baseUrl.value}?mesa=${n}`, opts)
   }
   qrUrls.value = urls
 }
@@ -119,14 +137,20 @@ async function disparaImpressao(itens) {
 }
 
 function imprimir() {
-  disparaImpressao(
-    Object.entries(qrUrls.value).map(([n, src]) => ({ n: Number(n), src }))
-  )
+  const mesaItems = Object.entries(qrUrls.value).map(([n, src]) => ({
+    label: `Mesa ${String(Number(n)).padStart(2, '0')}`,
+    src,
+  }))
+  disparaImpressao([{ label: 'Balcão', src: balcaoQrUrl.value }, ...mesaItems])
+}
+
+function imprimirBalcao() {
+  if (balcaoQrUrl.value) disparaImpressao([{ label: 'Balcão', src: balcaoQrUrl.value }])
 }
 
 function imprimirMesa(n) {
   const src = qrUrls.value[n]
-  if (src) disparaImpressao([{ n, src }])
+  if (src) disparaImpressao([{ label: `Mesa ${String(n).padStart(2, '0')}`, src }])
 }
 </script>
 
@@ -166,13 +190,6 @@ function imprimirMesa(n) {
     font-weight: 700;
     color: #1f2937;
     font-family: sans-serif;
-  }
-  .print-url {
-    font-size: 9px;
-    color: #9ca3af;
-    font-family: monospace;
-    text-align: center;
-    word-break: break-all;
   }
   @page { margin: 10mm; }
 }
