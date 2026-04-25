@@ -59,10 +59,30 @@ exports.assignGroup = async (req, res) => {
   try {
     const { productId } = req.body;
     const { id: additionalGroupId } = req.params;
-    await ProductAdditionalGroup.findOrCreate({ where: { productId, additionalGroupId } });
+    const count = await ProductAdditionalGroup.count({ where: { productId } });
+    await ProductAdditionalGroup.findOrCreate({
+      where: { productId, additionalGroupId },
+      defaults: { position: count },
+    });
     res.json({ message: 'Group assigned' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to assign group' });
+  }
+};
+
+exports.reorderGroups = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { order } = req.body; // [{ additionalGroupId, position }, ...]
+    if (!Array.isArray(order)) return res.status(400).json({ error: 'order deve ser um array' });
+    await Promise.all(
+      order.map(({ additionalGroupId, position }) =>
+        ProductAdditionalGroup.update({ position }, { where: { productId, additionalGroupId } })
+      )
+    );
+    res.json({ message: 'Ordem atualizada' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to reorder groups' });
   }
 };
 

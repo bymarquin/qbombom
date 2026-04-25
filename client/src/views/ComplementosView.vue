@@ -172,21 +172,39 @@
           </div>
 
           <div
-            v-for="group in sortedGroupsForAssign"
+            v-for="(group, idx) in sortedGroupsForAssign"
             :key="group.id"
-            @click="toggleAssign(group)"
-            class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all"
+            class="flex items-center gap-3 p-3 rounded-xl border transition-all"
             :class="isAssigned(group.id)
               ? 'border-red-500 bg-red-50 dark:bg-red-900/20 ring-1 ring-red-500'
               : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-red-300 dark:hover:border-red-700'"
           >
+            <!-- Botões de reordenação (só para vinculados) -->
+            <div v-if="isAssigned(group.id)" class="flex flex-col gap-0.5 shrink-0">
+              <button
+                @click.stop="moveGroup(idx, -1)"
+                :disabled="idx === 0"
+                class="p-0.5 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 disabled:opacity-20 disabled:cursor-default transition-colors"
+              >
+                <ChevronUp class="w-3.5 h-3.5" />
+              </button>
+              <button
+                @click.stop="moveGroup(idx, 1)"
+                :disabled="idx === assignedGroups.length - 1"
+                class="p-0.5 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 disabled:opacity-20 disabled:cursor-default transition-colors"
+              >
+                <ChevronDown class="w-3.5 h-3.5" />
+              </button>
+            </div>
+
             <div
-              class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
+              class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors cursor-pointer"
               :class="isAssigned(group.id) ? 'border-red-600 bg-red-600' : 'border-neutral-300 dark:border-neutral-600'"
+              @click="toggleAssign(group)"
             >
               <Check v-if="isAssigned(group.id)" class="w-3 h-3 text-white" />
             </div>
-            <div class="min-w-0">
+            <div class="min-w-0 flex-1 cursor-pointer" @click="toggleAssign(group)">
               <p class="text-sm font-medium text-neutral-900 dark:text-neutral-100">{{ group.name }}</p>
               <p v-if="group.items?.length" class="text-xs text-neutral-400 truncate">
                 {{ group.items.map(i => i.name).join(' · ') }}
@@ -203,7 +221,7 @@
 <script setup>
 import { ref, shallowRef, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { Pencil, Trash2, Plus, X, Check } from 'lucide-vue-next'
+import { Pencil, Trash2, Plus, X, Check, ChevronUp, ChevronDown } from 'lucide-vue-next'
 import { AdditionalService, CatalogService, ImportService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 import { useDialogStore } from '@/stores/dialog'
@@ -216,6 +234,7 @@ const productId = route.query.productId
 const productName = route.query.productName || 'Produto'
 
 const allGroups = shallowRef([])
+const assignedGroups = ref([]) // grupos vinculados em ordem por produto
 const assignedGroupIds = ref(new Set())
 const loadingGroups = ref(false)
 const isCreatingGroup = ref(false)
@@ -235,7 +254,9 @@ const loadGroups = async () => {
     ])
     // Ordena todos os grupos globais pela posição antes de armazenar
     allGroups.value = allRes.data.sort((a, b) => (a.position || 0) - (b.position || 0))
+    // backend já retorna na ordem correta por ProductAdditionalGroup.position
     const assigned = prodRes.data.additionalGroups || []
+    assignedGroups.value = assigned
     assignedGroupIds.value = new Set(assigned.map((g) => g.id))
     allGroups.value.forEach((group) => {
       if (!newItemForm.value[group.id]) {
@@ -270,30 +291,46 @@ const sortedGroups = computed(() => {
 
 const sortedGroupsForAssign = computed(() => {
   const q = groupSearch.value.trim().toLowerCase()
-  const list = q
-    ? allGroups.value.filter((g) =>
-        g.name.toLowerCase().includes(q) ||
-        g.items?.some((i) => i.name.toLowerCase().includes(q))
-      )
-    : allGroups.value
-  
-  // Aqui é onde o cliente vê no lado direito para vincular ao produto
-  // Respeitamos a posição primeiro
-  return [...list].sort((a, b) => (a.position || 0) - (b.position || 0))
+  const matches = (g) => !q || g.name.toLowerCase().includes(q) || g.items?.some((i) => i.name.toLowerCase().includes(q))
+  // assigned primeiro (em ordem por produto), depois não-vinculados
+  const assigned = assignedGroups.value.filter(matches)
+  const unassigned = allGroups.value.filter((g) => !isAssigned(g.id) && matches(g))
+  return [...assigned, ...unassigned]
 })
+
+const saveGroupOrder = async () => {
+  const order = assignedGroups.value.map((g, i) => ({ additionalGroupId: g.id, position: i }))
+  await AdditionalService.reorderGroups(productId, order)
+}
 
 const toggleAssign = async (group) => {
   try {
     if (isAssigned(group.id)) {
       await AdditionalService.unassignGroup(group.id, productId)
+      assignedGroups.value = assignedGroups.value.filter((g) => g.id !== group.id)
       assignedGroupIds.value.delete(group.id)
     } else {
       await AdditionalService.assignGroup(group.id, productId)
+      assignedGroups.value = [...assignedGroups.value, group]
       assignedGroupIds.value.add(group.id)
+      await saveGroupOrder()
     }
     assignedGroupIds.value = new Set(assignedGroupIds.value)
   } catch {
     toast.error('Erro ao atualizar vínculo')
+  }
+}
+
+const moveGroup = async (index, direction) => {
+  const list = [...assignedGroups.value]
+  const target = index + direction
+  if (target < 0 || target >= list.length) return
+  ;[list[index], list[target]] = [list[target], list[index]]
+  assignedGroups.value = list
+  try {
+    await saveGroupOrder()
+  } catch {
+    toast.error('Erro ao reordenar grupos')
   }
 }
 

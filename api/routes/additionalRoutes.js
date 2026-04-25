@@ -10,9 +10,10 @@ router.post('/groups', auth, checkPermission('products.update'), additionalContr
 router.put('/groups/:id', auth, checkPermission('products.update'), additionalController.updateGroup);
 router.delete('/groups/:id', auth, checkPermission('products.update'), additionalController.destroyGroup);
 
-// Assign / unassign grupo a produto
+// Assign / unassign / reorder grupos por produto
 router.post('/groups/:id/assign', auth, checkPermission('products.update'), additionalController.assignGroup);
 router.delete('/groups/:id/assign/:productId', auth, checkPermission('products.update'), additionalController.unassignGroup);
+router.patch('/groups/reorder/:productId', auth, checkPermission('products.update'), additionalController.reorderGroups);
 
 // ITEMS
 router.post('/items', auth, checkPermission('products.update'), additionalController.createItem);

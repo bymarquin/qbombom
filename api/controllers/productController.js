@@ -1,4 +1,5 @@
-const { Product, ProductVariation, ProductImage, AdditionalGroup, AdditionalItem } = require('../models');
+const { Product, ProductVariation, ProductImage, AdditionalGroup, AdditionalItem, ProductAdditionalGroup } = require('../models');
+const { Sequelize } = require('sequelize');
 const { uploadFile } = require('../services/storageService');
 
 async function extractAndUploadImage(imageBase64) {
@@ -52,7 +53,7 @@ exports.show = async (req, res) => {
       order: [
         [{ model: ProductVariation, as: 'variations' }, 'price', 'ASC'],
         [{ model: ProductImage, as: 'images' }, 'position', 'ASC'],
-        [{ model: AdditionalGroup, as: 'additionalGroups' }, 'position', 'ASC'],
+        [Sequelize.literal('"additionalGroups->ProductAdditionalGroup"."position"'), 'ASC'],
         [{ model: AdditionalGroup, as: 'additionalGroups' }, { model: AdditionalItem, as: 'items' }, 'name', 'ASC'],
       ],
     });

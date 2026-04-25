@@ -222,6 +222,9 @@ export const AdditionalService = {
   unassignGroup(groupId, productId) {
     return api.delete(`/additionals/groups/${groupId}/assign/${productId}`)
   },
+  reorderGroups(productId, order) {
+    return api.patch(`/additionals/groups/reorder/${productId}`, { order })
+  },
 
   createItem(data) {
     return api.post('/additionals/items', data)
