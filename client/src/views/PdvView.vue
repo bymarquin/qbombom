@@ -861,7 +861,7 @@ import {
 import { CatalogService, OrderService, AuthService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 import { useDialogStore } from '@/stores/dialog'
-import { printReceipt } from '@/utils/printReceipt'
+
 import { formatarMoeda, mascararTelefone, limparTelefone } from '@/utils/formatters'
 
 const router = useRouter()
@@ -1048,7 +1048,7 @@ const finalizarPedido = async () => {
       })),
     }
 
-    const res = await OrderService.createOrder(payload)
+    await OrderService.createOrder(payload)
     toast.success('Pedido cobrado e enviado para a cozinha com sucesso!')
     carrinho.value = []
     nomeCliente.value = ''
@@ -1057,14 +1057,7 @@ const finalizarPedido = async () => {
     aguardandoPix.value = false
     fecharModalPagamento()
     
-    // Automaticamente imprime a via da cozinha/balcão
-    if (res && res.data) {
-      try {
-        await printReceipt(res.data)
-      } catch {
-        toast.info('Pedido criado com sucesso. Não foi possível abrir o diálogo de impressão.')
-      }
-    }
+
   } catch (err) {
     console.error(err)
     if (err.response?.status === 422) {
