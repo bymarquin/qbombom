@@ -364,7 +364,7 @@
                   <Package class="w-4 h-4" /> Saiu para Entrega
                 </button>
                 <button
-                  @click="updateStatusForOrder(order, 'entregue')"
+                  @click="updateStatusForOrder(order, order.type === 'Entrega' ? 'entregue' : 'finalizado')"
                   class="w-full py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 transition flex items-center justify-center gap-2"
                 >
                   <Check class="w-4 h-4" /> Finalizar Pedido

@@ -262,13 +262,23 @@ const voltar = () => {
   router.push('/app/pedidos')
 }
 
-const statusOptions = [
-  { value: 'novo', label: 'Novo', activeClass: 'bg-blue-600 text-white ring-2 ring-offset-2 ring-blue-600/30' },
-  { value: 'em_preparo', label: 'Preparo', activeClass: 'bg-yellow-500 text-white ring-2 ring-offset-2 ring-yellow-500/30' },
-  { value: 'pronto', label: 'Pronto', activeClass: 'bg-green-600 text-white ring-2 ring-offset-2 ring-green-600/30' },
-  { value: 'entregue', label: 'Finalizado', activeClass: 'bg-neutral-800 text-white ring-2 ring-offset-2 ring-neutral-800/30' },
-  { value: 'cancelado', label: 'Cancelar', activeClass: 'bg-red-600 text-white ring-2 ring-offset-2 ring-red-600/30' },
-]
+const statusOptions = computed(() => {
+  const options = [
+    { value: 'novo', label: 'Novo', activeClass: 'bg-blue-600 text-white ring-2 ring-offset-2 ring-blue-600/30' },
+    { value: 'em_preparo', label: 'Preparo', activeClass: 'bg-yellow-500 text-white ring-2 ring-offset-2 ring-yellow-500/30' },
+    { value: 'pronto', label: 'Pronto', activeClass: 'bg-emerald-600 text-white ring-2 ring-offset-2 ring-emerald-600/30' },
+  ]
+
+  if (order.value?.type === 'Entrega') {
+    options.push({ value: 'em_rota', label: 'Em Rota', activeClass: 'bg-indigo-600 text-white ring-2 ring-offset-2 ring-indigo-600/30' })
+    options.push({ value: 'entregue', label: 'Finalizado', activeClass: 'bg-neutral-800 text-white ring-2 ring-offset-2 ring-neutral-800/30' })
+  } else {
+    options.push({ value: 'finalizado', label: 'Finalizado', activeClass: 'bg-neutral-800 text-white ring-2 ring-offset-2 ring-neutral-800/30' })
+  }
+
+  options.push({ value: 'cancelado', label: 'Cancelar', activeClass: 'bg-red-600 text-white ring-2 ring-offset-2 ring-red-600/30' })
+  return options
+})
 
 const loadOrder = async () => {
   loading.value = true

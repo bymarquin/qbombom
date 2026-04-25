@@ -628,8 +628,16 @@ exports.updateStatus = async (req, res) => {
         return res.status(400).json({ error: 'Use o endpoint de cancelamento para cancelar um pedido.' });
       }
 
-      const allowed = VALID_TRANSITIONS[order.status];
-      if (!allowed || !allowed.has(status)) {
+      const allowed = new Set(VALID_TRANSITIONS[order.status] || []);
+      
+      // Regra especial: Apenas pedidos que NÃO são 'Entrega' podem ir de 'pronto' para 'finalizado'
+      if (order.status === 'pronto' && status === 'finalizado') {
+        if (order.type === 'Entrega') {
+          return res.status(400).json({ error: 'Pedidos de Entrega devem passar pelo status Em Rota antes de serem finalizados.' });
+        }
+      }
+
+      if (!allowed.has(status)) {
         return res.status(400).json({
           error: `Transição inválida: ${order.status} → ${status}.`,
         });
