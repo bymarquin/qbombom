@@ -79,13 +79,12 @@ const router = createRouter({
           name: 'r2-storage',
           component: () => import('../views/R2StorageView.vue'),
         },
+        {
+          path: 'pdv',
+          name: 'pdv',
+          component: () => import('../views/PdvView.vue'),
+        },
       ],
-    },
-    {
-      path: '/pdv',
-      name: 'pdv',
-      component: () => import('../views/PdvView.vue'),
-      meta: { requiresAuth: true },
     },
     {
       path: '/delivery',

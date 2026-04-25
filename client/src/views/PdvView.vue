@@ -1,6 +1,6 @@
 <template>
   <div
-    class="h-screen flex flex-col bg-neutral-50 dark:bg-neutral-950 overflow-hidden font-sans relative"
+    class="h-full flex flex-col bg-neutral-50 dark:bg-neutral-950 overflow-hidden font-sans relative -m-8"
   >
     <!-- Topbar do PDV -->
     <header
