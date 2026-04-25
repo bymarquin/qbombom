@@ -260,7 +260,7 @@ const menuGroups = [
     items: [
       {
         name: "Frente de Caixa",
-        path: "/pdv",
+        path: "/app/pdv",
         icon: ShoppingCart,
         roles: ["SUPER_ADMIN", "MANAGER", "CASHIER"],
       },
