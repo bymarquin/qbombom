@@ -265,17 +265,17 @@
                 }}</span>
               </div>
 
-              <ul
+              <div
                 v-if="item.selectedAdditionals.length"
-                class="text-xs text-neutral-500 dark:text-neutral-500 mb-2 pl-3 list-disc space-y-0.5 marker:text-neutral-300"
+                class="text-xs text-neutral-500 dark:text-neutral-500 mb-2 pl-1 space-y-0.5"
               >
-                <li v-for="(add, i) in item.selectedAdditionals" :key="i">
-                  {{ add.name }}
-                  <span v-if="add.price > 0" class="text-neutral-400"
-                    >(+{{ formatarMoeda(add.price) }})</span
-                  >
-                </li>
-              </ul>
+                <template v-for="group in groupAdditionals(item.selectedAdditionals)" :key="group.name">
+                  <p v-if="group.name" class="font-semibold text-neutral-600 dark:text-neutral-400 mt-1">{{ group.name }}:</p>
+                  <p v-for="(add, i) in group.items" :key="i" class="pl-1">
+                    {{ add.name }}<span v-if="add.price > 0" class="text-neutral-400"> (+{{ formatarMoeda(add.price) }})</span>
+                  </p>
+                </template>
+              </div>
 
               <p
                 v-if="item.observation"
@@ -812,6 +812,14 @@
             </button>
             <button
               v-if="!aguardandoPix"
+              @click="finalizarPagarDepois"
+              :disabled="salvandoPedido"
+              class="px-5 py-2.5 font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 disabled:opacity-70 disabled:cursor-not-allowed rounded-lg transition-colors"
+            >
+              Pagar Depois
+            </button>
+            <button
+              v-if="!aguardandoPix"
               @click="metodoPagamentoSelecionado === 'PIX' ? (aguardandoPix = true) : finalizarPedido()"
               :disabled="salvandoPedido"
               class="px-6 py-2.5 font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-70 disabled:cursor-not-allowed rounded-lg shadow-sm dark:shadow-none transition-all duration-200 active:scale-[0.98] flex items-center gap-2"
@@ -861,13 +869,105 @@ import {
 import { CatalogService, OrderService, AuthService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 import { useDialogStore } from '@/stores/dialog'
+import { useOrderSocket } from '@/composables/useOrderSocket'
 
 import { formatarMoeda, mascararTelefone, limparTelefone } from '@/utils/formatters'
+
+const groupAdditionals = (additionals) => {
+  if (!additionals?.length) return []
+  const map = new Map()
+  for (const add of additionals) {
+    const key = add.groupName || add.grupoName || ''
+    if (!map.has(key)) map.set(key, [])
+    map.get(key).push(add)
+  }
+  return [...map.entries()].map(([name, items]) => ({ name, items }))
+}
 
 const router = useRouter()
 const toast = useToastStore()
 const dialog = useDialogStore()
 const inputBusca = ref(null)
+const newOrderAlertSound = '/sounds/order-alert.mp3'
+const PDV_ACTIVE_ORDERS_KEY = 'qbombom_pdv_pedidos_ativos'
+const PDV_FINAL_STATUSES = new Set(['cancelado', 'finalizado'])
+
+function getPdvActiveOrders() {
+  try {
+    const orders = JSON.parse(localStorage.getItem(PDV_ACTIVE_ORDERS_KEY) || '[]')
+    return Array.isArray(orders) ? orders : []
+  } catch {
+    return []
+  }
+}
+
+function savePdvActiveOrder(order) {
+  if (!order?.id) return
+  if (PDV_FINAL_STATUSES.has(order.status)) {
+    removePdvActiveOrder(order.id)
+    return
+  }
+
+  const orders = getPdvActiveOrders().filter((item) => item.id !== order.id)
+  orders.unshift({
+    id: order.id,
+    trackingCode: order.trackingCode,
+    status: order.status,
+    paymentStatus: order.paymentStatus,
+    paymentMethod: order.paymentMethod,
+    type: order.type,
+    customerName: order.customerName,
+    total: order.total,
+    items: order.items || [],
+    createdAt: order.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  })
+  localStorage.setItem(PDV_ACTIVE_ORDERS_KEY, JSON.stringify(orders.slice(0, 20)))
+}
+
+function updatePdvActiveOrder(order) {
+  if (!order?.id) return
+  if (PDV_FINAL_STATUSES.has(order.status)) {
+    removePdvActiveOrder(order.id)
+    return
+  }
+
+  const orders = getPdvActiveOrders()
+  const index = orders.findIndex((item) => item.id === order.id)
+  if (index === -1) return
+
+  orders[index] = {
+    ...orders[index],
+    trackingCode: order.trackingCode ?? orders[index].trackingCode,
+    status: order.status ?? orders[index].status,
+    paymentStatus: order.paymentStatus ?? orders[index].paymentStatus,
+    paymentMethod: order.paymentMethod ?? orders[index].paymentMethod,
+    updatedAt: new Date().toISOString(),
+  }
+  localStorage.setItem(PDV_ACTIVE_ORDERS_KEY, JSON.stringify(orders))
+}
+
+function removePdvActiveOrder(orderId) {
+  if (!orderId) return
+  const orders = getPdvActiveOrders().filter((item) => item.id !== orderId)
+  localStorage.setItem(PDV_ACTIVE_ORDERS_KEY, JSON.stringify(orders))
+}
+
+function playNewOrderAlert() {
+  const audio = new Audio(newOrderAlertSound)
+  audio.volume = 0.35
+  audio.play().catch(() => {})
+}
+
+function onOrderCreated() {
+  playNewOrderAlert()
+}
+
+function onOrderUpdated(order) {
+  updatePdvActiveOrder(order)
+}
+
+useOrderSocket({ onCreated: onOrderCreated, onUpdated: onOrderUpdated })
 
 // --- ESTADOS DO USUÁRIO E UI ---
 const operadorNome = ref('Caixa')
@@ -1022,6 +1122,47 @@ const cancelarPedido = async () => {
   toast.info('Pedido cancelado.')
 }
 
+const finalizarPagarDepois = async () => {
+  if (carrinho.value.length === 0) return
+  salvandoPedido.value = true
+  try {
+    const payload = {
+      type: tipoConsumo.value,
+      customerName: nomeCliente.value,
+      customerPhone: tipoConsumo.value === 'Entrega' ? limparTelefone(telefoneCliente.value) : undefined,
+      deliveryAddress: tipoConsumo.value === 'Entrega' ? enderecoEntrega.value : undefined,
+      paymentStatus: 'pendente',
+      paymentMethod: 'Pagar Depois',
+      subtotal: subtotal.value,
+      discount: 0,
+      total: subtotal.value,
+      items: carrinho.value.map((item) => ({
+        productId: item.productId,
+        productVariationId: item.variationId || null,
+        variationName: item.variationName || null,
+        quantity: item.quantity,
+        unitPrice: item.totalPrice,
+        totalPrice: item.totalPrice * item.quantity,
+        observation: item.observation,
+        selectedAdditionals: item.selectedAdditionals,
+      })),
+    }
+    const { data } = await OrderService.createOrder(payload)
+    savePdvActiveOrder(data)
+    toast.success('Pedido enviado para a cozinha. Pagamento pendente.')
+    carrinho.value = []
+    nomeCliente.value = ''
+    telefoneCliente.value = ''
+    enderecoEntrega.value = ''
+    fecharModalPagamento()
+  } catch (err) {
+    console.error(err)
+    toast.error('Erro ao finalizar pedido. Tente novamente.')
+  } finally {
+    salvandoPedido.value = false
+  }
+}
+
 const finalizarPedido = async () => {
   if (carrinho.value.length === 0) return
   salvandoPedido.value = true
@@ -1040,6 +1181,7 @@ const finalizarPedido = async () => {
       items: carrinho.value.map((item) => ({
         productId: item.productId,
         productVariationId: item.variationId || null,
+        variationName: item.variationName || null,
         quantity: item.quantity,
         unitPrice: item.totalPrice, // O totalPrice por 1 un é gravado como unitPrice
         totalPrice: item.totalPrice * item.quantity,
@@ -1048,7 +1190,8 @@ const finalizarPedido = async () => {
       })),
     }
 
-    await OrderService.createOrder(payload)
+    const { data } = await OrderService.createOrder(payload)
+    savePdvActiveOrder(data)
     toast.success('Pedido cobrado e enviado para a cozinha com sucesso!')
     carrinho.value = []
     nomeCliente.value = ''
@@ -1220,7 +1363,7 @@ const adicionaisComPrecoCalculado = computed(() => {
     if (grupo.stepperMode) continue
     const itensOrdenados = [...itensSelecionadosNoGrupo(grupo.id)].sort((a, b) => Number(a.price) - Number(b.price))
     itensOrdenados.forEach((item, index) => {
-      processados.push({ id: item.id, name: item.name, price: index < grupo.freeChoices ? 0 : Number(item.price) })
+      processados.push({ id: item.id, name: item.name, price: index < grupo.freeChoices ? 0 : Number(item.price), groupName: grupo.name })
     })
   }
   return processados
@@ -1241,7 +1384,7 @@ const confirmarItem = () => {
     const grupo = produtoDetalhado.value.additionalGroups?.find(g => g.stepperMode)
     grupo?.items.forEach(item => {
       const qty = itemQuantidades.value[item.id] || 0
-      if (qty > 0) casquinhaAdds.push({ id: item.id, name: `${item.name} ×${qty}`, price: Number(item.price) * qty })
+      if (qty > 0) casquinhaAdds.push({ id: item.id, name: `${item.name} ×${qty}`, price: Number(item.price) * qty, groupName: grupo.name })
     })
   }
 
