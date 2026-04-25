@@ -172,7 +172,7 @@
           </div>
 
           <div
-            v-for="(group, idx) in sortedGroupsForAssign"
+            v-for="group in sortedGroupsForAssign"
             :key="group.id"
             class="flex items-center gap-3 p-3 rounded-xl border transition-all"
             :class="isAssigned(group.id)
@@ -182,15 +182,15 @@
             <!-- Botões de reordenação (só para vinculados) -->
             <div v-if="isAssigned(group.id)" class="flex flex-col gap-0.5 shrink-0">
               <button
-                @click.stop="moveGroup(idx, -1)"
-                :disabled="idx === 0"
+                @click.stop="moveGroup(group.id, -1)"
+                :disabled="assignedIndex(group.id) === 0"
                 class="p-0.5 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 disabled:opacity-20 disabled:cursor-default transition-colors"
               >
                 <ChevronUp class="w-3.5 h-3.5" />
               </button>
               <button
-                @click.stop="moveGroup(idx, 1)"
-                :disabled="idx === assignedGroups.length - 1"
+                @click.stop="moveGroup(group.id, 1)"
+                :disabled="assignedIndex(group.id) === assignedGroups.length - 1"
                 class="p-0.5 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 disabled:opacity-20 disabled:cursor-default transition-colors"
               >
                 <ChevronDown class="w-3.5 h-3.5" />
@@ -254,7 +254,6 @@ const loadGroups = async () => {
     ])
     // Ordena todos os grupos globais pela posição antes de armazenar
     allGroups.value = allRes.data.sort((a, b) => (a.position || 0) - (b.position || 0))
-    // backend já retorna na ordem correta por ProductAdditionalGroup.position
     const assigned = prodRes.data.additionalGroups || []
     assignedGroups.value = assigned
     assignedGroupIds.value = new Set(assigned.map((g) => g.id))
@@ -321,10 +320,13 @@ const toggleAssign = async (group) => {
   }
 }
 
-const moveGroup = async (index, direction) => {
+const assignedIndex = (groupId) => assignedGroups.value.findIndex((g) => g.id === groupId)
+
+const moveGroup = async (groupId, direction) => {
   const list = [...assignedGroups.value]
+  const index = list.findIndex((g) => g.id === groupId)
   const target = index + direction
-  if (target < 0 || target >= list.length) return
+  if (index === -1 || target < 0 || target >= list.length) return
   ;[list[index], list[target]] = [list[target], list[index]]
   assignedGroups.value = list
   try {
