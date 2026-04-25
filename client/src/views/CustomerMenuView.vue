@@ -805,15 +805,16 @@ const removerItem = (index) => {
   if (carrinho.value.length === 0) sacolaAberta.value = false;
 };
 
-const capturarGeolocalizacaoEmSegundoPlano = async () => {
+const capturarGeolocalizacaoEntrega = async () => {
   if (typeof navigator === "undefined" || !navigator.geolocation) return null;
-  if (!navigator.permissions?.query) return null;
 
   try {
-    const permissionStatus = await navigator.permissions.query({ name: "geolocation" });
-    if (permissionStatus.state !== "granted") return null;
+    if (navigator.permissions?.query) {
+      const permissionStatus = await navigator.permissions.query({ name: "geolocation" });
+      if (permissionStatus.state === "denied") return null;
+    }
   } catch {
-    return null;
+    // Alguns navegadores não suportam Permissions API para geolocation.
   }
 
   return new Promise((resolve) => {
@@ -825,7 +826,7 @@ const capturarGeolocalizacaoEmSegundoPlano = async () => {
         capturedAt: new Date().toISOString(),
       }),
       () => resolve(null),
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 120000 },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 120000 },
     );
   });
 };
@@ -851,7 +852,7 @@ const enviarPedido = async () => {
         endEntrega += ` (${end.complemento})`;
       }
 
-      geo = await capturarGeolocalizacaoEmSegundoPlano();
+      geo = await capturarGeolocalizacaoEntrega();
       checkout.value.geolocacao = geo;
 
       if (checkout.value.pagamento === "Dinheiro") {

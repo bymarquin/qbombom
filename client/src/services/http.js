@@ -298,6 +298,12 @@ export const OrderService = {
   },
 }
 
+export const GeocodeService = {
+  reverseGeocode(lat, lon) {
+    return api.get('/geocode/reverse', { params: { lat, lon } })
+  },
+}
+
 export const DashboardService = {
   getMetrics(period = 'today') {
     return api.get('/dashboard', { params: { period } })

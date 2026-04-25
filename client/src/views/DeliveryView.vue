@@ -205,6 +205,12 @@ const carregarPedidos = async () => {
 };
 
 function onOrderCreated(novoPedido) {
+  const index = pedidos.value.findIndex(p => p.id === novoPedido.id);
+  if (index > -1) {
+    pedidos.value[index] = { ...pedidos.value[index], ...novoPedido };
+    return;
+  }
+
   pedidos.value.push(novoPedido);
 }
 
@@ -214,7 +220,7 @@ function onOrderUpdated(atualizado) {
     if (['entregue', 'cancelado'].includes(atualizado.status)) {
       pedidos.value.splice(index, 1);
     } else {
-      pedidos.value[index].status = atualizado.status;
+      pedidos.value[index] = { ...pedidos.value[index], ...atualizado };
     }
   } else if (['pronto', 'em_rota'].includes(atualizado.status)) {
     pedidos.value.push(atualizado);

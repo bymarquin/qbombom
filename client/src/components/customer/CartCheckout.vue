@@ -220,7 +220,19 @@
             </div>
 
             <div v-if="checkout.tipo === 'Entrega'" class="flex flex-col gap-3">
-              <label class="text-sm font-bold text-neutral-900 dark:text-neutral-100">Endereço de Entrega</label>
+              <div class="flex items-center justify-between">
+                <label class="text-sm font-bold text-neutral-900 dark:text-neutral-100">Endereço de Entrega</label>
+                <button
+                  type="button"
+                  @click="usarLocalizacaoAtual"
+                  :disabled="buscandoLocalizacao"
+                  class="flex items-center gap-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Loader2 v-if="buscandoLocalizacao" class="w-3.5 h-3.5 animate-spin" />
+                  <MapPin v-else class="w-3.5 h-3.5" />
+                  {{ buscandoLocalizacao ? 'Buscando...' : 'Usar minha localização' }}
+                </button>
+              </div>
               <input
                 v-model="checkout.endereco.rua"
                 type="text"
@@ -356,8 +368,10 @@
 </template>
 
 <script setup>
-import { ShoppingBag, Trash2 } from "lucide-vue-next";
+import { ref } from "vue";
+import { ShoppingBag, Trash2, MapPin, Loader2 } from "lucide-vue-next";
 import { formatarMoeda, mascararTelefone } from "@/utils/formatters";
+import { GeocodeService } from "@/services/http";
 
 const isOpen = defineModel("isOpen", { type: Boolean, required: true });
 const carrinho = defineModel("carrinho", { type: Array, required: true });
@@ -414,6 +428,30 @@ const incrementarItem = (index) => {
   const novoCarrinho = [...carrinho.value];
   novoCarrinho[index].quantity++;
   carrinho.value = novoCarrinho;
+};
+
+const buscandoLocalizacao = ref(false);
+
+const usarLocalizacaoAtual = () => {
+  if (!navigator.geolocation) return;
+
+  buscandoLocalizacao.value = true;
+
+  navigator.geolocation.getCurrentPosition(
+    async ({ coords }) => {
+      try {
+        const { data } = await GeocodeService.reverseGeocode(coords.latitude, coords.longitude);
+        const addr = data.address || {};
+        checkout.value.endereco.rua = addr.road || addr.pedestrian || '';
+        checkout.value.endereco.bairro = addr.suburb || addr.city_district || addr.neighbourhood || '';
+      } finally {
+        buscandoLocalizacao.value = false;
+      }
+    },
+    () => {
+      buscandoLocalizacao.value = false;
+    },
+  );
 };
 </script>
 
