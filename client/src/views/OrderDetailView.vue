@@ -23,6 +23,33 @@
     </div>
 
     <div v-else-if="order" class="flex-1 overflow-y-auto flex flex-col gap-6">
+      <!-- Receber pagamento pendente (Pagar Depois) -->
+      <div
+        v-if="order.paymentMethod === 'Pagar Depois' && order.paymentStatus !== 'pago'"
+        class="p-4 rounded-xl border border-amber-300 dark:border-amber-700/50 bg-amber-50 dark:bg-amber-900/10"
+      >
+        <p class="text-sm font-bold text-amber-800 dark:text-amber-300 mb-3">Pagamento pendente — R$ {{ parseFloat(order.total).toFixed(2) }}</p>
+        <div class="flex flex-wrap gap-2 mb-3">
+          <button
+            v-for="metodo in ['PIX', 'Crédito', 'Débito', 'Dinheiro']"
+            :key="metodo"
+            @click="metodoPagamentoReceber = metodo"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all"
+            :class="metodoPagamentoReceber === metodo
+              ? 'border-amber-600 bg-amber-600 text-white'
+              : 'border-amber-300 dark:border-amber-700 bg-white dark:bg-neutral-900 text-amber-800 dark:text-amber-300 hover:bg-amber-50'"
+          >
+            {{ metodo }}
+          </button>
+        </div>
+        <button
+          @click="receberPagamento"
+          class="w-full px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition"
+        >
+          Confirmar Recebimento
+        </button>
+      </div>
+
       <!-- Confirmação PIX pendente -->
       <div
         v-if="order.paymentMethod === 'PIX' && order.paymentStatus !== 'pago'"
@@ -69,7 +96,7 @@
           <div>
             <p class="text-xs text-neutral-500 dark:text-neutral-500 font-medium">Cliente</p>
             <p class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-              {{ order.customerName || 'Cliente Balcão' }}
+              {{ order.customerName || 'Não informado' }}
             </p>
           </div>
           <div>
@@ -153,7 +180,9 @@
             <div class="flex-1">
               <span class="font-medium text-neutral-900 dark:text-neutral-100">
                 {{ item.quantity }}x {{ item.product?.name || 'Produto' }}
-                {{ item.variation?.name ? `- ${item.variation.name}` : '' }}
+                <span v-if="item.variation?.name || item.variationName" class="text-red-600 font-semibold">
+                  • {{ item.variation?.name || item.variationName }}
+                </span>
               </span>
               <p
                 v-if="item.observation"
@@ -161,9 +190,14 @@
               >Obs: {{ item.observation }}</p>
               <div
                 v-if="item.selectedAdditionals && item.selectedAdditionals.length > 0"
-                class="mt-1 text-xs text-neutral-500 dark:text-neutral-500"
+                class="mt-1 text-xs text-neutral-500 dark:text-neutral-500 space-y-1"
               >
-                + {{ item.selectedAdditionals.map((a) => a.name).join(', ') }}
+                <template v-for="group in groupAdditionals(item.selectedAdditionals)" :key="group.name">
+                  <p v-if="group.name" class="font-medium text-neutral-600 dark:text-neutral-400 mt-1">{{ group.name }}:</p>
+                  <p v-for="add in group.items" :key="add.id ?? add.name" class="pl-1">
+                    {{ add.name }}<span v-if="add.price > 0" class="text-neutral-400"> +{{ formatMoney(add.price) }}</span>
+                  </p>
+                </template>
               </div>
             </div>
             <span class="font-medium text-neutral-900 dark:text-neutral-100 ml-4">
@@ -252,6 +286,7 @@ const userRole = AuthService.getRole()
 
 const order = ref(null)
 const loading = ref(true)
+const metodoPagamentoReceber = ref('PIX')
 
 const voltar = () => {
   if (window.history.length > 1) {
@@ -323,6 +358,18 @@ const updateStatus = async (newStatus) => {
   }
 }
 
+const receberPagamento = async () => {
+  if (!order.value) return
+  try {
+    await OrderService.updateOrderStatus(order.value.id, null, 'pago', metodoPagamentoReceber.value)
+    order.value.paymentStatus = 'pago'
+    order.value.paymentMethod = metodoPagamentoReceber.value
+    toast.success(`Pagamento de R$ ${parseFloat(order.value.total).toFixed(2)} confirmado via ${metodoPagamentoReceber.value}.`)
+  } catch {
+    toast.error('Erro ao confirmar pagamento')
+  }
+}
+
 const confirmPayment = async () => {
   if (!order.value) return
   try {
@@ -370,6 +417,17 @@ const getReceiptUrl = (url) => {
 
 const formatMoney = (val) =>
   Number(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+
+const groupAdditionals = (additionals) => {
+  if (!additionals?.length) return []
+  const map = new Map()
+  for (const add of additionals) {
+    const key = add.groupName || add.grupoName || ''
+    if (!map.has(key)) map.set(key, [])
+    map.get(key).push(add)
+  }
+  return [...map.entries()].map(([name, items]) => ({ name, items }))
+}
 
 const formatEta = (minutes) => {
   const value = Math.max(Number(minutes) || 0, 0)
