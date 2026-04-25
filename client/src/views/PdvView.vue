@@ -1043,8 +1043,15 @@ const precoMinimoPdv = (produto) => {
 }
 
 // --- CARRINHO ---
-const carrinho = ref([])
+const CARRINHO_KEY = 'qbombom_pdv_carrinho'
+const carrinho = ref((() => {
+  try { return JSON.parse(localStorage.getItem(CARRINHO_KEY) || '[]') } catch { return [] }
+})())
 const salvandoPedido = ref(false)
+
+watch(carrinho, (val) => {
+  localStorage.setItem(CARRINHO_KEY, JSON.stringify(val))
+}, { deep: true })
 
 const subtotal = computed(() => {
   return carrinho.value.reduce((acc, item) => acc + item.totalPrice * item.quantity, 0)
