@@ -5,7 +5,7 @@ exports.getAllGroups = async (req, res) => {
   try {
     const groups = await AdditionalGroup.findAll({
       include: [{ model: AdditionalItem, as: 'items', order: [['price', 'ASC']] }],
-      order: [['name', 'ASC']],
+      order: [['position', 'ASC'], ['name', 'ASC']],
     });
     res.json(groups);
   } catch (error) {
@@ -15,12 +15,13 @@ exports.getAllGroups = async (req, res) => {
 
 exports.createGroup = async (req, res) => {
   try {
-    const { name, minChoices, maxChoices, freeChoices, stepperMode, isSaborGroup } = req.body;
+    const { name, minChoices, maxChoices, freeChoices, position, stepperMode, isSaborGroup } = req.body;
     const group = await AdditionalGroup.create({
       name,
       minChoices: minChoices ?? 0,
       maxChoices: maxChoices ?? 99,
       freeChoices: freeChoices ?? 0,
+      position: position ?? 0,
       stepperMode: stepperMode ?? false,
       isSaborGroup: isSaborGroup ?? false,
     });
@@ -34,8 +35,8 @@ exports.updateGroup = async (req, res) => {
   try {
     const group = await AdditionalGroup.findByPk(req.params.id);
     if (!group) return res.status(404).json({ error: 'Group not found' });
-    const { name, minChoices, maxChoices, freeChoices, stepperMode, isSaborGroup } = req.body;
-    await group.update({ name, minChoices, maxChoices, freeChoices, stepperMode, isSaborGroup });
+    const { name, minChoices, maxChoices, freeChoices, position, stepperMode, isSaborGroup } = req.body;
+    await group.update({ name, minChoices, maxChoices, freeChoices, position, stepperMode, isSaborGroup });
     res.json(group);
   } catch (error) {
     res.status(500).json({ error: 'Failed to update group' });

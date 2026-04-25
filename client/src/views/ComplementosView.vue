@@ -108,18 +108,22 @@
           <form @submit.prevent="saveGroup" class="flex flex-col gap-3">
             <p class="text-xs font-semibold text-neutral-700 dark:text-neutral-300">{{ groupForm.id ? 'Editar Grupo' : 'Novo Grupo' }}</p>
             <input v-model="groupForm.name" type="text" required placeholder="Nome do grupo" class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-red-500" />
-            <div class="grid grid-cols-3 gap-2">
+            <div class="grid grid-cols-4 gap-2">
               <div class="flex flex-col gap-1">
-                <label class="text-xs text-neutral-500 dark:text-neutral-400">Mín. escolhas</label>
+                <label class="text-xs text-neutral-500 dark:text-neutral-400">Mínimo</label>
                 <input v-model.number="groupForm.minChoices" type="number" min="0" class="w-full px-2 py-1.5 text-xs border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-500" />
               </div>
               <div class="flex flex-col gap-1">
-                <label class="text-xs text-neutral-500 dark:text-neutral-400">Máx. escolhas</label>
+                <label class="text-xs text-neutral-500 dark:text-neutral-400">Máximo</label>
                 <input v-model.number="groupForm.maxChoices" type="number" min="0" class="w-full px-2 py-1.5 text-xs border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-500" />
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-xs text-neutral-500 dark:text-neutral-400">Grátis</label>
                 <input v-model.number="groupForm.freeChoices" type="number" min="0" class="w-full px-2 py-1.5 text-xs border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-500" />
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-xs text-neutral-500 dark:text-neutral-400 font-bold text-indigo-600">Ordem</label>
+                <input v-model.number="groupForm.position" type="number" min="0" class="w-full px-2 py-1.5 text-xs border border-indigo-300 dark:border-indigo-700 rounded bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-indigo-500 font-bold" />
               </div>
             </div>
             <label class="flex items-center gap-2 cursor-pointer select-none">
@@ -215,7 +219,7 @@ const allGroups = shallowRef([])
 const assignedGroupIds = ref(new Set())
 const loadingGroups = ref(false)
 const isCreatingGroup = ref(false)
-const groupForm = ref({ id: null, name: '' })
+const groupForm = ref({ id: null, name: '', position: 0 })
 const newItemForm = ref({})
 const groupSearch = ref('')
 const deduplicando = ref(false)
@@ -229,7 +233,8 @@ const loadGroups = async () => {
       AdditionalService.getGroups(),
       CatalogService.getProduct(productId, { all: true }),
     ])
-    allGroups.value = allRes.data
+    // Ordena todos os grupos globais pela posição antes de armazenar
+    allGroups.value = allRes.data.sort((a, b) => (a.position || 0) - (b.position || 0))
     const assigned = prodRes.data.additionalGroups || []
     assignedGroupIds.value = new Set(assigned.map((g) => g.id))
     allGroups.value.forEach((group) => {
@@ -257,6 +262,7 @@ const filteredGroups = computed(() => {
 })
 
 const sortedGroups = computed(() => {
+  // Mantém a ordem assigned -> rest, mas respeita a posição dentro de cada bloco
   const assigned = filteredGroups.value.filter((g) => isAssigned(g.id))
   const rest = filteredGroups.value.filter((g) => !isAssigned(g.id))
   return [...assigned, ...rest]
@@ -270,9 +276,10 @@ const sortedGroupsForAssign = computed(() => {
         g.items?.some((i) => i.name.toLowerCase().includes(q))
       )
     : allGroups.value
-  const assigned = list.filter((g) => isAssigned(g.id))
-  const rest = list.filter((g) => !isAssigned(g.id))
-  return [...assigned, ...rest]
+  
+  // Aqui é onde o cliente vê no lado direito para vincular ao produto
+  // Respeitamos a posição primeiro
+  return [...list].sort((a, b) => (a.position || 0) - (b.position || 0))
 })
 
 const toggleAssign = async (group) => {
@@ -291,7 +298,7 @@ const toggleAssign = async (group) => {
 }
 
 const openNewGroupForm = () => {
-  groupForm.value = { id: null, name: '', minChoices: 0, maxChoices: 5, freeChoices: 0, stepperMode: false, isSaborGroup: false }
+  groupForm.value = { id: null, name: '', minChoices: 0, maxChoices: 5, freeChoices: 0, position: 0, stepperMode: false, isSaborGroup: false }
   isCreatingGroup.value = true
 }
 
@@ -306,6 +313,7 @@ const editGroup = (group) => {
     minChoices: group.minChoices ?? 0,
     maxChoices: group.maxChoices ?? 5,
     freeChoices: group.freeChoices ?? 0,
+    position: group.position ?? 0,
     stepperMode: group.stepperMode ?? false,
     isSaborGroup: group.isSaborGroup ?? false,
   }

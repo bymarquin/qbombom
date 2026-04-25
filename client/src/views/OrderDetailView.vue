@@ -234,7 +234,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ChevronLeft, Navigation, Printer } from 'lucide-vue-next'
 import { OrderService, AuthService } from '@/services/http'
