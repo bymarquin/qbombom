@@ -6,7 +6,7 @@
           Painel de Pedidos
         </h1>
         <p class="text-sm text-neutral-500 dark:text-neutral-500">
-          Gerencie e acompanhe o fluxo de pedidos da loja em tempo real.
+          Gerencie e acompanhe o fluxo de pedidos da Qbombom em tempo real.
         </p>
       </div>
       <div class="flex items-center gap-2 flex-wrap">
