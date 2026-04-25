@@ -233,7 +233,7 @@
               v-for="s in statusOptions"
               :key="s.value"
               @click="updateStatus(s.value)"
-              :disabled="s.value === 'cancelado' && ['em_preparo', 'pronto', 'em_rota', 'finalizado', 'entregue'].includes(order.status)"
+              :disabled="s.value === 'cancelado' && order.status === 'cancelado'"
               :class="
                 order.status === s.value
                   ? s.activeClass
@@ -252,7 +252,7 @@
           </label>
           <button
             @click="cancelOrder"
-            :disabled="['em_preparo', 'pronto', 'em_rota', 'cancelado', 'finalizado', 'entregue'].includes(order.status)"
+            :disabled="order.status === 'cancelado'"
             class="w-full py-2.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             :class="
               order.status === 'cancelado'

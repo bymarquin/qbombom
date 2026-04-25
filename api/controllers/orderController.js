@@ -695,10 +695,6 @@ exports.cancelOrder = async (req, res) => {
       return res.json(order);
     }
 
-    if (['em_preparo', 'pronto', 'em_rota', 'finalizado', 'entregue'].includes(order.status)) {
-      await transaction.rollback();
-      return res.status(409).json({ error: 'Pedido em preparo ou posterior não pode ser cancelado.' });
-    }
 
     const items = await OrderItem.findAll({
       where: { orderId: order.id },
