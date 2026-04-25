@@ -23,6 +23,30 @@ const parseAdditionals = (raw) => {
   }
 };
 
+const groupAdditionals = (additionals) => {
+  const map = new Map();
+  for (const add of additionals) {
+    const key = add.groupName || add.grupoName || '';
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(add);
+  }
+  return [...map.entries()].map(([name, items]) => ({ name, items }));
+};
+
+const buildAdditionalsHtml = (additionals) => {
+  if (!additionals.length) return '';
+  const groups = groupAdditionals(additionals);
+  const lines = [];
+  for (const group of groups) {
+    if (group.name) lines.push(`  <em>${esc(group.name)}:</em>`);
+    for (const a of group.items) {
+      const price = a.price > 0 ? ` +R$ ${Number(a.price).toFixed(2).replace('.', ',')}` : '';
+      lines.push(`  ${esc(a.name)}${price}`);
+    }
+  }
+  return `<div class="item-adds">${lines.join('<br>')}</div>`;
+};
+
 const buildItemsHtml = (items) => {
   if (!Array.isArray(items) || items.length === 0) {
     return '<p class="empty">Itens nao detalhados.</p>';
@@ -30,10 +54,8 @@ const buildItemsHtml = (items) => {
 
   return items.map((item) => {
     const additionals = parseAdditionals(item.selectedAdditionals);
-    const addText = additionals.map((a) => `  + ${esc(a.name)}`).join('\n');
-
     const productName = esc(item.product?.name || 'Produto');
-    const varName = item.variation?.name ? ` (${esc(item.variation.name)})` : '';
+    const varName = item.variation?.name || item.variationName ? ` (${esc(item.variation?.name || item.variationName)})` : '';
     const price = `R$ ${Number(item.totalPrice || 0).toFixed(2).replace('.', ',')}`;
 
     return `
@@ -43,7 +65,7 @@ const buildItemsHtml = (items) => {
           <span class="item-name">${productName}${varName}</span>
           <span class="item-price">${price}</span>
         </div>
-        ${addText ? `<div class="item-adds">${addText.replace(/\n/g, '<br>')}</div>` : ''}
+        ${additionals.length ? buildAdditionalsHtml(additionals) : ''}
         ${item.observation ? `<div class="item-obs">* ${esc(item.observation)}</div>` : ''}
       </div>
     `;
