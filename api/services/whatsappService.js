@@ -9,6 +9,7 @@ const CONSENT_KEY = 'whatsapp_consent'
 const MIN_SEND_INTERVAL_MS = Number(process.env.WHATSAPP_MIN_SEND_INTERVAL_MS || 90_000)
 const JITTER_MIN_MS = Number(process.env.WHATSAPP_JITTER_MIN_MS || 3_000)
 const JITTER_MAX_MS = Number(process.env.WHATSAPP_JITTER_MAX_MS || 12_000)
+const WHATSAPP_TIMEZONE = process.env.WHATSAPP_TIMEZONE || 'America/Fortaleza'
 
 const lastSentAtByPhone = new Map()   // phone → timestamp último envio
 const sentStatusByOrder = new Map()   // statusKey → timestamp quando foi marcado
@@ -81,6 +82,15 @@ const normalizeStatus = (rawStatus) => {
 }
 
 const DEFAULT_MESSAGES = {
+  aguardando_pagamento: [
+    '⏳ Recebemos seu pedido! Ele será confirmado assim que o pagamento for aprovado.',
+    '⏳ Pedido recebido! Estamos apenas aguardando a confirmação do seu PIX para começar.',
+  ],
+  novo: [
+    '✅ Recebemos seu pedido! Assim que começarmos a preparar te aviso por aqui.',
+    '👍 Seu pedido já está com a gente! Logo logo entra em preparo.',
+    '🍦 Oba! Recebemos seu pedido. Vamos te mantendo informado por aqui.',
+  ],
   em_preparo: [
     '🍧 Seu pedido está sendo preparado! Em breve ficará pronto.',
     '🍧 Já estamos preparando seu pedido! Logo logo fica prontinho.',
@@ -116,7 +126,11 @@ const formatPhone = (phone) => {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const greeting = () => {
-  const hour = new Date().getHours()
+  const hour = Number(new Intl.DateTimeFormat('pt-BR', {
+    hour: '2-digit',
+    hour12: false,
+    timeZone: WHATSAPP_TIMEZONE,
+  }).format(new Date()))
   if (hour >= 6 && hour < 12) return 'Bom dia'
   if (hour >= 12 && hour < 18) return 'Boa tarde'
   return 'Boa noite'
@@ -221,6 +235,7 @@ exports.sendStatusMessage = async (phone, status, orderNumber, trackingUrl = nul
   if (!normalizedPhone) return
 
   if (!(await canSendToPhone(normalizedPhone))) {
+    console.log(`[WhatsApp] Sem consentimento para ${normalizedPhone}. Ignorando envio.`)
     return
   }
 
@@ -238,7 +253,10 @@ exports.sendStatusMessage = async (phone, status, orderNumber, trackingUrl = nul
   } catch {}
 
   const pool = messages[status]
-  if (!pool) return
+  if (!pool) {
+    console.warn(`[WhatsApp] Nenhum template encontrado para status: ${status}`)
+    return
+  }
   const messageBody = pickRandom(Array.isArray(pool) ? pool : [pool])
 
   const name = firstWord(customerName)
@@ -248,11 +266,15 @@ exports.sendStatusMessage = async (phone, status, orderNumber, trackingUrl = nul
   if (trackingUrl) text += `\n${trackingUrl}`
 
   const statusKey = `${orderId || orderNumber}:${status}`
-  if (isStatusSent(statusKey)) return
-  // Reserva imediatamente para evitar race condition entre chamadas concorrentes
+  if (isStatusSent(statusKey)) {
+    console.log(`[WhatsApp] Status ${status} para pedido ${orderNumber} ja enviado anteriormente.`)
+    return
+  }
+  // Reserva antes do enqueueSend para bloquear chamadas concorrentes com mesmo statusKey
   markStatusSent(statusKey)
 
   try {
+    console.log(`[WhatsApp] Agendando envio para ${normalizedPhone} (Status: ${status})...`)
     await enqueueSend(async () => {
       const lastSentAt = lastSentAtByPhone.get(normalizedPhone) || 0
       if (Date.now() - lastSentAt < MIN_SEND_INTERVAL_MS) {
@@ -266,18 +288,25 @@ exports.sendStatusMessage = async (phone, status, orderNumber, trackingUrl = nul
           number: normalizedPhone,
           options: { presence: 'composing', delay: Math.floor(Math.random() * 2000) + 2000 },
         })
-      } catch {}
+      } catch (e) {
+        console.warn(`[WhatsApp] Falha ao enviar 'presence': ${e.message}`)
+      }
 
-      await client.post(`/message/sendText/${INSTANCE}`, {
+      console.log(`[WhatsApp] Enviando texto para ${normalizedPhone}...`)
+      const res = await client.post(`/message/sendText/${INSTANCE}`, {
         number: normalizedPhone,
         text,
       })
 
+      console.log(`[WhatsApp] Sucesso! messageId: ${res.data?.key?.id || 'ok'}`)
       lastSentAtByPhone.set(normalizedPhone, Date.now())
     })
   } catch (error) {
     // Falha no WhatsApp não deve derrubar a operação principal
-    console.error('[WhatsApp] Erro ao enviar mensagem:', error.message)
+    console.error('[WhatsApp] Erro fatal no envio:', error.message)
+    if (error.response) {
+      console.error('[WhatsApp] Detalhes API:', error.response.status, error.response.data)
+    }
   }
 }
 

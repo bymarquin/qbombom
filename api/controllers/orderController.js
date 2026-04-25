@@ -483,6 +483,7 @@ exports.create = async (req, res) => {
           orderId: order.id,
           productId: item.productId,
           productVariationId: item.productVariationId || null,
+          variationName: item.variationName || null,
           quantity: item.quantity || 1,
           unitPrice: item.unitPrice,
           totalPrice: item.totalPrice,
@@ -505,6 +506,9 @@ exports.create = async (req, res) => {
     await attachEtaToOrders(createdOrder);
 
     req.app.get('io')?.emit('orderCreated', createdOrder);
+
+    // Envia notificação inicial de WhatsApp (Status Novo ou Aguardando PIX)
+    notifyCustomer(createdOrder, createdOrder.status);
 
     res.status(201).json(createdOrder);
   } catch (error) {
@@ -621,7 +625,7 @@ exports.updateStatus = async (req, res) => {
     const order = await Order.findByPk(req.params.id);
     if (!order) return res.status(404).json({ error: 'Order not found' });
 
-    const { status, paymentStatus } = req.body;
+    const { status, paymentStatus, paymentMethod } = req.body;
 
     if (status) {
       if (status === 'cancelado') {
@@ -648,6 +652,7 @@ exports.updateStatus = async (req, res) => {
 
     if (status) order.status = status;
     if (paymentStatus) order.paymentStatus = paymentStatus;
+    if (paymentMethod) order.paymentMethod = paymentMethod;
     await order.save();
 
     await attachEtaToOrders(order);
@@ -787,6 +792,9 @@ exports.confirmPixPayment = async (req, res) => {
     if (!freshOrder) return res.status(404).json({ error: 'Order not found' });
     await attachEtaToOrders(freshOrder);
     req.app.get('io')?.emit('orderUpdated', freshOrder);
+    
+    // Notifica que o pagamento caiu e o pedido foi recebido (Novo)
+    notifyCustomer(freshOrder, freshOrder.status);
 
     return res.json(freshOrder);
   } catch (error) {
