@@ -595,7 +595,14 @@
               <div
                 class="p-4 bg-white rounded-2xl border border-neutral-200 shadow-sm inline-block"
               >
-                <img :src="waQrCode" alt="QR Code WhatsApp" class="w-56 h-56" />
+                <qrcode-vue
+                  v-if="waQrCodeString"
+                  :value="waQrCodeString"
+                  :size="224"
+                  level="M"
+                  render-as="svg"
+                />
+                <img v-else-if="waQrCode" :src="waQrCode" alt="QR Code WhatsApp" class="w-56 h-56" />
               </div>
               <button
                 @click="buscarQRCode"
@@ -643,6 +650,7 @@
 
 <script setup>
 import { ref, reactive, watch, computed, onMounted, onUnmounted } from "vue";
+import QrcodeVue from "qrcode.vue";
 import { useToastStore } from "@/stores/toast";
 import { SettingService, WhatsAppService } from "@/services/http";
 import { mascararTelefone, limparTelefone } from "@/utils/formatters";
@@ -667,6 +675,7 @@ const isSaving = ref(false);
 // WhatsApp
 const waStatus = ref("disconnected");
 const waQrCode = ref(null);
+const waQrCodeString = ref("");
 const waLoading = ref(false);
 const waLoadingAction = ref(false);
 const waRawStatus = ref(null);
@@ -718,9 +727,13 @@ const waStatusMeta = computed(() => {
 const applyWaStatus = (data = {}) => {
   waStatus.value = data.status || "disconnected";
   waRawStatus.value = data.rawStatus || null;
-  waLastError.value = data.lastError || "";
-  if (waStatus.value === "open") waQrCode.value = null;
-};
+  waLastError.value = data?.lastError || "";
+
+  if (waStatus.value === "open") {
+    waQrCode.value = null;
+    waQrCodeString.value = "";
+  }
+  };
 
 const getWaPollInterval = () => {
   if (waStatus.value === "connecting") return 5000;
@@ -779,7 +792,10 @@ const recarregarStatus = async () => {
 const buscarQRCode = async () => {
   try {
     const { data } = await WhatsAppService.getQRCode();
-    waQrCode.value = data.base64 || data.qrcode || data.code || null;
+    // Prioriza o código bruto para renderizar com qrcode-vue (padrão P&B)
+    waQrCodeString.value = data.code || data.qrcode || "";
+    // Fallback para a imagem se não houver código
+    waQrCode.value = data.base64 || null;
   } catch {
     toast.error("Erro ao buscar QR Code");
   }
@@ -804,6 +820,7 @@ const desconectarWhatsapp = async () => {
   try {
     await WhatsAppService.disconnect();
     waQrCode.value = null;
+    waQrCodeString.value = "";
     await recarregarStatus();
     toast.success("WhatsApp desconectado com sucesso.");
   } catch {
