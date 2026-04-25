@@ -364,6 +364,7 @@
                   <Package class="w-4 h-4" /> Saiu para Entrega
                 </button>
                 <button
+                  v-if="order.type !== 'Entrega' || order.status === 'em_rota'"
                   @click="updateStatusForOrder(order, order.type === 'Entrega' ? 'entregue' : 'finalizado')"
                   class="w-full py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 transition flex items-center justify-center gap-2"
                 >

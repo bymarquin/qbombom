@@ -631,7 +631,7 @@ exports.updateStatus = async (req, res) => {
       const allowed = new Set(VALID_TRANSITIONS[order.status] || []);
       
       // Regra especial: Apenas pedidos que NÃO são 'Entrega' podem ir de 'pronto' para 'finalizado'
-      if (order.status === 'pronto' && status === 'finalizado') {
+      if (order.status === 'pronto' && (status === 'finalizado' || status === 'entregue')) {
         if (order.type === 'Entrega') {
           return res.status(400).json({ error: 'Pedidos de Entrega devem passar pelo status Em Rota antes de serem finalizados.' });
         }
