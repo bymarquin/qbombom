@@ -68,7 +68,10 @@
           >
             <div class="px-4 py-3 flex items-center justify-between">
               <div>
-                <p class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{{ group.name }}</p>
+                <div class="flex items-center gap-2">
+                  <p class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{{ group.name }}</p>
+                  <span v-if="group.countsTowardLimit === false" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">não conta</span>
+                </div>
                 <p class="text-xs text-neutral-400">{{ group.items?.length || 0 }} opções</p>
               </div>
               <div class="flex items-center gap-1.5">
@@ -145,6 +148,16 @@
                 <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform" :class="groupForm.isSaborGroup ? 'translate-x-4' : ''"></div>
               </div>
               <span class="text-xs text-neutral-600 dark:text-neutral-400">Grupo de sabores</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <div
+                class="relative w-9 h-5 rounded-full transition-colors"
+                :class="groupForm.countsTowardLimit ? 'bg-green-600' : 'bg-neutral-300 dark:bg-neutral-600'"
+                @click="groupForm.countsTowardLimit = !groupForm.countsTowardLimit"
+              >
+                <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform" :class="groupForm.countsTowardLimit ? 'translate-x-4' : ''"></div>
+              </div>
+              <span class="text-xs text-neutral-600 dark:text-neutral-400">Conta no limite de complementos</span>
             </label>
             <div class="flex justify-end gap-2">
               <button type="button" @click="cancelGroupForm" class="px-3 py-1.5 text-xs text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 rounded hover:bg-neutral-200 transition-colors">Cancelar</button>
@@ -337,7 +350,7 @@ const moveGroup = async (groupId, direction) => {
 }
 
 const openNewGroupForm = () => {
-  groupForm.value = { id: null, name: '', minChoices: 0, maxChoices: 5, freeChoices: 0, position: 0, stepperMode: false, isSaborGroup: false }
+  groupForm.value = { id: null, name: '', minChoices: 0, maxChoices: 5, freeChoices: 0, position: 0, stepperMode: false, isSaborGroup: false, countsTowardLimit: true }
   isCreatingGroup.value = true
 }
 
@@ -355,6 +368,7 @@ const editGroup = (group) => {
     position: group.position ?? 0,
     stepperMode: group.stepperMode ?? false,
     isSaborGroup: group.isSaborGroup ?? false,
+    countsTowardLimit: group.countsTowardLimit ?? true,
   }
   isCreatingGroup.value = true
 }

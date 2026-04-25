@@ -15,7 +15,7 @@ exports.getAllGroups = async (req, res) => {
 
 exports.createGroup = async (req, res) => {
   try {
-    const { name, minChoices, maxChoices, freeChoices, position, stepperMode, isSaborGroup } = req.body;
+    const { name, minChoices, maxChoices, freeChoices, position, stepperMode, isSaborGroup, countsTowardLimit } = req.body;
     const group = await AdditionalGroup.create({
       name,
       minChoices: minChoices ?? 0,
@@ -24,6 +24,7 @@ exports.createGroup = async (req, res) => {
       position: position ?? 0,
       stepperMode: stepperMode ?? false,
       isSaborGroup: isSaborGroup ?? false,
+      countsTowardLimit: countsTowardLimit ?? true,
     });
     res.status(201).json(group);
   } catch (error) {
@@ -35,8 +36,8 @@ exports.updateGroup = async (req, res) => {
   try {
     const group = await AdditionalGroup.findByPk(req.params.id);
     if (!group) return res.status(404).json({ error: 'Group not found' });
-    const { name, minChoices, maxChoices, freeChoices, position, stepperMode, isSaborGroup } = req.body;
-    await group.update({ name, minChoices, maxChoices, freeChoices, position, stepperMode, isSaborGroup });
+    const { name, minChoices, maxChoices, freeChoices, position, stepperMode, isSaborGroup, countsTowardLimit } = req.body;
+    await group.update({ name, minChoices, maxChoices, freeChoices, position, stepperMode, isSaborGroup, countsTowardLimit: countsTowardLimit ?? true });
     res.json(group);
   } catch (error) {
     res.status(500).json({ error: 'Failed to update group' });

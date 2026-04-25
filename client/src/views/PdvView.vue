@@ -1270,11 +1270,17 @@ const atingiuMaximo = (grupo) => {
 }
 
 const limiteGlobal = computed(() => tamanhoSelecionado.value?.maxAdditionals ?? null)
-const totalSelecionado = computed(() => adicionaisSelecionados.value.length)
+const grupoById = computed(() => new Map((produtoDetalhado.value?.additionalGroups ?? []).map(g => [g.id, g])))
+const totalSelecionado = computed(() =>
+  adicionaisSelecionados.value.filter(a => grupoById.value.get(a.grupoId)?.countsTowardLimit !== false).length
+)
 const atingiuLimite = computed(() => limiteGlobal.value !== null && totalSelecionado.value >= limiteGlobal.value)
 
-const estaBloqueado = (adicional, grupo) =>
-  !isAdicionalSelecionado(adicional) && (atingiuLimite.value || atingiuMaximo(grupo))
+const estaBloqueado = (adicional, grupo) => {
+  if (isAdicionalSelecionado(adicional)) return false
+  if (atingiuMaximo(grupo)) return true
+  return grupo.countsTowardLimit !== false && atingiuLimite.value
+}
 
 const selecionarUnico = (add, grupo) => {
   adicionaisSelecionados.value = adicionaisSelecionados.value.filter((a) => a.grupoId !== grupo.id)
@@ -1283,8 +1289,11 @@ const selecionarUnico = (add, grupo) => {
 
 watch(tamanhoSelecionado, () => {
   const max = limiteGlobal.value
-  if (max !== null && adicionaisSelecionados.value.length > max) {
-    adicionaisSelecionados.value = adicionaisSelecionados.value.slice(0, max)
+  if (max === null) return
+  const contam = adicionaisSelecionados.value.filter(a => grupoById.value.get(a.grupoId)?.countsTowardLimit !== false)
+  if (contam.length > max) {
+    const naoContam = adicionaisSelecionados.value.filter(a => grupoById.value.get(a.grupoId)?.countsTowardLimit === false)
+    adicionaisSelecionados.value = [...contam.slice(0, max), ...naoContam]
   }
 })
 

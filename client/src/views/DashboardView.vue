@@ -9,7 +9,7 @@
           Visão Geral
         </h1>
         <p class="text-sm text-neutral-500 dark:text-neutral-500 mt-1">
-          Acompanhe o desempenho da sua loja.
+          Acompanhe o desempenho da Qbombom.
         </p>
       </div>
 

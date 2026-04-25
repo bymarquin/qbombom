@@ -426,13 +426,14 @@ const casquinhaTotal = computed(() => {
 const fechar = () => { modelValue.value = false; };
 
 const limiteGlobal = computed(() => tamanhoSelecionado.value?.maxAdditionals ?? null);
+const grupoByIdModal = computed(() => new Map((props.produtoDetalhado?.additionalGroups ?? []).map(g => [g.id, g])));
 const totalSelecionado = computed(() => {
-  const gruposOpcionais = new Set(
+  const gruposQueContam = new Set(
     (props.produtoDetalhado?.additionalGroups ?? [])
-      .filter(g => g.minChoices === 0 && !g.stepperMode)
+      .filter(g => g.minChoices === 0 && !g.stepperMode && g.countsTowardLimit !== false)
       .map(g => g.id)
   );
-  return adicionaisSelecionados.value.filter(a => gruposOpcionais.has(a.grupoId)).length;
+  return adicionaisSelecionados.value.filter(a => gruposQueContam.has(a.grupoId)).length;
 });
 const atingiuLimite = computed(() => limiteGlobal.value !== null && totalSelecionado.value >= limiteGlobal.value);
 
@@ -450,8 +451,11 @@ watch(bolaCount, (novo) => {
 
 watch(tamanhoSelecionado, () => {
   const max = limiteGlobal.value;
-  if (max !== null && adicionaisSelecionados.value.length > max) {
-    adicionaisSelecionados.value = adicionaisSelecionados.value.slice(0, max);
+  if (max === null) return;
+  const contam = adicionaisSelecionados.value.filter(a => grupoByIdModal.value.get(a.grupoId)?.countsTowardLimit !== false);
+  if (contam.length > max) {
+    const naoContam = adicionaisSelecionados.value.filter(a => grupoByIdModal.value.get(a.grupoId)?.countsTowardLimit === false);
+    adicionaisSelecionados.value = [...contam.slice(0, max), ...naoContam];
   }
 });
 
@@ -471,8 +475,11 @@ const isSaborGroup = (grupo) => !!grupo.isSaborGroup;
 const maxEfetivoGrupo = (grupo) => isSaborGroup(grupo) ? bolaCount.value : grupo.maxChoices;
 const minEfetivoGrupo = (grupo) => isSaborGroup(grupo) ? bolaCount.value : grupo.minChoices;
 
-const estaBloqueado = (adicional, grupo) =>
-  !isAdicionalSelecionado(adicional) && (atingiuLimite.value || qtdSelecionadaNoGrupo(grupo.id) >= maxEfetivoGrupo(grupo));
+const estaBloqueado = (adicional, grupo) => {
+  if (isAdicionalSelecionado(adicional)) return false;
+  if (qtdSelecionadaNoGrupo(grupo.id) >= maxEfetivoGrupo(grupo)) return true;
+  return grupo.countsTowardLimit !== false && atingiuLimite.value;
+};
 
 const selecionarUnico = (add, grupo) => {
   adicionaisSelecionados.value = adicionaisSelecionados.value.filter((a) => a.grupoId !== grupo.id);

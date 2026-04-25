@@ -128,7 +128,7 @@
 
                 <template v-else-if="pixCurrentStep === 2">
                   <p class="text-sm text-neutral-700 dark:text-neutral-300 mb-4 text-center">
-                    Envie uma foto ou PDF do comprovante para a loja conferir seu pagamento.
+                    Envie uma foto ou PDF do comprovante para a Qbombom conferir seu pagamento.
                   </p>
 
                   <label
@@ -136,7 +136,7 @@
                   >
                     <CheckCircle class="w-7 h-7 text-red-600 dark:text-red-400" />
                     <span class="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                      {{ uploadingReceipt ? 'Enviando comprovante...' : 'Escolher comprovante' }}
+                      {{ uploadingReceipt ? 'Enviando comprovante...' : 'Clique aqui para selecionar o comprovante' }}
                     </span>
                     <span class="text-xs text-neutral-500 dark:text-neutral-400">
                       Foto, imagem ou PDF
@@ -186,7 +186,7 @@
                       Comprovante enviado
                     </h4>
                     <p class="text-sm text-neutral-600 dark:text-neutral-400">
-                      A loja está conferindo seu pagamento. Assim que confirmar, seu pedido vai para preparo.
+                      A Qbombom está conferindo seu pagamento. Assim que confirmar, seu pedido vai para preparo.
                     </p>
                   </div>
                 </template>

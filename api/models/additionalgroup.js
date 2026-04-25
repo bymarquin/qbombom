@@ -46,6 +46,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
+    countsTowardLimit: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+    },
     position: {
       type: DataTypes.INTEGER,
       defaultValue: 0,
