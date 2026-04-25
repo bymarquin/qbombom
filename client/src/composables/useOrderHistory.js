@@ -1,8 +1,11 @@
 import { ref } from 'vue'
 
 const STORAGE_KEY = 'qbombom_historico'
+const ACTIVE_ORDERS_KEY = 'qbombom_pedidos_ativos'
 const CONSENT_KEY = 'qbombom_cookie_consent'
 const MAX_ORDERS = 3
+const MAX_ACTIVE_ORDERS = 5
+const FINAL_STATUSES = new Set(['cancelado', 'finalizado'])
 
 export function useOrderHistory() {
   const consentimento = ref(localStorage.getItem(CONSENT_KEY))
@@ -60,5 +63,72 @@ export function useOrderHistory() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(historico.slice(0, MAX_ORDERS)))
   }
 
-  return { consentimento, aceitarCookies, recusarCookies, getHistorico, salvarPedido }
+  const getPedidosAtivos = () => {
+    try {
+      const pedidos = JSON.parse(localStorage.getItem(ACTIVE_ORDERS_KEY) || '[]')
+      return Array.isArray(pedidos) ? pedidos : []
+    } catch {
+      return []
+    }
+  }
+
+  const salvarPedidoAtivo = (pedido) => {
+    if (consentimento.value !== 'aceito') return
+    if (!pedido?.trackingCode) return
+    if (FINAL_STATUSES.has(pedido.status)) {
+      removerPedidoAtivo(pedido.trackingCode)
+      return
+    }
+
+    const pedidos = getPedidosAtivos().filter((item) => item.trackingCode !== pedido.trackingCode)
+    pedidos.unshift({
+      id: pedido.id,
+      trackingCode: pedido.trackingCode,
+      status: pedido.status,
+      paymentStatus: pedido.paymentStatus,
+      total: pedido.total,
+      date: pedido.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+    localStorage.setItem(ACTIVE_ORDERS_KEY, JSON.stringify(pedidos.slice(0, MAX_ACTIVE_ORDERS)))
+  }
+
+  const atualizarPedidoAtivo = (pedido) => {
+    if (consentimento.value !== 'aceito') return
+    if (!pedido?.trackingCode) return
+    if (FINAL_STATUSES.has(pedido.status)) {
+      removerPedidoAtivo(pedido.trackingCode)
+      return
+    }
+
+    const pedidos = getPedidosAtivos()
+    const index = pedidos.findIndex((item) => item.trackingCode === pedido.trackingCode)
+    if (index === -1) return
+
+    pedidos[index] = {
+      ...pedidos[index],
+      status: pedido.status ?? pedidos[index].status,
+      paymentStatus: pedido.paymentStatus ?? pedidos[index].paymentStatus,
+      updatedAt: new Date().toISOString(),
+    }
+    localStorage.setItem(ACTIVE_ORDERS_KEY, JSON.stringify(pedidos))
+  }
+
+  const removerPedidoAtivo = (trackingCode) => {
+    if (!trackingCode) return
+    const pedidos = getPedidosAtivos().filter((item) => item.trackingCode !== trackingCode)
+    localStorage.setItem(ACTIVE_ORDERS_KEY, JSON.stringify(pedidos))
+  }
+
+  return {
+    consentimento,
+    aceitarCookies,
+    recusarCookies,
+    getHistorico,
+    salvarPedido,
+    getPedidosAtivos,
+    salvarPedidoAtivo,
+    atualizarPedidoAtivo,
+    removerPedidoAtivo,
+  }
 }

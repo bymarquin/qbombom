@@ -378,7 +378,17 @@ const toggleDark = useToggle(isDark);
 
 const toast = useToastStore();
 
-const { consentimento, aceitarCookies, recusarCookies, getHistorico, salvarPedido } = useOrderHistory()
+const {
+  consentimento,
+  aceitarCookies,
+  recusarCookies,
+  getHistorico,
+  salvarPedido,
+  getPedidosAtivos,
+  salvarPedidoAtivo,
+  atualizarPedidoAtivo,
+  removerPedidoAtivo,
+} = useOrderHistory()
 const mesaDoQr = ref(null)
 const historico = ref(getHistorico())
 
@@ -548,12 +558,15 @@ const carregarRastreio = async () => {
   try {
     const { data } = await OrderService.trackPublicOrder(rastreioAtual.value);
     if (data.status === 'cancelado' || data.status === 'finalizado') {
+      removerPedidoAtivo(data.trackingCode || rastreioAtual.value);
       limparRastreio();
       return;
     }
+    salvarPedidoAtivo(data);
     pedidoRastreado.value = data;
   } catch (error) {
     if (error?.response?.status === 404) {
+      removerPedidoAtivo(rastreioAtual.value);
       limparRastreio();
     }
   }
@@ -651,6 +664,13 @@ onMounted(async () => {
     if (trackingAtivo) {
       rastreioAtual.value = trackingAtivo;
       carregarRastreio();
+    } else {
+      const [pedidoAtivo] = getPedidosAtivos();
+      if (pedidoAtivo?.trackingCode) {
+        localStorage.setItem("qbombom_tracking", pedidoAtivo.trackingCode);
+        rastreioAtual.value = pedidoAtivo.trackingCode;
+        carregarRastreio();
+      }
     }
   }
 
@@ -668,6 +688,7 @@ onMounted(async () => {
       pedidoRastreado.value.status = updatedOrder.status;
       pedidoRastreado.value.paymentStatus = updatedOrder.paymentStatus;
       pedidoRastreado.value.receiptUrl = toMediaProxyUrl(updatedOrder.receiptUrl);
+      atualizarPedidoAtivo(updatedOrder);
 
       // Notificações Push nativas e Toasts de avanço só disparam se houve mudança de status real
       if (statusMudou) {
@@ -683,12 +704,14 @@ onMounted(async () => {
         } else if (updatedOrder.status === "cancelado") {
           toast.info("Seu pedido foi cancelado.");
           showNotification("Pedido Cancelado", { body: "Seu pedido foi cancelado com sucesso." });
+          removerPedidoAtivo(updatedOrder.trackingCode);
           limparRastreio();
         } else if (updatedOrder.status === "entregue") {
           toast.success("Pedido entregue! Bom apetite 😋");
           showNotification("Pedido Entregue! 😋", { body: "Bom apetite! Agradecemos a preferência." });
         } else if (updatedOrder.status === "finalizado") {
           showNotification("Pedido Finalizado! 🎉", { body: "Agradecemos a preferência. Até a próxima!" });
+          removerPedidoAtivo(updatedOrder.trackingCode);
           limparRastreio();
         }
       }
@@ -899,6 +922,7 @@ const enviarPedido = async () => {
     const trackingCode = response.data.trackingCode;
     if (trackingCode) {
       localStorage.setItem("qbombom_tracking", trackingCode);
+      salvarPedidoAtivo(response.data);
       rastreioAtual.value = trackingCode;
       await carregarRastreio();
     }
