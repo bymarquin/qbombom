@@ -126,7 +126,6 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)]
 
-const firstWord = (name) => (name || '').trim().split(/\s+/)[0]
 
 const randomDelay = () => {
   const min = Math.max(0, JITTER_MIN_MS)
@@ -247,10 +246,12 @@ exports.sendStatusMessage = async (phone, status, orderNumber, trackingUrl = nul
   }
   const messageBody = pickRandom(Array.isArray(pool) ? pool : [pool])
 
-  const name = firstWord(customerName)
-  const salutation = name ? `Olá, ${name}!` : null
+  const orderKey = String(orderId || orderNumber)
+  const isFirstMessage = ![...sentStatusByOrder.keys()].some((k) => k.startsWith(`${orderKey}:`))
+  const name = (customerName || '').trim().split(/\s+/)[0]
+  const header = isFirstMessage && name ? `Olá, ${name}!\n` : ''
 
-  let text = `*Qbombom Sorvetes* — Pedido #${orderNumber}\n\n${salutation ? `${salutation}\n` : ''}${messageBody}`
+  let text = `*Qbombom Sorvetes* — Pedido #${orderNumber}\n\n${header}${messageBody}`
   if (trackingUrl) text += `\n${trackingUrl}`
 
   const statusKey = `${orderId || orderNumber}:${status}`
