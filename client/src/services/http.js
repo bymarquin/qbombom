@@ -24,6 +24,15 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 )
 
+// Fila para evitar múltiplos refreshes simultâneos (race condition que desloga o usuário)
+let isRefreshing = false
+let refreshQueue = []
+
+const processRefreshQueue = (error, token = null) => {
+  refreshQueue.forEach((cb) => (error ? cb.reject(error) : cb.resolve(token)))
+  refreshQueue = []
+}
+
 // Interceptor de Resposta (Volta)
 api.interceptors.response.use(
   (response) => {
@@ -66,10 +75,24 @@ api.interceptors.response.use(
         return Promise.reject(error)
       }
 
+      // Se um refresh já está em andamento, enfileira esta requisição para retentar depois
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          refreshQueue.push({ resolve, reject })
+        })
+          .then((token) => {
+            originalRequest._retry = true
+            originalRequest.headers.Authorization = `Bearer ${token}`
+            return api(originalRequest)
+          })
+          .catch((err) => Promise.reject(err))
+      }
+
       // Se não for rota de login/refresh e for a primeira tentativa de erro (não tentamos _retry),
       // dispara o fluxo de Silent Refresh Token
       if (!originalRequest._retry) {
         originalRequest._retry = true
+        isRefreshing = true
 
         try {
           const refreshToken = localStorage.getItem('refreshToken')
@@ -84,13 +107,19 @@ api.interceptors.response.use(
           localStorage.setItem('accessToken', data.accessToken)
           localStorage.setItem('refreshToken', data.refreshToken)
 
+          processRefreshQueue(null, data.accessToken)
+
           // Atualiza o cabeçalho da requisição original com o novo token e refaz
           originalRequest.headers.Authorization = `Bearer ${data.accessToken}`
           return api(originalRequest)
         } catch (refreshError) {
+          processRefreshQueue(refreshError)
+
           // Falha catastrófica no refresh (token revogado ou expirado), limpa a casa e desloga
           localStorage.removeItem('accessToken')
           localStorage.removeItem('refreshToken')
+          localStorage.removeItem('userRole')
+          localStorage.removeItem('userName')
 
           if (toastStore) {
             toastStore.error('Sua sessão expirou. Faça login novamente.')
@@ -98,6 +127,8 @@ api.interceptors.response.use(
 
           window.location.href = '/login'
           return Promise.reject(refreshError)
+        } finally {
+          isRefreshing = false
         }
       }
     }
@@ -289,10 +320,11 @@ export const OrderService = {
   confirmPix(id) {
     return api.patch(`/orders/${id}/confirm-pix`)
   },
-  updateOrderStatus(id, status, paymentStatus) {
+  updateOrderStatus(id, status, paymentStatus, paymentMethod) {
     const payload = {};
     if (status) payload.status = status;
     if (paymentStatus) payload.paymentStatus = paymentStatus;
+    if (paymentMethod) payload.paymentMethod = paymentMethod;
 
     return api.patch(`/orders/${id}/status`, payload)
   },
