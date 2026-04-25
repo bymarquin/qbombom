@@ -306,12 +306,6 @@
                 >
                   <CheckCircle2 class="w-4 h-4" /> Marcar como Pronto
                 </button>
-                <button
-                  @click="requestCancel(order)"
-                  class="w-full py-1.5 rounded-lg text-xs font-semibold text-neutral-500 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700 hover:border-red-300 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                >
-                  Cancelar pedido
-                </button>
               </div>
             </div>
           </div>
@@ -387,12 +381,6 @@
                   class="w-full py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 transition flex items-center justify-center gap-2"
                 >
                   <Check class="w-4 h-4" /> Finalizar Pedido
-                </button>
-                <button
-                  @click="requestCancel(order)"
-                  class="w-full py-1.5 rounded-lg text-xs font-semibold text-neutral-500 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700 hover:border-red-300 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                >
-                  Cancelar pedido
                 </button>
               </div>
             </div>

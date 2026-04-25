@@ -695,9 +695,9 @@ exports.cancelOrder = async (req, res) => {
       return res.json(order);
     }
 
-    if (['finalizado', 'entregue'].includes(order.status)) {
+    if (['em_preparo', 'pronto', 'em_rota', 'finalizado', 'entregue'].includes(order.status)) {
       await transaction.rollback();
-      return res.status(400).json({ error: 'Não é possível cancelar um pedido já finalizado.' });
+      return res.status(409).json({ error: 'Pedido em preparo ou posterior não pode ser cancelado.' });
     }
 
     const items = await OrderItem.findAll({
