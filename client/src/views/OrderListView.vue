@@ -96,7 +96,7 @@
                 }}</span>
               </div>
               <h3 class="font-bold text-neutral-900 dark:text-neutral-100 truncate">
-                {{ order.customerName || "Cliente Balcão" }}
+                {{ order.customerName || "Não informado" }}
               </h3>
               <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-3">{{ order.type }}</p>
 
@@ -182,7 +182,7 @@
                 }}</span>
               </div>
               <h3 class="font-bold text-neutral-900 dark:text-neutral-100 truncate">
-                {{ order.customerName || "Cliente Balcão" }}
+                {{ order.customerName || "Não informado" }}
               </h3>
               <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-3">{{ order.type }}</p>
 
@@ -257,7 +257,7 @@
                 }}</span>
               </div>
               <h3 class="font-bold text-neutral-900 dark:text-neutral-100 truncate">
-                {{ order.customerName || "Cliente Balcão" }}
+                {{ order.customerName || "Não informado" }}
               </h3>
               <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-3">{{ order.type }}</p>
 
@@ -340,7 +340,7 @@
                 }}</span>
               </div>
               <h3 class="font-bold text-neutral-900 dark:text-neutral-100 truncate">
-                {{ order.customerName || "Cliente Balcão" }}
+                {{ order.customerName || "Não informado" }}
               </h3>
               <p
                 class="text-sm font-semibold mb-3"

@@ -1082,7 +1082,7 @@ const finalizarPagarDepois = async () => {
   try {
     const payload = {
       type: tipoConsumo.value,
-      customerName: nomeCliente.value,
+      customerName: nomeCliente.value || 'Não informado',
       customerPhone: tipoConsumo.value === 'Entrega' ? limparTelefone(telefoneCliente.value) : undefined,
       deliveryAddress: tipoConsumo.value === 'Entrega' ? enderecoEntrega.value : undefined,
       paymentStatus: 'pendente',
@@ -1124,7 +1124,7 @@ const finalizarPedido = async () => {
   try {
     const payload = {
       type: tipoConsumo.value,
-      customerName: nomeCliente.value,
+      customerName: nomeCliente.value || 'Não informado',
       customerPhone: tipoConsumo.value === 'Entrega' ? limparTelefone(telefoneCliente.value) : undefined,
       deliveryAddress: tipoConsumo.value === 'Entrega' ? enderecoEntrega.value : undefined,
       paymentStatus: 'pago',

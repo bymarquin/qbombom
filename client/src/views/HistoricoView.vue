@@ -78,7 +78,7 @@
                 #{{ order.trackingCode || order.id.slice(0, 8).toUpperCase() }}
               </td>
               <td class="px-5 py-3 text-neutral-800 dark:text-neutral-200 font-medium">
-                {{ order.customerName || 'Cliente Balcão' }}
+                {{ order.customerName || 'Não informado' }}
               </td>
               <td class="px-5 py-3 text-neutral-500 dark:text-neutral-400 hidden sm:table-cell capitalize">
                 {{ order.type }}
