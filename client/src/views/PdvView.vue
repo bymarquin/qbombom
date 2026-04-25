@@ -2,89 +2,40 @@
   <div
     class="h-full flex flex-col bg-neutral-50 dark:bg-neutral-950 overflow-hidden font-sans relative -m-8"
   >
-    <!-- Topbar do PDV -->
-    <header
-      class="h-16 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between px-6 shrink-0"
-    >
-      <div class="flex items-center gap-4">
-        <div class="flex items-center justify-center">
-          <svg
-            width="40"
-            height="40"
-            viewBox="0 0 32 32"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <rect width="32" height="32" rx="10" class="fill-red-600" />
-            <text
-              x="16"
-              y="22"
-              font-size="18"
-              font-weight="900"
-              fill="white"
-              text-anchor="middle"
-              font-family="system-ui, sans-serif"
-            >
-              Q
-            </text>
-          </svg>
-        </div>
-        <div>
-          <h1
-            class="text-xl font-bold text-neutral-900 dark:text-neutral-100 leading-none tracking-tight"
-          >
-            Frente de Caixa (PDV)
-          </h1>
-          <p class="text-xs text-neutral-500 dark:text-neutral-500 mt-1">
-            Caixa Aberto • Operador: {{ operadorNome }}
-          </p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3">
-        <div class="relative">
-          <Search class="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
-          <input
-            ref="inputBusca"
-            type="text"
-            v-model="termoBusca"
-            placeholder="Buscar produto..."
-            class="pl-10 pr-16 py-2.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-all duration-200 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 placeholder-neutral-400 w-64"
-          />
-          <kbd class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono bg-neutral-100 dark:bg-neutral-800 text-neutral-400 px-1.5 py-0.5 rounded border border-neutral-200 dark:border-neutral-700 pointer-events-none">F2</kbd>
-        </div>
-
-        <button
-          @click="fazerLogout"
-          class="flex items-center gap-2 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-red-50 hover:text-red-700 text-neutral-700 dark:text-neutral-300 rounded-lg text-sm font-medium transition-colors"
-        >
-          <LogOut class="w-4 h-4" />
-          Sair do PDV
-        </button>
-      </div>
-    </header>
-
     <!-- Área Principal -->
-    <main class="flex-1 flex overflow-hidden">
+    <main class="h-full flex overflow-hidden">
       <!-- Lado Esquerdo: Menu e Produtos -->
       <section class="flex-1 flex flex-col bg-white dark:bg-neutral-900 overflow-hidden">
-        <!-- Categorias (Abas) -->
-        <div
-          class="flex overflow-x-auto gap-2 p-4 border-b border-neutral-100 dark:border-neutral-800/50 shrink-0 no-scrollbar"
-        >
-          <button
-            v-for="categoria in categorias"
-            :key="categoria.id"
-            @click="categoriaAtiva = categoria.id"
-            class="px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors"
-            :class="
-              categoriaAtiva === categoria.id
-                ? 'bg-red-600 text-white shadow-sm dark:shadow-none'
-                : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700'
-            "
-          >
-            {{ categoria.name }}
-          </button>
+        <!-- Busca + Categorias -->
+        <div class="shrink-0 border-b border-neutral-100 dark:border-neutral-800/50">
+          <div class="px-4 pt-3 pb-2">
+            <div class="relative">
+              <Search class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+              <input
+                ref="inputBusca"
+                type="text"
+                v-model="termoBusca"
+                placeholder="Buscar produto..."
+                class="w-full pl-10 pr-14 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 placeholder-neutral-400"
+              />
+              <kbd class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono bg-neutral-100 dark:bg-neutral-800 text-neutral-400 px-1.5 py-0.5 rounded border border-neutral-200 dark:border-neutral-700 pointer-events-none">F2</kbd>
+            </div>
+          </div>
+          <div class="flex overflow-x-auto gap-2 px-4 pb-3 no-scrollbar">
+            <button
+              v-for="categoria in categorias"
+              :key="categoria.id"
+              @click="categoriaAtiva = categoria.id"
+              class="px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors"
+              :class="
+                categoriaAtiva === categoria.id
+                  ? 'bg-red-600 text-white shadow-sm dark:shadow-none'
+                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700'
+              "
+            >
+              {{ categoria.name }}
+            </button>
+          </div>
         </div>
 
         <!-- Grade de Produtos -->
@@ -857,7 +808,6 @@ import {
   XCircle,
   Plus,
   Coffee,
-  LogOut,
   ArrowRightCircle,
   PlusCircle,
   MessageSquare,
@@ -1020,9 +970,6 @@ onMounted(() => {
   window.addEventListener('keydown', atalhosTeclado)
 })
 
-const fazerLogout = () => {
-  AuthService.logout()
-}
 
 // Produtos da Categoria Ativa
 const produtosFiltrados = computed(() => {
