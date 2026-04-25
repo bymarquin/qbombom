@@ -1,6 +1,6 @@
 <template>
   <div
-    class="h-full flex flex-col bg-neutral-50 dark:bg-neutral-950 overflow-hidden font-sans relative -m-8"
+    class="h-[calc(100%+4rem)] flex flex-col bg-neutral-50 dark:bg-neutral-950 overflow-hidden font-sans relative -m-8"
   >
     <!-- Área Principal -->
     <main class="h-full flex overflow-hidden">
