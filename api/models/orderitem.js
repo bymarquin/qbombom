@@ -59,6 +59,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false
     },
+    variationName: DataTypes.STRING,
     observation: DataTypes.TEXT,
     selectedAdditionals: {
       type: DataTypes.JSONB,
