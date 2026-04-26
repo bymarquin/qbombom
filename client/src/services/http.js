@@ -115,17 +115,28 @@ api.interceptors.response.use(
         } catch (refreshError) {
           processRefreshQueue(refreshError)
 
-          // Falha catastrófica no refresh (token revogado ou expirado), limpa a casa e desloga
-          localStorage.removeItem('accessToken')
-          localStorage.removeItem('refreshToken')
-          localStorage.removeItem('userRole')
-          localStorage.removeItem('userName')
-
-          if (toastStore) {
-            toastStore.error('Sua sessão expirou. Faça login novamente.')
+          const status = refreshError.response?.status
+          
+          // Se o servidor disser que o Refresh Token é inválido ou expirou (401/403),
+          // não há como recuperar a sessão sem um novo login manual.
+          if (status === 401 || status === 403) {
+            localStorage.removeItem('accessToken')
+            localStorage.removeItem('refreshToken')
+            localStorage.removeItem('userRole')
+            localStorage.removeItem('userName')
+            
+            if (toastStore) {
+              toastStore.error('Sua sessão expirou ou foi revogada. Faça login novamente.')
+            }
+            window.location.href = '/login'
+          } else {
+            // Outros erros (ex: rede fora do ar), apenas avisamos mas mantemos o refreshToken salvo
+            localStorage.removeItem('accessToken')
+            if (toastStore) {
+              toastStore.error('Conexão instável. Verifique sua internet.')
+            }
           }
 
-          window.location.href = '/login'
           return Promise.reject(refreshError)
         } finally {
           isRefreshing = false
@@ -199,7 +210,9 @@ export const AuthService = {
     return routes[role] || 'pdv' // Fallback seguro
   },
   isAuthenticated() {
-    return !!localStorage.getItem('accessToken')
+    // Consideramos autenticado se houver pelo menos o refreshToken, 
+    // pois o interceptor cuidará de renovar o accessToken se necessário.
+    return !!localStorage.getItem('refreshToken')
   },
 }
 

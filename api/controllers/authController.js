@@ -7,8 +7,8 @@ const { SECRET, REFRESH_SECRET } = require('../config/jwt');
 const { sanitizeUser } = require('../utils/sanitize');
 
 function generateTokens(user) {
-  const accessToken = jwt.sign({ id: user.id, role: user.role }, SECRET, { expiresIn: '1h' });
-  const refreshToken = jwt.sign({ id: user.id }, REFRESH_SECRET, { expiresIn: '7d' });
+  const accessToken = jwt.sign({ id: user.id, role: user.role }, SECRET, { expiresIn: '24h' });
+  const refreshToken = jwt.sign({ id: user.id }, REFRESH_SECRET, { expiresIn: '365d' });
   return { accessToken, refreshToken };
 }
 
@@ -169,6 +169,7 @@ exports.resetPassword = async (req, res) => {
     }
 
     user.password = password;
+    user.refreshToken = null; // Invalida sessões antigas por segurança
     await user.save();
 
     res.json({ message: 'Password has been reset successfully' });
