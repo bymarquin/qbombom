@@ -396,7 +396,12 @@ const toast = useToastStore();
 const orders = shallowRef([]);
 const loadingData = ref(false);
 
-const toDateInput = (d) => d.toISOString().slice(0, 10)
+const toDateInput = (d) => {
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 const hoje = toDateInput(new Date())
 const dateFrom = ref(hoje)
 const dateTo = ref(hoje)

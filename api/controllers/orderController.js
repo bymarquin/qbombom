@@ -324,10 +324,9 @@ exports.index = async (req, res) => {
 
     const { dateFrom, dateTo } = req.query
     if (dateFrom || dateTo) {
-      const from = dateFrom ? new Date(dateFrom) : new Date('2000-01-01')
-      const to = dateTo ? new Date(dateTo) : new Date()
-      from.setHours(0, 0, 0, 0)
-      to.setHours(23, 59, 59, 999)
+      // Interpreta as datas no fuso de Brasília (UTC-3) para não cortar pedidos da virada de meia-noite UTC
+      const from = dateFrom ? new Date(`${dateFrom}T00:00:00.000-03:00`) : new Date('2000-01-01')
+      const to = dateTo ? new Date(`${dateTo}T23:59:59.999-03:00`) : new Date()
       where.createdAt = { [Op.between]: [from, to] }
     }
 
