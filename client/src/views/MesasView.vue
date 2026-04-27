@@ -72,7 +72,7 @@
           class="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 flex flex-col items-center gap-3 shadow-sm"
         >
           <p class="text-sm font-bold text-neutral-800 dark:text-neutral-200">
-            Mesa {{ String(n).padStart(2, '0') }}
+            Cardápio
           </p>
           <div class="bg-white p-2 rounded-xl border border-neutral-200">
             <img
