@@ -138,7 +138,7 @@ async function disparaImpressao(itens) {
 
 function imprimir() {
   const mesaItems = Object.entries(qrUrls.value).map(([n, src]) => ({
-    label: `Mesa ${String(Number(n)).padStart(2, '0')}`,
+    label: 'Cardápio',
     src,
   }))
   disparaImpressao([{ label: 'Balcão', src: balcaoQrUrl.value }, ...mesaItems])
@@ -150,7 +150,7 @@ function imprimirBalcao() {
 
 function imprimirMesa(n) {
   const src = qrUrls.value[n]
-  if (src) disparaImpressao([{ label: `Mesa ${String(n).padStart(2, '0')}`, src }])
+  if (src) disparaImpressao([{ label: 'Cardápio', src }])
 }
 </script>
 
