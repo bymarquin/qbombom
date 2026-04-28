@@ -56,6 +56,7 @@ module.exports = (sequelize, DataTypes) => {
     observation: DataTypes.TEXT,
     customerId: DataTypes.UUID,
     customerPhone: DataTypes.STRING,
+    tableNumber: DataTypes.STRING,
     deliveryAddress: DataTypes.TEXT,
     deliveryLatitude: DataTypes.DECIMAL(10, 7),
     deliveryLongitude: DataTypes.DECIMAL(10, 7),

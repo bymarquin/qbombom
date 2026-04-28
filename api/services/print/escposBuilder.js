@@ -90,6 +90,9 @@ function buildOrderBuffer(order, storeConfig = {}) {
         : sanitize(order.type || '').toUpperCase();
 
   const trackCode = order.trackingCode || (order.id || '').slice(0, 8);
+  const tableLabel = order.type === 'Mesa' && order.tableNumber
+    ? String(order.tableNumber).trim()
+    : '';
   const createdAt = new Date(order.createdAt || new Date()).toLocaleString('pt-BR', {
     timeZone: 'America/Fortaleza',
   });
@@ -113,6 +116,9 @@ function buildOrderBuffer(order, storeConfig = {}) {
   parts.push(CMD.DOUBLE_OFF, CMD.BOLD_OFF);
   parts.push(CMD.BOLD_ON);
   parts.push(center(typeLabel, cols));
+  if (tableLabel) {
+    parts.push(center(tableLabel.toLowerCase().startsWith('mesa') ? tableLabel.toUpperCase() : `MESA ${tableLabel}`, cols));
+  }
   parts.push(CMD.BOLD_OFF);
   parts.push(center(createdAt, cols));
   parts.push(divider(cols));

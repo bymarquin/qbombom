@@ -364,12 +364,15 @@ exports.create = async (req, res) => {
 
   try {
     const {
-      type, customerName, customerPhone, deliveryAddress,
+      type, customerName, customerPhone, tableNumber, deliveryAddress,
       deliveryLatitude, deliveryLongitude, deliveryAccuracyMeters, deliveryLocationCapturedAt,
       paymentStatus, paymentMethod, subtotal, discount, total, observation, items, whatsappOptIn
     } = req.body;
 
     const orderType = type || 'Mesa';
+    const resolvedTableNumber = orderType === 'Mesa' && tableNumber
+      ? String(tableNumber).trim()
+      : null;
     const hasDeliveryLatitude = deliveryLatitude != null && String(deliveryLatitude).trim() !== '';
     const hasDeliveryLongitude = deliveryLongitude != null && String(deliveryLongitude).trim() !== '';
 
@@ -446,6 +449,7 @@ exports.create = async (req, res) => {
       customerName,
       customerId,
       customerPhone,
+      tableNumber: resolvedTableNumber,
       deliveryAddress: resolvedDeliveryAddress,
       deliveryLatitude: geoLat,
       deliveryLongitude: geoLng,

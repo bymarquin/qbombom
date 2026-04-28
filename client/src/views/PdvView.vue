@@ -122,7 +122,7 @@
                 class="w-full pl-10 pr-3.5 py-2.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-all duration-200 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 placeholder-neutral-400"
               />
             </div>
-            
+
             <div v-if="tipoConsumo === 'Entrega'" class="flex flex-col gap-2 animate-in fade-in slide-in-from-top-1">
               <div class="relative">
                 <Phone class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
@@ -180,6 +180,16 @@
               >
                 Delivery
               </button>
+            </div>
+
+            <div v-if="tipoConsumo === 'Mesa'" class="relative animate-in fade-in slide-in-from-top-1">
+              <Hash class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+              <input
+                v-model="numeroMesa"
+                type="text"
+                placeholder="Nº da mesa (opcional)"
+                class="w-full pl-10 pr-3.5 py-2.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-all duration-200 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 placeholder-neutral-400"
+              />
             </div>
           </div>
         </div>
@@ -812,6 +822,7 @@ import {
   PlusCircle,
   MessageSquare,
   Check,
+  Hash,
   Phone,
   MapPin,
   Clock,
@@ -924,6 +935,7 @@ const operadorNome = ref('Caixa')
 const termoBusca = ref('')
 const tipoConsumo = ref('Mesa')
 const nomeCliente = ref('')
+const numeroMesa = ref('')
 const telefoneCliente = ref('')
 const enderecoEntrega = ref('')
 
@@ -1011,6 +1023,7 @@ const removerItem = (index) => {
 const limparPedido = () => {
   carrinho.value = []
   nomeCliente.value = ''
+  numeroMesa.value = ''
   telefoneCliente.value = ''
   enderecoEntrega.value = ''
 }
@@ -1084,6 +1097,7 @@ const finalizarPagarDepois = async () => {
       type: tipoConsumo.value,
       customerName: nomeCliente.value || 'Não informado',
       customerPhone: tipoConsumo.value === 'Entrega' ? limparTelefone(telefoneCliente.value) : undefined,
+      tableNumber: tipoConsumo.value === 'Mesa' ? numeroMesa.value.trim() || undefined : undefined,
       deliveryAddress: tipoConsumo.value === 'Entrega' ? enderecoEntrega.value : undefined,
       paymentStatus: 'pendente',
       paymentMethod: 'Pagar Depois',
@@ -1106,6 +1120,7 @@ const finalizarPagarDepois = async () => {
     toast.success('Pedido enviado para a cozinha. Pagamento pendente.')
     carrinho.value = []
     nomeCliente.value = ''
+    numeroMesa.value = ''
     telefoneCliente.value = ''
     enderecoEntrega.value = ''
     fecharModalPagamento()
@@ -1126,6 +1141,7 @@ const finalizarPedido = async () => {
       type: tipoConsumo.value,
       customerName: nomeCliente.value || 'Não informado',
       customerPhone: tipoConsumo.value === 'Entrega' ? limparTelefone(telefoneCliente.value) : undefined,
+      tableNumber: tipoConsumo.value === 'Mesa' ? numeroMesa.value.trim() || undefined : undefined,
       deliveryAddress: tipoConsumo.value === 'Entrega' ? enderecoEntrega.value : undefined,
       paymentStatus: 'pago',
       paymentMethod: metodoPagamentoSelecionado.value,
@@ -1149,6 +1165,7 @@ const finalizarPedido = async () => {
     toast.success('Pedido cobrado e enviado para a cozinha com sucesso!')
     carrinho.value = []
     nomeCliente.value = ''
+    numeroMesa.value = ''
     telefoneCliente.value = ''
     enderecoEntrega.value = ''
     aguardandoPix.value = false

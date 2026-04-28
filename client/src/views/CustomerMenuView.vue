@@ -891,6 +891,7 @@ const enviarPedido = async () => {
       type: checkout.value.tipo,
       customerName: finalCustomerName,
       customerPhone: limparTelefone(checkout.value.telefone),
+      tableNumber: checkout.value.tipo === "Mesa" ? checkout.value.mesa?.trim() || undefined : undefined,
       whatsappOptIn: Boolean(checkout.value.whatsappOptIn),
       deliveryAddress: endEntrega || undefined,
       ...(geo?.latitude != null && geo?.longitude != null ? {
@@ -963,7 +964,7 @@ const abrirAcompanhamento = () => {
 const fecharSucesso = () => {
   telaSucesso.value = false;
   checkout.value.nome = "";
-  checkout.value.mesa = "";
+  checkout.value.mesa = mesaDoQr.value || "";
 };
 </script>
 

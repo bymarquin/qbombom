@@ -79,9 +79,17 @@ const buildTypeLabel = (type) => {
   return (type || '').toUpperCase();
 };
 
+const buildTableLabel = (order) => {
+  if (order.type !== 'Mesa' || !order.tableNumber) return '';
+  const tableNumber = String(order.tableNumber).trim();
+  if (!tableNumber) return '';
+  return tableNumber.toLowerCase().startsWith('mesa') ? tableNumber.toUpperCase() : `MESA ${tableNumber}`;
+};
+
 const buildReceiptHtml = (order, paperSize) => {
   const itemsHtml = buildItemsHtml(order.items);
   const typeLabel = buildTypeLabel(order.type);
+  const tableLabel = buildTableLabel(order);
   const tracking = order.trackingCode || (order.id ? order.id.slice(0, 8) : '0000');
 
   return `
@@ -306,6 +314,7 @@ const buildReceiptHtml = (order, paperSize) => {
 
         <p class="order-number">#${tracking}</p>
         <div class="type-badge">${typeLabel}</div>
+        ${tableLabel ? `<div class="type-badge">${esc(tableLabel)}</div>` : ''}
         <p class="datetime">${new Date(order.createdAt || new Date()).toLocaleString('pt-BR')}</p>
 
         <div class="customer-box">
