@@ -623,6 +623,10 @@ exports.track = async (req, res) => {
     });
     if (!order) return res.status(404).json({ error: 'Order not found' });
 
+    if (order.status === 'aguardando_pagamento') {
+      await syncPixGatewayPaymentStatus(order, req.app.get('io'));
+    }
+
     await attachEtaToOrders(order);
 
     res.json(order);

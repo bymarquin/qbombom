@@ -361,7 +361,7 @@
 </template>
 
 <script setup>
-import { ref, shallowRef, computed, onMounted, onUnmounted } from "vue";
+import { ref, shallowRef, computed, watch, onMounted, onUnmounted } from "vue";
 import { useOrderHistory } from "@/composables/useOrderHistory";
 import { useDark, useToggle } from "@vueuse/core";
 import { useToastStore } from "@/stores/toast";
@@ -738,9 +738,38 @@ onMounted(async () => {
   });
 });
 
+let pixPollInterval = null;
+
+const iniciarPollPix = () => {
+  if (pixPollInterval) return;
+  pixPollInterval = setInterval(async () => {
+    if (!rastreioAtual.value) return;
+    await carregarRastreio();
+  }, 5000);
+};
+
+const pararPollPix = () => {
+  if (pixPollInterval) {
+    clearInterval(pixPollInterval);
+    pixPollInterval = null;
+  }
+};
+
+watch(
+  () => pedidoRastreado.value?.status,
+  (status) => {
+    if (status === "aguardando_pagamento") {
+      iniciarPollPix();
+    } else {
+      pararPollPix();
+    }
+  },
+  { immediate: true }
+);
+
 onUnmounted(() => {
+  pararPollPix();
   socket.off("orderUpdated");
-  // É boa prática desconectar caso o cliente feche a tela do cardápio, para poupar o servidor
   socket.disconnect();
 });
 
