@@ -320,7 +320,8 @@ async function notifyCustomer(order, status) {
     const trackingUrl = status === 'em_rota' && order.trackingCode
       ? `${CLIENT_URL}/cardapio?track=${order.trackingCode}`
       : null;
-    whatsappService.sendStatusMessage(customer.phone, status, order.id.slice(-6).toUpperCase(), trackingUrl, order.id, customer.name);
+    const pixExpiresAt = status === 'aguardando_pagamento' ? order.pixExpiresAt : null;
+    whatsappService.sendStatusMessage(customer.phone, status, order.id.slice(-6).toUpperCase(), trackingUrl, order.id, customer.name, pixExpiresAt);
   }
 }
 

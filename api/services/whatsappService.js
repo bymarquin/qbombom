@@ -216,7 +216,7 @@ const canSendToPhone = async (phone) => {
   return optedIn.has(normalized) && !optedOut.has(normalized)
 }
 
-exports.sendStatusMessage = async (phone, status, orderNumber, trackingUrl = null, orderId = null, customerName = null) => {
+exports.sendStatusMessage = async (phone, status, orderNumber, trackingUrl = null, orderId = null, customerName = null, pixExpiresAt = null) => {
   if (!phone) return
   const normalizedPhone = formatPhone(phone)
   if (!normalizedPhone) return
@@ -252,7 +252,15 @@ exports.sendStatusMessage = async (phone, status, orderNumber, trackingUrl = nul
   const header = isFirstMessage && name ? `Olá, ${name}!\n` : ''
 
   let text = `*Qbombom Sorvetes* — Pedido #${orderNumber}\n\n${header}${messageBody}`
+  if (pixExpiresAt) {
+    const expiry = new Date(pixExpiresAt)
+    if (!Number.isNaN(expiry.getTime())) {
+      const hhmm = expiry.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
+      text += `\n⏱ O PIX expira às *${hhmm}*.`
+    }
+  }
   if (trackingUrl) text += `\n${trackingUrl}`
+  text += `\n\n_🤖 Mensagem automática — por favor não responda este número._`
 
   const statusKey = `${orderId || orderNumber}:${status}`
   if (isStatusSent(statusKey)) {
