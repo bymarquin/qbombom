@@ -1,6 +1,6 @@
 'use strict';
 
-const mercadoPagoService = require('./mercadoPagoService');
+const pixGatewayService = require('./pixGatewayService');
 const logger = require('../utils/logger');
 
 function isPendingPix(order) {
@@ -13,18 +13,18 @@ function canSyncPixStatus(order) {
   if (order.paymentStatus === 'pago') return false;
   if (order.paymentProvider !== 'mercadopago') return false;
   if (!order.paymentProviderReference) return false;
-  return mercadoPagoService.isEnabled();
+  return pixGatewayService.isEnabled();
 }
 
 async function ensurePixPayment(order) {
-  if (!isPendingPix(order) || !mercadoPagoService.isEnabled()) return order;
+  if (!isPendingPix(order) || !pixGatewayService.isEnabled()) return order;
   if (order.paymentProviderReference && order.pixQrCode) return order;
 
   const payerEmail = order.customerPhone
     ? `cliente-${order.customerPhone.replace(/\D/g, '').slice(-8) || 'pix'}@qbombom.com`
     : `pedido-${order.id.slice(0, 8)}@qbombom.com`;
 
-  const payment = await mercadoPagoService.createPixPayment({
+  const payment = await pixGatewayService.createPixPayment({
     order,
     payerEmail,
     description: `Pedido Qbombom #${order.trackingCode || order.id.slice(0, 8)}`,
@@ -45,7 +45,7 @@ async function ensurePixPayment(order) {
 }
 
 async function applyPaymentToOrder(order, payment) {
-  const pixData = mercadoPagoService.normalizePixData(payment);
+  const pixData = pixGatewayService.normalizePixData(payment);
   let changed = false;
   let paymentApprovedNow = false;
 
@@ -88,7 +88,7 @@ async function syncPixPaymentStatus(order, { onOrderUpdated } = {}) {
   if (!canSyncPixStatus(order)) return order;
 
   try {
-    const payment = await mercadoPagoService.getPayment(order.paymentProviderReference);
+    const payment = await pixGatewayService.getPayment(order.paymentProviderReference);
     if (!payment) return order;
 
     const result = await applyPaymentToOrder(order, payment);

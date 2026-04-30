@@ -28,7 +28,7 @@ function buildNotificationUrl() {
   const base = rawBase.endsWith('/api') ? rawBase.slice(0, -4) : rawBase;
   const webhookToken = process.env.MERCADOPAGO_WEBHOOK_TOKEN;
   const tokenQuery = webhookToken ? `?token=${encodeURIComponent(webhookToken)}` : '';
-  return `${base}/api/orders/webhooks/mercadopago${tokenQuery}`;
+  return `${base}/api/orders/webhooks/pix-gateway${tokenQuery}`;
 }
 
 function normalizePixData(payment) {
@@ -61,7 +61,7 @@ async function createPixPayment({ order, payerEmail, description, amount }) {
     },
   };
 
-  logger.info('mercadopago.pix.create_start', {
+  logger.info('pix_gateway.pix.create_start', {
     orderId: order.id,
     trackingCode: order.trackingCode,
     amount: Number(amount),
@@ -78,7 +78,7 @@ async function createPixPayment({ order, payerEmail, description, amount }) {
     timeout: 15000,
   });
 
-  logger.info('mercadopago.pix.create_done', {
+  logger.info('pix_gateway.pix.create_done', {
     orderId: order.id,
     paymentId: data?.id,
     status: data?.status,

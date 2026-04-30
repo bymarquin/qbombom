@@ -65,7 +65,7 @@
           <p class="text-xs"
             :class="'text-orange-700 dark:text-orange-400'"
           >
-            A confirmação acontece automaticamente pelo Mercado Pago.
+            A confirmação acontece automaticamente pelo Gateway PIX.
           </p>
         </div>
       </div>

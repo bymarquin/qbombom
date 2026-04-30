@@ -47,7 +47,7 @@ export function generatePixPayload(pixKey, pixType, merchantName, merchantCity, 
     cleanKey = cleanKey.replace(/\s/g, '');
   }
 
-  // Para PIX estático funcionar em 100% dos bancos (especialmente Mercado Pago e Itaú),
+  // Para PIX estático funcionar em 100% dos bancos (especialmente Gateway PIX e Itaú),
   // o TXID deve ser obrigatoriamente '***' (que significa gerado pelo aplicativo do usuário).
   const cleanTxid = '***';
 

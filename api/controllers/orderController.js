@@ -2,7 +2,7 @@ const { Order, OrderItem, Product, ProductVariation, Customer, Setting, sequeliz
 const { Op } = require('sequelize');
 const whatsappService = require('../services/whatsappService');
 const thermalPrinter = require('../services/print/thermalPrinterService');
-const mercadoPagoService = require('../services/mercadoPagoService');
+const pixGatewayService = require('../services/pixGatewayService');
 const orderPaymentService = require('../services/orderPaymentService');
 const logger = require('../utils/logger');
 const { handleControllerError } = require('../utils/controllerError');
@@ -289,10 +289,10 @@ async function reserveStockAtomically(items, transaction) {
 }
 
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
-const MP_RECONCILE_INTERVAL_MS = 30000;
-const MP_RECONCILE_BATCH_SIZE = 20;
-let mpReconcilerStarted = false;
-let mpReconcileRunning = false;
+const PIX_RECONCILE_INTERVAL_MS = 30000;
+const PIX_RECONCILE_BATCH_SIZE = 20;
+let pixReconcilerStarted = false;
+let pixReconcileRunning = false;
 
 // Re-busca o pedido no banco antes de finalizar para não sobrescrever
 // uma mudança concorrente (ex.: cancelamento ocorrido nos 3s de espera).
@@ -324,11 +324,11 @@ async function notifyCustomer(order, status) {
   }
 }
 
-async function ensureMercadoPagoPix(order) {
+async function ensurePixGatewayPix(order) {
   return orderPaymentService.ensurePixPayment(order);
 }
 
-async function syncMercadoPagoPaymentStatus(order, io) {
+async function syncPixGatewayPaymentStatus(order, io) {
   return orderPaymentService.syncPixPaymentStatus(order, {
     onOrderUpdated: async (updatedOrder, meta) => {
       await attachEtaToOrders(updatedOrder);
@@ -343,9 +343,9 @@ async function syncMercadoPagoPaymentStatus(order, io) {
   });
 }
 
-async function runMercadoPagoReconcile(io) {
-  if (mpReconcileRunning) return;
-  mpReconcileRunning = true;
+async function runPixGatewayReconcile(io) {
+  if (pixReconcileRunning) return;
+  pixReconcileRunning = true;
   try {
     const pendingOrders = await Order.findAll({
       where: {
@@ -354,35 +354,35 @@ async function runMercadoPagoReconcile(io) {
         paymentStatus: { [Op.ne]: 'pago' },
       },
       order: [['createdAt', 'ASC']],
-      limit: MP_RECONCILE_BATCH_SIZE,
+      limit: PIX_RECONCILE_BATCH_SIZE,
     });
 
     if (!pendingOrders.length) return;
 
-    await Promise.all(pendingOrders.map((order) => syncMercadoPagoPaymentStatus(order, io)));
+    await Promise.all(pendingOrders.map((order) => syncPixGatewayPaymentStatus(order, io)));
   } catch (error) {
     logger.error('orders.reconcile.failed', error);
   } finally {
-    mpReconcileRunning = false;
+    pixReconcileRunning = false;
   }
 }
 
-function ensureMercadoPagoReconciler(io) {
-  if (mpReconcilerStarted || !mercadoPagoService.isEnabled()) return;
-  mpReconcilerStarted = true;
+function ensurePixGatewayReconciler(io) {
+  if (pixReconcilerStarted || !pixGatewayService.isEnabled()) return;
+  pixReconcilerStarted = true;
   setInterval(() => {
-    runMercadoPagoReconcile(io);
-  }, MP_RECONCILE_INTERVAL_MS);
-  runMercadoPagoReconcile(io);
+    runPixGatewayReconcile(io);
+  }, PIX_RECONCILE_INTERVAL_MS);
+  runPixGatewayReconcile(io);
   logger.info('orders.reconciler.started', {
-    intervalMs: MP_RECONCILE_INTERVAL_MS,
-    batchSize: MP_RECONCILE_BATCH_SIZE,
+    intervalMs: PIX_RECONCILE_INTERVAL_MS,
+    batchSize: PIX_RECONCILE_BATCH_SIZE,
   });
 }
 
 exports.index = async (req, res) => {
   try {
-    ensureMercadoPagoReconciler(req.app.get('io'));
+    ensurePixGatewayReconciler(req.app.get('io'));
     const where = {}
     if (req.query.status) where.status = req.query.status
 
@@ -410,7 +410,7 @@ exports.index = async (req, res) => {
 
 exports.show = async (req, res) => {
   try {
-    ensureMercadoPagoReconciler(req.app.get('io'));
+    ensurePixGatewayReconciler(req.app.get('io'));
     const order = await Order.findByPk(req.params.id, { include: ORDER_INCLUDES });
     if (!order) return res.status(404).json({ error: 'Order not found' });
 
@@ -426,7 +426,7 @@ exports.create = async (req, res) => {
   const transaction = await sequelize.transaction();
 
   try {
-    ensureMercadoPagoReconciler(req.app.get('io'));
+    ensurePixGatewayReconciler(req.app.get('io'));
     const {
       type, customerName, customerPhone, tableNumber, deliveryAddress,
       deliveryLatitude, deliveryLongitude, deliveryAccuracyMeters, deliveryLocationCapturedAt,
@@ -575,7 +575,7 @@ exports.create = async (req, res) => {
     let createdOrder = await Order.findByPk(order.id, { include: ORDER_INCLUDES });
     if (createdOrder) {
       try {
-        createdOrder = await ensureMercadoPagoPix(createdOrder);
+        createdOrder = await ensurePixGatewayPix(createdOrder);
       } catch (pixError) {
         logger.error('orders.create.mp_failed', pixError, { orderId: createdOrder?.id });
       }
@@ -615,7 +615,7 @@ exports.optOutWhatsappByTracking = async (req, res) => {
 
 exports.track = async (req, res) => {
   try {
-    ensureMercadoPagoReconciler(req.app.get('io'));
+    ensurePixGatewayReconciler(req.app.get('io'));
     const order = await Order.findOne({
       where: { trackingCode: req.params.code },
       include: ORDER_INCLUDES
@@ -821,9 +821,9 @@ exports.confirmDeliveryByTracking = async (req, res) => {
   }
 };
 
-exports.mercadoPagoWebhook = async (req, res) => {
+exports.pixGatewayWebhook = async (req, res) => {
   try {
-    ensureMercadoPagoReconciler(req.app.get('io'));
+    ensurePixGatewayReconciler(req.app.get('io'));
     logger.info('orders.webhook.received', {
       type: req.query?.type || req.body?.type || null,
       action: req.body?.action || null,
@@ -849,7 +849,7 @@ exports.mercadoPagoWebhook = async (req, res) => {
       return res.status(200).json({ ok: true });
     }
 
-    const payment = await mercadoPagoService.getPayment(paymentId);
+    const payment = await pixGatewayService.getPayment(paymentId);
     if (!payment) {
       return res.status(200).json({ ok: true });
     }

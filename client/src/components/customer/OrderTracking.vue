@@ -52,7 +52,7 @@
                   <p class="text-sm text-neutral-700 dark:text-neutral-300 mb-4">
                     Escaneie o QR Code abaixo ou copie a chave PIX Copia e Cola para pagar
                     <strong>{{ formatarMoeda(pedidoRastreado.total) }}</strong
-                    >. A confirmação do pagamento é automática pelo Mercado Pago.
+                    >. A confirmação do pagamento é automática pelo Gateway PIX.
                   </p>
 
                   <!-- QR Code PIX -->
@@ -83,7 +83,7 @@
                 <template v-else>
                   <div class="py-8 flex flex-col items-center justify-center gap-3">
                     <div class="w-8 h-8 border-4 border-red-200 border-t-red-600 rounded-full animate-spin"></div>
-                    <p class="text-sm text-neutral-500">Aguardando QR Code do Mercado Pago...</p>
+                    <p class="text-sm text-neutral-500">Aguardando QR Code do Gateway PIX...</p>
                   </div>
                 </template>
 

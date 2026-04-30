@@ -6,7 +6,7 @@ const checkPermission = require('../middlewares/checkPermission');
 const checkStoreOpen = require('../middlewares/checkStoreOpen');
 
 // ---- ROTAS PÚBLICAS (CLIENTES) ----
-router.post('/webhooks/mercadopago', orderController.mercadoPagoWebhook);
+router.post('/webhooks/pix-gateway', orderController.pixGatewayWebhook);
 
 // Permite que um cliente final faça um pedido pelo Cardápio Digital (sem precisar de token)
 router.post('/public', checkStoreOpen, orderController.create);
