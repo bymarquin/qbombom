@@ -13,7 +13,7 @@ const rolePermissions = {
     'reports.view', 'users.create', 'users.update', 'users.manage'
   ],
   CASHIER: [
-    'orders.create', 'orders.update', 'orders.view', 'orders.cancel',
+    'orders.create', 'orders.update', 'orders.view', 'orders.cancel', 'orders.change_status',
     'payments.create'
   ],
   DELIVERY: [

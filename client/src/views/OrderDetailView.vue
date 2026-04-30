@@ -206,7 +206,7 @@
           Imprimir Comanda
         </button>
 
-        <template v-if="userRole === 'SUPER_ADMIN' || userRole === 'MANAGER'">
+        <template v-if="userRole === 'SUPER_ADMIN' || userRole === 'MANAGER' || userRole === 'CASHIER'">
           <label class="text-xs font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider mt-2">
             Alterar Status do Pedido:
           </label>
@@ -227,23 +227,6 @@
           </div>
         </template>
 
-        <template v-else-if="userRole === 'CASHIER'">
-          <label class="text-xs font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider mt-2">
-            Ações:
-          </label>
-          <button
-            @click="cancelOrder"
-            :disabled="['cancelado', 'finalizado', 'entregue'].includes(order.status)"
-            class="w-full py-2.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-            :class="
-              order.status === 'cancelado'
-                ? 'bg-red-600 text-white'
-                : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/40'
-            "
-          >
-            {{ order.status === 'cancelado' ? 'Pedido Cancelado' : 'Cancelar Pedido' }}
-          </button>
-        </template>
       </div>
     </div>
   </div>
