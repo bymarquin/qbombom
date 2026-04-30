@@ -9,6 +9,13 @@ module.exports = async (req, res, next) => {
       return next(); // Se não tem config, deixa passar
     }
 
+    const maintenance = setting.value.maintenance || {};
+    if (maintenance.enabled === true) {
+      return res.status(503).json({
+        error: maintenance.message || 'Estamos em manutenção no momento. Tente novamente em instantes.',
+      });
+    }
+
     const hours = setting.value.hours;
 
     // 1. Checa a chave mestra (se o dono clicou em "Fechar Loja")

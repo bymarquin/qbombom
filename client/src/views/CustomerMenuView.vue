@@ -2,6 +2,18 @@
   <div
     class="h-dvh flex flex-col bg-neutral-50 dark:bg-neutral-950 font-sans relative overflow-hidden text-neutral-900 dark:text-neutral-100"
   >
+    <div
+      v-if="maintenanceAtiva"
+      class="absolute inset-0 z-[80] bg-neutral-950/95 backdrop-blur-sm flex items-center justify-center p-6"
+    >
+      <div class="max-w-xl w-full text-center bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-8 shadow-2xl">
+        <h2 class="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-3">Estamos em manutenção</h2>
+        <p class="text-sm text-neutral-600 dark:text-neutral-300">
+          {{ maintenanceMensagem }}
+        </p>
+      </div>
+    </div>
+
     <!-- Banner Loja Fechada -->
     <div
       v-if="!loadingCatalog && !isStoreOpen"
@@ -478,7 +490,13 @@ syncToLocalStorage("qbombom_checkout", checkout);
 
 const PEDIDO_MINIMO_ENTREGA = 12;
 
+const maintenanceAtiva = computed(() => Boolean(storeSettings.value?.maintenance?.enabled));
+const maintenanceMensagem = computed(
+  () => storeSettings.value?.maintenance?.message || "Estamos em manutenção e voltamos em breve.",
+);
+
 const podeFinalizarPedido = computed(() => {
+  if (maintenanceAtiva.value) return false;
   if (!checkout.value.nome || !checkout.value.telefone) return false;
   if (checkout.value.tipo === "Entrega") {
     if (subtotal.value < PEDIDO_MINIMO_ENTREGA) return false;
@@ -829,6 +847,10 @@ const capturarGeolocalizacaoEntrega = async () => {
 
 const enviarPedido = async () => {
   if (!podeFinalizarPedido.value) return;
+  if (maintenanceAtiva.value) {
+    toast.error(maintenanceMensagem.value);
+    return;
+  }
 
   // Pede permissão para notificar o andamento antes de enviar o pedido
   await requestNotificationPermission();

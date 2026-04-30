@@ -419,6 +419,37 @@
               </div>
             </div>
           </div>
+
+          <div class="mt-8 space-y-4 p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/30">
+            <div class="flex items-center justify-between gap-4">
+              <div>
+                <h3 class="font-bold text-neutral-900 dark:text-neutral-100">Modo Manutenção</h3>
+                <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                  Quando ativo, o cardápio público exibe tela de manutenção e bloqueia novos pedidos.
+                </p>
+              </div>
+              <button
+                @click="form.maintenance.enabled = !form.maintenance.enabled"
+                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                :class="form.maintenance.enabled ? 'bg-red-600' : 'bg-neutral-300 dark:bg-neutral-700'"
+              >
+                <span
+                  class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                  :class="form.maintenance.enabled ? 'translate-x-5' : 'translate-x-0'"
+                ></span>
+              </button>
+            </div>
+
+            <div class="space-y-1">
+              <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Mensagem da tela</label>
+              <textarea
+                v-model="form.maintenance.message"
+                rows="2"
+                class="w-full px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all"
+                placeholder="Estamos em manutenção e voltamos em breve."
+              ></textarea>
+            </div>
+          </div>
         </div>
 
         <!-- Tab: WhatsApp -->
@@ -844,6 +875,10 @@ const form = reactive({
     type: "phone",
     key: "88992998161",
   },
+  maintenance: {
+    enabled: false,
+    message: "Estamos em manutenção e voltamos em breve.",
+  },
 });
 
 // Buscar config ao montar a tela
@@ -853,6 +888,9 @@ const carregarConfiguracoes = async () => {
     if (res.data && Object.keys(res.data).length > 0) {
       // Mescla os dados do banco no form mantendo as propriedades reativas
       Object.assign(form, res.data);
+      if (!form.maintenance) {
+        form.maintenance = { enabled: false, message: "Estamos em manutenção e voltamos em breve." };
+      }
       if (form.profile?.phone) form.profile.phone = mascararTelefone(form.profile.phone);
       if (form.pix) form.pix.type = normalizePixType(form.pix.type);
     }
