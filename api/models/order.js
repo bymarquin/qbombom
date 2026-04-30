@@ -53,6 +53,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DECIMAL(10, 2),
       defaultValue: 0.00
     },
+    serviceFee: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0.00
+    },
     total: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,

@@ -430,8 +430,10 @@ exports.create = async (req, res) => {
     const {
       type, customerName, customerPhone, tableNumber, deliveryAddress,
       deliveryLatitude, deliveryLongitude, deliveryAccuracyMeters, deliveryLocationCapturedAt,
-      paymentStatus, paymentMethod, subtotal, discount, total, observation, items, whatsappOptIn
+      paymentStatus, paymentMethod, subtotal, discount, serviceFee, total, observation, items, whatsappOptIn
     } = req.body;
+
+    const resolvedServiceFee = Number.parseFloat(serviceFee);
 
     const orderType = type || 'Mesa';
     const resolvedTableNumber = orderType === 'Mesa' && tableNumber
@@ -524,6 +526,7 @@ exports.create = async (req, res) => {
       paymentMethod,
       subtotal,
       discount: discount || 0,
+      serviceFee: Number.isFinite(resolvedServiceFee) ? resolvedServiceFee : 0,
       total,
       observation
     }, { transaction });

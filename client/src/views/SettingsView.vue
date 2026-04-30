@@ -420,6 +420,54 @@
             </div>
           </div>
 
+          <div class="mt-8 space-y-4 p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/30">
+            <div class="flex items-center justify-between gap-4">
+              <div>
+                <h3 class="font-bold text-neutral-900 dark:text-neutral-100">Taxa de serviço</h3>
+                <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                  Acréscimo aplicado no checkout para pedidos PIX do cardápio público.
+                </p>
+              </div>
+              <button
+                @click="form.serviceCharge.enabled = !form.serviceCharge.enabled"
+                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                :class="form.serviceCharge.enabled ? 'bg-red-600' : 'bg-neutral-300 dark:bg-neutral-700'"
+              >
+                <span
+                  class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                  :class="form.serviceCharge.enabled ? 'translate-x-5' : 'translate-x-0'"
+                ></span>
+              </button>
+            </div>
+
+            <div v-if="form.serviceCharge.enabled" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-1">
+                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Tipo</label>
+                <select
+                  v-model="form.serviceCharge.type"
+                  class="w-full h-[42px] px-4 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all cursor-pointer"
+                >
+                  <option value="percent">Percentual (%)</option>
+                  <option value="fixed">Valor fixo (R$)</option>
+                </select>
+              </div>
+
+              <div class="space-y-1">
+                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  {{ form.serviceCharge.type === 'percent' ? 'Percentual (%)' : 'Valor (R$)' }}
+                </label>
+                <input
+                  v-model.number="form.serviceCharge.value"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="w-full px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all"
+                  :placeholder="form.serviceCharge.type === 'percent' ? 'Ex: 1.00' : 'Ex: 0.50'"
+                />
+              </div>
+            </div>
+          </div>
+
         </div>
 
         <!-- Tab: Manutenção -->
@@ -898,6 +946,11 @@ const form = reactive({
     enabled: false,
     message: "Estamos em manutenção e voltamos em breve.",
   },
+  serviceCharge: {
+    enabled: false,
+    type: "percent",
+    value: 0,
+  },
 });
 
 // Buscar config ao montar a tela
@@ -909,6 +962,9 @@ const carregarConfiguracoes = async () => {
       Object.assign(form, res.data);
       if (!form.maintenance) {
         form.maintenance = { enabled: false, message: "Estamos em manutenção e voltamos em breve." };
+      }
+      if (!form.serviceCharge) {
+        form.serviceCharge = { enabled: false, type: "percent", value: 0 };
       }
       if (form.profile?.phone) form.profile.phone = mascararTelefone(form.profile.phone);
       if (form.pix) form.pix.type = normalizePixType(form.pix.type);

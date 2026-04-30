@@ -321,12 +321,20 @@
         class="bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800 p-4 shrink-0 shadow-sm dark:shadow-none"
       >
         <div class="flex justify-between items-center mb-3">
-          <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300"
-            >Total a pagar</span
-          >
-          <span class="text-xl font-bold text-red-600 dark:text-red-400">{{
-            formatarMoeda(subtotal)
-          }}</span>
+          <div class="w-full space-y-1.5">
+            <div class="flex justify-between text-sm text-neutral-700 dark:text-neutral-300">
+              <span>Subtotal</span>
+              <span>{{ formatarMoeda(subtotal) }}</span>
+            </div>
+            <div class="flex justify-between text-sm text-neutral-700 dark:text-neutral-300">
+              <span>Taxa de serviço</span>
+              <span>{{ formatarMoeda(serviceFee) }}</span>
+            </div>
+            <div class="flex justify-between items-center pt-1 border-t border-neutral-200 dark:border-neutral-800">
+              <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Total a pagar</span>
+              <span class="text-xl font-bold text-red-600 dark:text-red-400">{{ formatarMoeda(total) }}</span>
+            </div>
+          </div>
         </div>
         <button
           @click="emit('enviar-pedido')"
@@ -379,6 +387,14 @@ const checkout = defineModel("checkout", { type: Object, required: true });
 
 defineProps({
   subtotal: {
+    type: Number,
+    required: true,
+  },
+  serviceFee: {
+    type: Number,
+    default: 0,
+  },
+  total: {
     type: Number,
     required: true,
   },

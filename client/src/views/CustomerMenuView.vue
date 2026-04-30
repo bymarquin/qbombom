@@ -299,7 +299,7 @@
           </div>
           <span>Ver Sacola</span>
         </div>
-        <span>{{ formatarMoeda(subtotal) }}</span>
+        <span>{{ formatarMoeda(totalComTaxaServico) }}</span>
       </button>
     </div>
 
@@ -318,6 +318,8 @@
       v-model:carrinho="carrinho"
       v-model:checkout="checkout"
       :subtotal="subtotal"
+      :service-fee="taxaServico"
+      :total="totalComTaxaServico"
       :pode-finalizar-pedido="podeFinalizarPedido"
       :enviando="enviando"
       :is-store-open="isStoreOpen"
@@ -492,6 +494,7 @@ syncToLocalStorage("qbombom_carrinho", carrinho);
 syncToLocalStorage("qbombom_checkout", checkout);
 
 const PEDIDO_MINIMO_ENTREGA = 12;
+const roundToCents = (value) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 
 const maintenanceAtiva = computed(() => Boolean(storeSettings.value?.maintenance?.enabled));
 const maintenanceMensagem = computed(
@@ -512,6 +515,23 @@ const podeFinalizarPedido = computed(() => {
   return true;
 });
 const enviando = ref(false);
+
+const taxaServico = computed(() => {
+  const config = storeSettings.value?.serviceCharge;
+  if (!config?.enabled) return 0;
+  if (checkout.value.pagamento !== "PIX") return 0;
+
+  const numericValue = Number(config.value);
+  if (!Number.isFinite(numericValue) || numericValue <= 0) return 0;
+
+  if (config.type === "fixed") {
+    return roundToCents(numericValue);
+  }
+
+  return roundToCents((subtotal.value * numericValue) / 100);
+});
+
+const totalComTaxaServico = computed(() => roundToCents(subtotal.value + taxaServico.value));
 
 
 // --- Lógica Rastreio (Tracking) ---
@@ -901,8 +921,9 @@ const enviarPedido = async () => {
       paymentStatus: "pendente", // Pedido online nasce como pagamento pendente sempre
       paymentMethod: checkout.value.pagamento,
       subtotal: subtotal.value,
+      serviceFee: taxaServico.value,
       discount: 0,
-      total: subtotal.value,
+      total: totalComTaxaServico.value,
       observation: obsAdicional || undefined,
       items: carrinho.value.map((item) => ({
         productId: item.productId,
@@ -927,7 +948,7 @@ const enviarPedido = async () => {
     }
 
     // Sucesso UI
-    salvarPedido(response.data, carrinho.value, checkout.value, subtotal.value)
+    salvarPedido(response.data, carrinho.value, checkout.value, totalComTaxaServico.value)
     historico.value = getHistorico()
 
     sacolaAberta.value = false;
