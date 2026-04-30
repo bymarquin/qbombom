@@ -311,16 +311,6 @@
       @remover-item="removerItem"
     />
 
-    <!-- TELA DE SUCESSO -->
-    <OrderSuccess
-      v-model="telaSucesso"
-      :subtotal-enviado="subtotalEnviado"
-      :checkout-enviado="checkoutEnviado"
-      :pix-payload="pixPayloadSucesso"
-      @acompanhar="abrirAcompanhamento"
-      @fechar="fecharSucesso"
-    />
-
     <!-- TELA DE ACOMPANHAMENTO (RASTREIO) -->
     <OrderTracking
       v-model="rastreioAberto"
@@ -334,7 +324,7 @@
 
     <!-- Botão Flutuante "Acompanhar Pedido" na Tela Inicial (caso exista pedido rastreado) -->
     <div
-      v-if="pedidoRastreado && !rastreioAberto && !sacolaAberta && !telaSucesso"
+      v-if="pedidoRastreado && !rastreioAberto && !sacolaAberta"
       class="absolute bottom-20 left-0 w-full px-4 z-10 flex justify-center pointer-events-none"
     >
       <button
@@ -361,15 +351,12 @@ import { useToastStore } from "@/stores/toast";
 import { CatalogService, OrderService, SettingService } from "@/services/http";
 import { requestNotificationPermission, showNotification } from "@/utils/notifications";
 import { syncToLocalStorage } from "@/composables/useLocalStorage";
-import { generatePixPayload } from "@/utils/pix";
 import { limparTelefone, mascararTelefone } from "@/utils/formatters";
 import { formatarMoeda } from "@/utils/formatters";
-import { toMediaProxyUrl } from "@/utils/mediaUrl";
 import socket from "@/services/socket";
 import ProductModal from "@/components/customer/ProductModal.vue";
 import ImageCarousel from "@/components/ImageCarousel.vue";
 import CartCheckout from "@/components/customer/CartCheckout.vue";
-import OrderSuccess from "@/components/customer/OrderSuccess.vue";
 import OrderTracking from "@/components/customer/OrderTracking.vue";
 import { Coffee, Sun, Moon, MapPin, AlertCircle, Search, ShoppingCart, Plus } from "lucide-vue-next";
 
@@ -505,19 +492,6 @@ const podeFinalizarPedido = computed(() => {
 });
 const enviando = ref(false);
 
-const telaSucesso = ref(false);
-const checkoutEnviado = ref({});
-const subtotalEnviado = ref(0);
-const pedidoCriado = ref(null);
-
-const pixPayloadSucesso = computed(() => {
-  if (!pedidoCriado.value || !storeSettings.value?.pix?.key) return "";
-  const pix = storeSettings.value.pix;
-  const profile = storeSettings.value?.profile;
-  const name = profile?.name || "Qbombom Sorvetes";
-  const city = (profile?.address?.city || "Sao Paulo").split("-")[0].trim();
-  return generatePixPayload(pix.key, pix.type || "cpf", name, city, pedidoCriado.value.total, pedidoCriado.value.id || "***");
-});
 
 // --- Lógica Rastreio (Tracking) ---
 const rastreioAberto = ref(false);
@@ -687,7 +661,6 @@ onMounted(async () => {
 
       pedidoRastreado.value.status = updatedOrder.status;
       pedidoRastreado.value.paymentStatus = updatedOrder.paymentStatus;
-      pedidoRastreado.value.receiptUrl = toMediaProxyUrl(updatedOrder.receiptUrl);
       atualizarPedidoAtivo(updatedOrder);
 
       // Notificações Push nativas e Toasts de avanço só disparam se houve mudança de status real
@@ -718,7 +691,7 @@ onMounted(async () => {
 
       if (pagamentoMudou && updatedOrder.paymentStatus === "pago" && pedidoRastreado.value.paymentMethod === "PIX") {
         toast.success("Pagamento confirmado!");
-        showNotification("Pagamento Recebido! ✅", { body: "Conferimos o seu comprovante PIX." });
+        showNotification("Pagamento Recebido! ✅", { body: "Pagamento PIX confirmado com sucesso." });
       }
     }
   });
@@ -929,10 +902,6 @@ const enviarPedido = async () => {
     }
 
     // Sucesso UI
-    checkoutEnviado.value = { ...checkout.value };
-    subtotalEnviado.value = subtotal.value;
-    pedidoCriado.value = response.data;
-
     salvarPedido(response.data, carrinho.value, checkout.value, subtotal.value)
     historico.value = getHistorico()
 
@@ -956,16 +925,6 @@ const enviarPedido = async () => {
   }
 };
 
-const abrirAcompanhamento = () => {
-  telaSucesso.value = false;
-  rastreioAberto.value = true;
-};
-
-const fecharSucesso = () => {
-  telaSucesso.value = false;
-  checkout.value.nome = "";
-  checkout.value.mesa = mesaDoQr.value || "";
-};
 </script>
 
 <style scoped>

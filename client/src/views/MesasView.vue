@@ -137,7 +137,7 @@ async function disparaImpressao(itens) {
 }
 
 function imprimir() {
-  const mesaItems = Object.entries(qrUrls.value).map(([n, src]) => ({
+  const mesaItems = Object.entries(qrUrls.value).map(([, src]) => ({
     label: 'Cardápio',
     src,
   }))

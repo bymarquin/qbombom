@@ -40,6 +40,11 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: 'pendente' // pendente, pago
     },
     paymentMethod: DataTypes.STRING,
+    paymentProvider: DataTypes.STRING,
+    paymentProviderReference: DataTypes.STRING,
+    pixQrCode: DataTypes.TEXT,
+    pixQrCodeBase64: DataTypes.TEXT,
+    pixExpiresAt: DataTypes.DATE,
     subtotal: {
       type: DataTypes.DECIMAL(10, 2),
       defaultValue: 0.00
@@ -62,7 +67,6 @@ module.exports = (sequelize, DataTypes) => {
     deliveryLongitude: DataTypes.DECIMAL(10, 7),
     deliveryAccuracyMeters: DataTypes.FLOAT,
     deliveryLocationCapturedAt: DataTypes.DATE,
-    receiptUrl: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'Order',

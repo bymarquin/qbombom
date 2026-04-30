@@ -6,13 +6,13 @@ const checkPermission = require('../middlewares/checkPermission');
 const checkStoreOpen = require('../middlewares/checkStoreOpen');
 
 // ---- ROTAS PÚBLICAS (CLIENTES) ----
+router.post('/webhooks/mercadopago', orderController.mercadoPagoWebhook);
+
 // Permite que um cliente final faça um pedido pelo Cardápio Digital (sem precisar de token)
 router.post('/public', checkStoreOpen, orderController.create);
 
 // Permite o cliente consultar o andamento do pedido com base no código secreto
 router.get('/track/:code', orderController.track);
-router.post('/track/:code/receipt', orderController.uploadReceipt);
-router.patch('/track/:code/claim-paid', orderController.claimPaid);
 router.patch('/track/:code/cancel', orderController.cancelByTracking);
 router.patch('/track/:code/confirm', orderController.confirmDeliveryByTracking);
 router.patch('/track/:code/whatsapp-optout', orderController.optOutWhatsappByTracking);
@@ -30,9 +30,6 @@ router.patch('/:id/status', auth, checkPermission('orders.change_status'), order
 
 // Cancelar pedido (Permissão: orders.cancel — disponível também para CASHIER)
 router.patch('/:id/cancel', auth, checkPermission('orders.cancel'), orderController.cancelOrder);
-
-// Confirmar pagamento PIX manualmente (Permissão: orders.change_status)
-router.patch('/:id/confirm-pix', auth, checkPermission('orders.change_status'), orderController.confirmPixPayment);
 
 // Imprimir comanda via impressora térmica (Permissão: orders.view)
 router.post('/:id/print', auth, checkPermission('orders.view'), orderController.printOrder);

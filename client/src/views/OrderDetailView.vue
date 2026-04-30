@@ -54,37 +54,19 @@
       <div
         v-if="order.paymentMethod === 'PIX' && order.paymentStatus !== 'pago'"
         class="p-4 rounded-xl flex items-center justify-between gap-4"
-        :class="order.paymentStatus === 'alegado'
-          ? 'bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-300 dark:border-yellow-700/50'
-          : 'bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800/40'"
+        :class="'bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800/40'"
       >
         <div>
           <p class="text-sm font-bold"
-            :class="order.paymentStatus === 'alegado'
-              ? 'text-yellow-800 dark:text-yellow-300'
-              : 'text-orange-800 dark:text-orange-300'"
+            :class="'text-orange-800 dark:text-orange-300'"
           >
-            {{ order.paymentStatus === 'alegado' ? 'Cliente avisou que pagou' : 'Aguardando pagamento PIX' }}
+            Aguardando pagamento PIX
           </p>
           <p class="text-xs"
-            :class="order.paymentStatus === 'alegado'
-              ? 'text-yellow-700 dark:text-yellow-400'
-              : 'text-orange-700 dark:text-orange-400'"
+            :class="'text-orange-700 dark:text-orange-400'"
           >
-            {{ order.paymentStatus === 'alegado' ? 'Confira o extrato do PIX e confirme.' : 'Confirme quando o pagamento chegar.' }}
+            A confirmação acontece automaticamente pelo Mercado Pago.
           </p>
-        </div>
-        <div class="flex gap-2 shrink-0">
-          <a
-            v-if="order.receiptUrl"
-            :href="getReceiptUrl(order.receiptUrl)"
-            target="_blank"
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition"
-          >Ver Foto</a>
-          <button
-            @click="confirmPayment"
-            class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition"
-          >Confirmar</button>
         </div>
       </div>
 
@@ -268,15 +250,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ChevronLeft, Navigation, Printer } from 'lucide-vue-next'
 import { OrderService, AuthService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 import { useOrderStatus } from '@/composables/useOrderStatus'
+import { useOrderSocket } from '@/composables/useOrderSocket'
 import { printReceipt } from '@/utils/printReceipt'
-import { toMediaProxyUrl } from '@/utils/mediaUrl'
-import socket from '@/services/socket'
 
 const route = useRoute()
 const router = useRouter()
@@ -332,17 +313,13 @@ const loadOrder = async () => {
 function onOrderUpdated(updated) {
   if (!order.value) return
   if (order.value.id !== updated.id && order.value.trackingCode !== updated.trackingCode) return
-  updated.receiptUrl = toMediaProxyUrl(updated.receiptUrl)
   Object.assign(order.value, updated)
 }
 
-onMounted(() => {
-  loadOrder()
-  socket.on('orderUpdated', onOrderUpdated)
-})
+onMounted(loadOrder)
 
-onUnmounted(() => {
-  socket.off('orderUpdated', onOrderUpdated)
+useOrderSocket({
+  onUpdated: onOrderUpdated,
 })
 
 const updateStatus = async (newStatus) => {
@@ -370,18 +347,6 @@ const receberPagamento = async () => {
   }
 }
 
-const confirmPayment = async () => {
-  if (!order.value) return
-  try {
-    const res = await OrderService.confirmPix(order.value.id)
-    Object.assign(order.value, res.data)
-    toast.success('Pagamento PIX confirmado.')
-  } catch (error) {
-    toast.error('Erro ao confirmar pagamento')
-    console.error(error)
-  }
-}
-
 const cancelOrder = async () => {
   if (!order.value || order.value.status === 'cancelado') return
   try {
@@ -405,14 +370,6 @@ const printOrder = async () => {
   if (order.value.status === 'novo') {
     await updateStatus('em_preparo')
   }
-}
-
-const getReceiptUrl = (url) => {
-  if (!url) return '#'
-  const normalized = toMediaProxyUrl(url)
-  if (normalized.startsWith('http')) return normalized
-  const baseUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3006/api' : '/api')
-  return `${baseUrl.replace('/api', '')}${normalized}`
 }
 
 const formatMoney = (val) =>

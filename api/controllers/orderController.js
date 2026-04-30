@@ -1,8 +1,11 @@
 const { Order, OrderItem, Product, ProductVariation, Customer, Setting, sequelize } = require('../models');
 const { Op } = require('sequelize');
-const { uploadFile } = require('../services/storageService');
 const whatsappService = require('../services/whatsappService');
 const thermalPrinter = require('../services/print/thermalPrinterService');
+const mercadoPagoService = require('../services/mercadoPagoService');
+const orderPaymentService = require('../services/orderPaymentService');
+const logger = require('../utils/logger');
+const { handleControllerError } = require('../utils/controllerError');
 
 // Transições permitidas por updateStatus.
 // Cancelamento não está aqui — tem endpoint e lógica própria (restaura estoque).
@@ -286,6 +289,10 @@ async function reserveStockAtomically(items, transaction) {
 }
 
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+const MP_RECONCILE_INTERVAL_MS = 30000;
+const MP_RECONCILE_BATCH_SIZE = 20;
+let mpReconcilerStarted = false;
+let mpReconcileRunning = false;
 
 // Re-busca o pedido no banco antes de finalizar para não sobrescrever
 // uma mudança concorrente (ex.: cancelamento ocorrido nos 3s de espera).
@@ -301,7 +308,7 @@ function scheduleAutoFinalize(orderId, io) {
       io?.emit('orderUpdated', fresh);
       notifyCustomer(fresh, 'finalizado');
     } catch (e) {
-      console.error('[auto-finalizar]', e);
+      logger.error('orders.auto_finalize.failed', e, { orderId });
     }
   }, 3000);
 }
@@ -317,8 +324,65 @@ async function notifyCustomer(order, status) {
   }
 }
 
+async function ensureMercadoPagoPix(order) {
+  return orderPaymentService.ensurePixPayment(order);
+}
+
+async function syncMercadoPagoPaymentStatus(order, io) {
+  return orderPaymentService.syncPixPaymentStatus(order, {
+    onOrderUpdated: async (updatedOrder, meta) => {
+      await attachEtaToOrders(updatedOrder);
+      io?.emit('orderUpdated', updatedOrder);
+      if (meta.paymentApprovedNow) notifyCustomer(updatedOrder, updatedOrder.status);
+      logger.info('orders.pix.reconciled', {
+        orderId: updatedOrder.id,
+        status: updatedOrder.status,
+        paymentStatus: updatedOrder.paymentStatus,
+      });
+    },
+  });
+}
+
+async function runMercadoPagoReconcile(io) {
+  if (mpReconcileRunning) return;
+  mpReconcileRunning = true;
+  try {
+    const pendingOrders = await Order.findAll({
+      where: {
+        paymentMethod: 'PIX',
+        paymentProvider: 'mercadopago',
+        paymentStatus: { [Op.ne]: 'pago' },
+      },
+      order: [['createdAt', 'ASC']],
+      limit: MP_RECONCILE_BATCH_SIZE,
+    });
+
+    if (!pendingOrders.length) return;
+
+    await Promise.all(pendingOrders.map((order) => syncMercadoPagoPaymentStatus(order, io)));
+  } catch (error) {
+    logger.error('orders.reconcile.failed', error);
+  } finally {
+    mpReconcileRunning = false;
+  }
+}
+
+function ensureMercadoPagoReconciler(io) {
+  if (mpReconcilerStarted || !mercadoPagoService.isEnabled()) return;
+  mpReconcilerStarted = true;
+  setInterval(() => {
+    runMercadoPagoReconcile(io);
+  }, MP_RECONCILE_INTERVAL_MS);
+  runMercadoPagoReconcile(io);
+  logger.info('orders.reconciler.started', {
+    intervalMs: MP_RECONCILE_INTERVAL_MS,
+    batchSize: MP_RECONCILE_BATCH_SIZE,
+  });
+}
+
 exports.index = async (req, res) => {
   try {
+    ensureMercadoPagoReconciler(req.app.get('io'));
     const where = {}
     if (req.query.status) where.status = req.query.status
 
@@ -340,13 +404,13 @@ exports.index = async (req, res) => {
 
     res.json(orders);
   } catch (error) {
-    console.error('[orders.index]', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return handleControllerError(res, 'orders.index', error);
   }
 };
 
 exports.show = async (req, res) => {
   try {
+    ensureMercadoPagoReconciler(req.app.get('io'));
     const order = await Order.findByPk(req.params.id, { include: ORDER_INCLUDES });
     if (!order) return res.status(404).json({ error: 'Order not found' });
 
@@ -354,8 +418,7 @@ exports.show = async (req, res) => {
 
     res.json(order);
   } catch (error) {
-    console.error('[orders.show]', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return handleControllerError(res, 'orders.show', error);
   }
 };
 
@@ -363,6 +426,7 @@ exports.create = async (req, res) => {
   const transaction = await sequelize.transaction();
 
   try {
+    ensureMercadoPagoReconciler(req.app.get('io'));
     const {
       type, customerName, customerPhone, tableNumber, deliveryAddress,
       deliveryLatitude, deliveryLongitude, deliveryAccuracyMeters, deliveryLocationCapturedAt,
@@ -505,7 +569,14 @@ exports.create = async (req, res) => {
       await whatsappService.setPhoneOptIn(customerPhone, whatsappOptIn);
     }
 
-    const createdOrder = await Order.findByPk(order.id, { include: ORDER_INCLUDES });
+    let createdOrder = await Order.findByPk(order.id, { include: ORDER_INCLUDES });
+    if (createdOrder) {
+      try {
+        createdOrder = await ensureMercadoPagoPix(createdOrder);
+      } catch (pixError) {
+        logger.error('orders.create.mp_failed', pixError, { orderId: createdOrder?.id });
+      }
+    }
     await attachEtaToOrders(createdOrder);
 
     req.app.get('io')?.emit('orderCreated', createdOrder);
@@ -518,9 +589,7 @@ exports.create = async (req, res) => {
     if (!transaction.finished) {
       await transaction.rollback();
     }
-    console.error('[orders.create]', error);
-    const status = error.status || 500;
-    res.status(status).json({ error: status === 500 ? 'Internal server error' : error.message });
+    return handleControllerError(res, 'orders.create', error);
   }
 };
 
@@ -537,13 +606,13 @@ exports.optOutWhatsappByTracking = async (req, res) => {
     await whatsappService.setPhoneOptOut(customerPhone, true);
     return res.json({ message: 'Notificações de WhatsApp desativadas para este número.' });
   } catch (error) {
-    console.error('[orders.optOutWhatsappByTracking]', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return handleControllerError(res, 'orders.optOutWhatsappByTracking', error);
   }
 };
 
 exports.track = async (req, res) => {
   try {
+    ensureMercadoPagoReconciler(req.app.get('io'));
     const order = await Order.findOne({
       where: { trackingCode: req.params.code },
       include: ORDER_INCLUDES
@@ -554,8 +623,7 @@ exports.track = async (req, res) => {
 
     res.json(order);
   } catch (error) {
-    console.error('[orders.track]', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return handleControllerError(res, 'orders.track', error);
   }
 };
 
@@ -609,7 +677,6 @@ exports.cancelByTracking = async (req, res) => {
       trackingCode: order.trackingCode,
       status: order.status,
       paymentStatus: order.paymentStatus,
-      receiptUrl: order.receiptUrl,
       eta: order.eta,
     });
 
@@ -618,8 +685,7 @@ exports.cancelByTracking = async (req, res) => {
     if (!transaction.finished) {
       await transaction.rollback();
     }
-    console.error('[orders.cancelByTracking]', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return handleControllerError(res, 'orders.cancelByTracking', error);
   }
 };
 
@@ -673,8 +739,7 @@ exports.updateStatus = async (req, res) => {
       scheduleAutoFinalize(order.id, io);
     }
   } catch (error) {
-    console.error('[orders.updateStatus]', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return handleControllerError(res, 'orders.updateStatus', error);
   }
 };
 
@@ -724,8 +789,7 @@ exports.cancelOrder = async (req, res) => {
     if (!transaction.finished) {
       await transaction.rollback();
     }
-    console.error('[orders.cancelOrder]', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return handleControllerError(res, 'orders.cancelOrder', error);
   }
 };
 
@@ -750,121 +814,79 @@ exports.confirmDeliveryByTracking = async (req, res) => {
 
     scheduleAutoFinalize(order.id, io);
   } catch (error) {
-    console.error('[orders.confirmDeliveryByTracking]', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return handleControllerError(res, 'orders.confirmDeliveryByTracking', error);
   }
 };
 
-exports.confirmPixPayment = async (req, res) => {
-  const transaction = await sequelize.transaction();
-
+exports.mercadoPagoWebhook = async (req, res) => {
   try {
-    const order = await Order.findByPk(req.params.id, {
-      transaction,
-      lock: transaction.LOCK.UPDATE,
+    ensureMercadoPagoReconciler(req.app.get('io'));
+    logger.info('orders.webhook.received', {
+      type: req.query?.type || req.body?.type || null,
+      action: req.body?.action || null,
     });
 
-    if (!order) {
-      await transaction.rollback();
-      return res.status(404).json({ error: 'Order not found' });
+    const expectedToken = process.env.MERCADOPAGO_WEBHOOK_TOKEN;
+    if (expectedToken) {
+      const receivedToken = req.query?.token;
+      if (receivedToken !== expectedToken) {
+        return res.status(401).json({ error: 'Unauthorized webhook' });
+      }
     }
 
-    if (order.paymentMethod !== 'PIX') {
-      await transaction.rollback();
-      return res.status(400).json({ error: 'Pedido não é PIX.' });
+    const eventType = String(req.query?.type || req.body?.type || '').toLowerCase();
+    const action = String(req.body?.action || '').toLowerCase();
+    const isPaymentEvent = eventType === 'payment' || action.startsWith('payment.');
+    if (!isPaymentEvent) {
+      return res.status(200).json({ ok: true });
     }
 
-    if (order.paymentStatus === 'pago') {
-      await transaction.commit();
-      const freshOrder = await Order.findByPk(order.id, { include: ORDER_INCLUDES });
-      if (!freshOrder) return res.status(404).json({ error: 'Order not found' });
-      await attachEtaToOrders(freshOrder);
-      return res.json(freshOrder);
+    const paymentId = req.body?.data?.id || req.query?.['data.id'];
+    if (!paymentId) {
+      return res.status(200).json({ ok: true });
     }
 
-    order.paymentStatus = 'pago';
-
-    if (order.status === 'aguardando_pagamento') {
-      order.status = 'novo';
+    const payment = await mercadoPagoService.getPayment(paymentId);
+    if (!payment) {
+      return res.status(200).json({ ok: true });
     }
 
-    await order.save({ transaction });
-    await transaction.commit();
-
-    const freshOrder = await Order.findByPk(order.id, { include: ORDER_INCLUDES });
-    if (!freshOrder) return res.status(404).json({ error: 'Order not found' });
-    await attachEtaToOrders(freshOrder);
-    req.app.get('io')?.emit('orderUpdated', freshOrder);
-    
-    // Notifica que o pagamento caiu e o pedido foi recebido (Novo)
-    notifyCustomer(freshOrder, freshOrder.status);
-
-    return res.json(freshOrder);
-  } catch (error) {
-    if (!transaction.finished) {
-      await transaction.rollback();
+    const externalReference = payment.external_reference || payment.metadata?.orderId;
+    if (!externalReference) {
+      return res.status(200).json({ ok: true });
     }
-    console.error('[orders.confirmPixPayment]', error);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-};
 
-exports.claimPaid = async (req, res) => {
-  try {
-    const order = await Order.findOne({ where: { trackingCode: req.params.code } });
-    if (!order) return res.status(404).json({ error: 'Order not found' });
-    if (order.paymentMethod !== 'PIX') return res.status(400).json({ error: 'Only PIX orders' });
-    if (order.paymentStatus !== 'pendente') return res.status(400).json({ error: 'Payment already processed' });
+    const order = await Order.findByPk(externalReference);
+    if (!order || order.paymentMethod !== 'PIX') {
+      return res.status(200).json({ ok: true });
+    }
 
-    order.paymentStatus = 'alegado';
-    await order.save();
-
-    req.app.get('io')?.emit('orderUpdated', {
-      id: order.id,
-      trackingCode: order.trackingCode,
-      status: order.status,
-      paymentStatus: order.paymentStatus,
+    logger.info('orders.webhook.order_matched', {
+      paymentId: String(paymentId),
+      foundOrder: Boolean(order),
+      orderId: order?.id,
+      orderStatus: order?.status,
+      paymentStatus: order?.paymentStatus,
     });
+    const { changed, paymentApprovedNow } = await orderPaymentService.applyPaymentToOrder(order, payment);
 
-    res.json({ paymentStatus: order.paymentStatus });
+    if (changed) {
+      await attachEtaToOrders(order);
+      req.app.get('io')?.emit('orderUpdated', order);
+      logger.info('orders.webhook.order_updated', {
+        orderId: order.id,
+        status: order.status,
+        paymentStatus: order.paymentStatus,
+      });
+      if (paymentApprovedNow) {
+        notifyCustomer(order, order.status);
+      }
+    }
+
+    return res.status(200).json({ ok: true });
   } catch (error) {
-    console.error('[orders.claimPaid]', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-};
-
-exports.uploadReceipt = async (req, res) => {
-  try {
-    const order = await Order.findOne({ where: { trackingCode: req.params.code } });
-    if (!order) return res.status(404).json({ error: 'Order not found' });
-
-    const { receiptBase64 } = req.body;
-    if (!receiptBase64) return res.status(400).json({ error: 'Missing image data' });
-
-    const matches = receiptBase64.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
-    if (!matches) return res.status(400).json({ error: 'Invalid base64 string' });
-
-    const [, contentType, data] = matches;
-    const ext = contentType.split('/')[1] || 'png';
-    const key = `receipts/receipt_${order.id}_${Date.now()}.${ext}`;
-
-    order.receiptUrl = await uploadFile(Buffer.from(data, 'base64'), key, contentType);
-    await order.save();
-    await attachEtaToOrders(order);
-
-    req.app.get('io')?.emit('orderUpdated', {
-      id: order.id,
-      trackingCode: order.trackingCode,
-      status: order.status,
-      paymentStatus: order.paymentStatus,
-      receiptUrl: order.receiptUrl,
-      eta: order.eta,
-    });
-
-    res.json(order);
-  } catch (error) {
-    console.error('[orders.uploadReceipt]', error);
-    res.status(500).json({ error: 'Internal server error' });
+    logger.error('orders.webhook.failed', error);
+    return res.status(200).json({ ok: true });
   }
 };
 
@@ -892,7 +914,7 @@ exports.printOrder = async (req, res) => {
     if (operationalCodes.includes(error.code)) {
       return res.status(422).json({ error: error.message });
     }
-    console.error('[orders.printOrder]', error);
+    logger.error('orders.printOrder.failed', error);
     return res.status(422).json({
       error: `Falha ao comunicar com a impressora: ${error.message}`,
     });

@@ -200,20 +200,10 @@
               <!-- Quick Actions -->
               <div class="flex flex-col gap-2" @click.stop>
                 <button
-                  v-if="order.paymentStatus !== 'pago'"
-                  @click="confirmPixPayment(order)"
-                  :disabled="pixLoadingIds.has(order.id)"
-                  class="w-full py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Check class="w-4 h-4" />
-                  {{ pixLoadingIds.has(order.id) ? 'Confirmando...' : 'Confirmar PIX' }}
-                </button>
-                <button
-                  v-if="order.receiptUrl"
                   @click="router.push({ name: 'pedido-detalhe', params: { id: order.id } })"
-                  class="w-full py-2 bg-orange-500 text-white rounded-lg text-xs font-bold hover:bg-orange-600 transition flex items-center justify-center gap-2"
+                  class="w-full py-2 bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 rounded-lg text-xs font-bold hover:bg-neutral-300 dark:hover:bg-neutral-700 transition flex items-center justify-center gap-2"
                 >
-                  Conferir Comprovante
+                  Ver Detalhes
                 </button>
               </div>
             </div>
@@ -389,8 +379,6 @@ import { useOrderSocket } from "@/composables/useOrderSocket";
 import { useOrderStatus } from "@/composables/useOrderStatus";
 import { printReceipt } from "@/utils/printReceipt";
 
-const pixLoadingIds = ref(new Set());
-
 const router = useRouter();
 const toast = useToastStore();
 const orders = shallowRef([]);
@@ -531,29 +519,6 @@ const executePrint = async (order) => {
   } catch {
     toast.error("Não foi possível abrir o diálogo de impressão.");
     return false;
-  }
-};
-
-const confirmPixPayment = async (order) => {
-  if (pixLoadingIds.value.has(order.id)) return;
-  pixLoadingIds.value = new Set([...pixLoadingIds.value, order.id]);
-  try {
-    const res = await OrderService.confirmPix(order.id);
-    const updated = res.data;
-    const idx = orders.value.findIndex((o) => o.id === order.id);
-    if (idx !== -1) {
-      const newOrders = [...orders.value];
-      newOrders[idx] = { ...newOrders[idx], ...updated };
-      orders.value = newOrders;
-    }
-    toast.success(`PIX confirmado: pedido #${order.trackingCode || order.id.slice(0, 8)} agora é Novo.`);
-  } catch (error) {
-    toast.error("Erro ao confirmar PIX");
-    console.error(error);
-  } finally {
-    const next = new Set(pixLoadingIds.value);
-    next.delete(order.id);
-    pixLoadingIds.value = next;
   }
 };
 

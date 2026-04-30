@@ -67,10 +67,6 @@ module.exports = {
       observation: {
         type: Sequelize.TEXT
       },
-      receiptUrl: {
-        type: Sequelize.STRING,
-        allowNull: true
-      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE

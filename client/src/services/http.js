@@ -311,12 +311,6 @@ export const OrderService = {
     // Rota pública para pedidos feitos pelo cliente via celular, sem necessidade de Auth
     return api.post('/orders/public', orderData)
   },
-  uploadReceipt(trackingCode, payload) {
-    return api.post(`/orders/track/${trackingCode}/receipt`, payload)
-  },
-  claimPaid(trackingCode) {
-    return api.patch(`/orders/track/${trackingCode}/claim-paid`)
-  },
   cancelPublicOrder(trackingCode) {
     return api.patch(`/orders/track/${trackingCode}/cancel`)
   },
@@ -329,9 +323,6 @@ export const OrderService = {
   trackPublicOrder(trackingCode) {
     // Rota pública para consultar status do pedido por código
     return api.get(`/orders/track/${trackingCode}`)
-  },
-  confirmPix(id) {
-    return api.patch(`/orders/${id}/confirm-pix`)
   },
   updateOrderStatus(id, status, paymentStatus, paymentMethod) {
     const payload = {};
