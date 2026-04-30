@@ -7,6 +7,9 @@
       class="absolute inset-0 z-[80] bg-neutral-950/95 backdrop-blur-sm flex items-center justify-center p-6"
     >
       <div class="max-w-xl w-full text-center bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-8 shadow-2xl">
+        <div class="mx-auto mb-4 w-14 h-14 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 flex items-center justify-center">
+          <Wrench class="w-7 h-7 text-red-600 dark:text-red-400" />
+        </div>
         <h2 class="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-3">Estamos em manutenção</h2>
         <p class="text-sm text-neutral-600 dark:text-neutral-300">
           {{ maintenanceMensagem }}
@@ -370,7 +373,7 @@ import ProductModal from "@/components/customer/ProductModal.vue";
 import ImageCarousel from "@/components/ImageCarousel.vue";
 import CartCheckout from "@/components/customer/CartCheckout.vue";
 import OrderTracking from "@/components/customer/OrderTracking.vue";
-import { Coffee, Sun, Moon, MapPin, AlertCircle, Search, ShoppingCart, Plus } from "lucide-vue-next";
+import { Coffee, Sun, Moon, MapPin, AlertCircle, Search, ShoppingCart, Plus, Wrench } from "lucide-vue-next";
 
 const isDark = useDark();
 const toggleDark = useToggle(isDark);

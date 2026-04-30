@@ -420,34 +420,47 @@
             </div>
           </div>
 
-          <div class="mt-8 space-y-4 p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/30">
-            <div class="flex items-center justify-between gap-4">
-              <div>
-                <h3 class="font-bold text-neutral-900 dark:text-neutral-100">Modo Manutenção</h3>
-                <p class="text-sm text-neutral-500 dark:text-neutral-400">
-                  Quando ativo, o cardápio público exibe tela de manutenção e bloqueia novos pedidos.
-                </p>
-              </div>
-              <button
-                @click="form.maintenance.enabled = !form.maintenance.enabled"
-                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                :class="form.maintenance.enabled ? 'bg-red-600' : 'bg-neutral-300 dark:bg-neutral-700'"
-              >
-                <span
-                  class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                  :class="form.maintenance.enabled ? 'translate-x-5' : 'translate-x-0'"
-                ></span>
-              </button>
-            </div>
+        </div>
 
-            <div class="space-y-1">
-              <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Mensagem da tela</label>
-              <textarea
-                v-model="form.maintenance.message"
-                rows="2"
-                class="w-full px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all"
-                placeholder="Estamos em manutenção e voltamos em breve."
-              ></textarea>
+        <!-- Tab: Manutenção -->
+        <div v-show="currentTab === 'maintenance'" class="space-y-8 animate-fadeIn">
+          <div>
+            <h2 class="text-xl font-bold text-neutral-900 dark:text-neutral-100 mb-3">
+              Modo Manutenção
+            </h2>
+            <p class="text-neutral-500 dark:text-neutral-400 mb-6">
+              Bloqueia novos pedidos no cardápio público e exibe uma mensagem para os clientes.
+            </p>
+
+            <div class="space-y-4 p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/30">
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <h3 class="font-bold text-neutral-900 dark:text-neutral-100">Ativar manutenção</h3>
+                  <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                    Quando ativo, o checkout do cardápio fica indisponível.
+                  </p>
+                </div>
+                <button
+                  @click="form.maintenance.enabled = !form.maintenance.enabled"
+                  class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                  :class="form.maintenance.enabled ? 'bg-red-600' : 'bg-neutral-300 dark:bg-neutral-700'"
+                >
+                  <span
+                    class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                    :class="form.maintenance.enabled ? 'translate-x-5' : 'translate-x-0'"
+                  ></span>
+                </button>
+              </div>
+
+              <div class="space-y-1">
+                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Mensagem da tela</label>
+                <textarea
+                  v-model="form.maintenance.message"
+                  rows="2"
+                  class="w-full px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all"
+                  placeholder="Estamos em manutenção e voltamos em breve."
+                ></textarea>
+              </div>
             </div>
           </div>
         </div>
@@ -570,6 +583,7 @@ import {
   Clock3,
   Truck,
   CreditCard,
+  Wrench,
   MessageCircle,
   Landmark,
   Banknote,
@@ -792,6 +806,11 @@ const tabs = [
     id: "payment",
     label: "Pagamentos",
     icon: CreditCard,
+  },
+  {
+    id: "maintenance",
+    label: "Manutenção",
+    icon: Wrench,
   },
   {
     id: "whatsapp",
