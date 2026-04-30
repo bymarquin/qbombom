@@ -32,7 +32,7 @@
 
           <select
             v-model="selectedCategoryId"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 transition-all cursor-pointer"
+            class="w-full h-[42px] px-3.5 text-sm rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 transition-all cursor-pointer dark:[color-scheme:dark]"
           >
             <option value="all">Todas categorias</option>
             <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
@@ -40,7 +40,7 @@
 
           <select
             v-model="selectedStatus"
-            class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 transition-all cursor-pointer"
+            class="w-full h-[42px] px-3.5 text-sm rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 transition-all cursor-pointer dark:[color-scheme:dark]"
           >
             <option value="all">Todos status</option>
             <option value="active">Ativos</option>
