@@ -10,11 +10,15 @@ const rolePermissions = {
     // Produtos
     'products.create', 'products.update', 'products.toggle_active',
     // Relatórios e Usuários
-    'reports.view', 'users.create', 'users.update', 'users.manage'
+    'reports.view', 'users.create', 'users.update', 'users.manage',
+    // Clientes
+    'customers.view', 'customers.manage'
   ],
   CASHIER: [
     'orders.create', 'orders.update', 'orders.view', 'orders.cancel', 'orders.change_status',
-    'payments.create'
+    'payments.create',
+    // Clientes
+    'customers.view', 'customers.manage'
   ],
   DELIVERY: [
     'orders.view', 'orders.change_status'
