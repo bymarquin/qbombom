@@ -255,6 +255,12 @@
             >
               {{ getStockBadge(produto).label }}
             </p>
+            <p
+              v-if="getAvailabilityBadge(produto)"
+              class="mt-1 text-[11px] font-medium text-neutral-400 dark:text-neutral-500"
+            >
+              {{ getAvailabilityBadge(produto).label }}
+            </p>
           </div>
         </button>
       </div>
@@ -317,10 +323,12 @@
       v-model:is-open="sacolaAberta"
       v-model:carrinho="carrinho"
       v-model:checkout="checkout"
+      :mesa-do-qr="mesaDoQr"
       :subtotal="subtotal"
       :service-fee="taxaServico"
       :total="totalComTaxaServico"
       :pode-finalizar-pedido="podeFinalizarPedido"
+      :itens-incompativeis="itensIncompativeis"
       :enviando="enviando"
       :is-store-open="isStoreOpen"
       :pedido-minimo-entrega="PEDIDO_MINIMO_ENTREGA"
@@ -501,9 +509,17 @@ const maintenanceMensagem = computed(
   () => storeSettings.value?.maintenance?.message || "Estamos em manutenção e voltamos em breve.",
 );
 
+const itensIncompativeis = computed(() => {
+  const tipo = checkout.value.tipo
+  return carrinho.value.filter(
+    item => Array.isArray(item.allowedOrderTypes) && !item.allowedOrderTypes.includes(tipo)
+  )
+})
+
 const podeFinalizarPedido = computed(() => {
   if (maintenanceAtiva.value) return false;
   if (!checkout.value.nome || !checkout.value.telefone) return false;
+  if (itensIncompativeis.value.length > 0) return false;
   if (checkout.value.tipo === "Entrega") {
     if (subtotal.value < PEDIDO_MINIMO_ENTREGA) return false;
     return Boolean(
@@ -659,10 +675,13 @@ onMounted(async () => {
   // Lê parâmetro ?mesa= do QR Code da mesa
   const mesaParam = params.get('mesa')
   if (mesaParam) {
+    const mesaNumero = String(mesaParam).replace(/\D/g, '').slice(0, 3)
+    if (mesaNumero) {
     checkout.value.tipo = 'Mesa'
-    checkout.value.mesa = `Mesa ${mesaParam.padStart(2, '0')}`
+      checkout.value.mesa = `Mesa ${mesaNumero.padStart(2, '0')}`
     mesaDoQr.value = checkout.value.mesa
     window.history.replaceState({}, '', window.location.pathname)
+    }
   }
 
   // Checa se há um pedido sendo rastreado (via URL ?track= ou localStorage)
@@ -815,6 +834,14 @@ const getStockBadge = (produto) => {
   return { label: 'Em estoque', tone: 'success' }
 }
 
+const getAvailabilityBadge = (produto) => {
+  const types = produto?.allowedOrderTypes
+  if (!Array.isArray(types)) return null
+  if (!types.includes('Entrega') && !types.includes('Viagem')) return { label: 'Apenas presencial' }
+  if (!types.includes('Entrega')) return { label: 'Sem entrega' }
+  return null
+}
+
 const stockBadgeClass = (tone) => {
   if (tone === 'danger') return 'bg-red-600 text-white'
   if (tone === 'warning') return 'bg-amber-500 text-white'
@@ -938,7 +965,9 @@ const enviarPedido = async () => {
       type: checkout.value.tipo,
       customerName: finalCustomerName,
       customerPhone: limparTelefone(checkout.value.telefone),
-      tableNumber: checkout.value.tipo === "Mesa" ? checkout.value.mesa?.trim() || undefined : undefined,
+      tableNumber: checkout.value.tipo === "Mesa"
+        ? checkout.value.mesa?.trim() || mesaDoQr.value || undefined
+        : undefined,
       whatsappOptIn: Boolean(checkout.value.whatsappOptIn),
       deliveryAddress: endEntrega || undefined,
       ...(geo?.latitude != null && geo?.longitude != null ? {

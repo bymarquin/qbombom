@@ -536,6 +536,7 @@ const montarItemPayload = () => {
   return {
     productId: props.produtoDetalhado.id,
     productName: props.produtoDetalhado.name,
+    allowedOrderTypes: props.produtoDetalhado.allowedOrderTypes ?? ['Mesa', 'Viagem', 'Entrega'],
     variationId: (isSorvete.value || isWeightBased.value) ? null : (tamanhoSelecionado.value?.id || null),
     variationName: isWeightBased.value
       ? `${pesoGramas.value}g`

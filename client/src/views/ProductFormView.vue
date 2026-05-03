@@ -316,6 +316,25 @@
             </div>
           </div>
 
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Disponível para</label>
+            <div class="flex flex-wrap gap-4">
+              <label class="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 cursor-pointer">
+                <input type="checkbox" value="Mesa" v-model="form.allowedOrderTypes" class="w-4 h-4 rounded border-neutral-300 dark:border-neutral-700 accent-red-600 cursor-pointer" />
+                Local (Mesa)
+              </label>
+              <label class="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 cursor-pointer">
+                <input type="checkbox" value="Viagem" v-model="form.allowedOrderTypes" class="w-4 h-4 rounded border-neutral-300 dark:border-neutral-700 accent-red-600 cursor-pointer" />
+                Viagem
+              </label>
+              <label class="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 cursor-pointer">
+                <input type="checkbox" value="Entrega" v-model="form.allowedOrderTypes" class="w-4 h-4 rounded border-neutral-300 dark:border-neutral-700 accent-red-600 cursor-pointer" />
+                Entrega
+              </label>
+            </div>
+            <p class="text-xs text-neutral-400 dark:text-neutral-500">Desmarque tipos que este produto não suporta (ex.: taças não saem para entrega)</p>
+          </div>
+
           <div class="flex items-center gap-3">
             <input v-model="form.manageStock" id="prod-manage-stock" type="checkbox" class="w-4 h-4 rounded border-neutral-300 dark:border-neutral-700 accent-red-600 cursor-pointer" />
             <label for="prod-manage-stock" class="text-sm font-medium text-neutral-700 dark:text-neutral-300 cursor-pointer">Controlar Estoque</label>
@@ -376,6 +395,7 @@ const categories = shallowRef([])
 const form = ref({
   name: '', description: '', categoryId: '', status: true,
   requiresPreparation: true,
+  allowedOrderTypes: ['Mesa', 'Viagem', 'Entrega'],
   manageStock: false, stock: 0, variations: [],
   weightBased: false, pricePerKg: 0, minPrice: 0,
 })
@@ -440,6 +460,7 @@ onMounted(async () => {
         categoryId: data.categoryId,
         status: data.status,
         requiresPreparation: data.requiresPreparation ?? true,
+        allowedOrderTypes: data.allowedOrderTypes ?? ['Mesa', 'Viagem', 'Entrega'],
         manageStock: data.manageStock || false,
         stock: data.stock || 0,
         variations: (data.variations || []).map((v) => ({ name: v.name, price: v.price, maxAdditionals: v.maxAdditionals ?? null })),

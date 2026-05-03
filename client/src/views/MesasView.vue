@@ -84,6 +84,9 @@
             />
             <div v-else class="w-[120px] h-[120px] bg-neutral-100 rounded animate-pulse" />
           </div>
+          <p class="text-[11px] font-medium text-neutral-500 dark:text-neutral-400 -mt-1">
+            Mesa {{ String(n).padStart(2, '0') }}
+          </p>
           <button
             @click="imprimirMesa(n)"
             class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-neutral-500 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
@@ -99,6 +102,7 @@
     <div id="print-area">
       <div v-for="item in printItems" :key="item.label" class="print-card">
         <p class="print-label">{{ item.label }}</p>
+        <p v-if="item.subLabel" class="print-sublabel">{{ item.subLabel }}</p>
         <img :src="item.src" width="200" height="200" />
       </div>
     </div>
@@ -137,8 +141,9 @@ async function disparaImpressao(itens) {
 }
 
 function imprimir() {
-  const mesaItems = Object.entries(qrUrls.value).map(([, src]) => ({
+  const mesaItems = Object.entries(qrUrls.value).map(([n, src]) => ({
     label: 'Cardápio',
+    subLabel: `Mesa ${String(n).padStart(2, '0')}`,
     src,
   }))
   disparaImpressao([{ label: 'Balcão', src: balcaoQrUrl.value }, ...mesaItems])
@@ -150,7 +155,9 @@ function imprimirBalcao() {
 
 function imprimirMesa(n) {
   const src = qrUrls.value[n]
-  if (src) disparaImpressao([{ label: 'Cardápio', src }])
+  if (src) {
+    disparaImpressao([{ label: 'Cardápio', subLabel: `Mesa ${String(n).padStart(2, '0')}`, src }])
+  }
 }
 </script>
 
@@ -190,6 +197,15 @@ function imprimirMesa(n) {
     font-weight: 700;
     color: #1f2937;
     font-family: sans-serif;
+  }
+  .print-sublabel {
+    margin-top: -2px;
+    margin-bottom: 2px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #6b7280;
+    font-family: sans-serif;
+    letter-spacing: 0.02em;
   }
   @page { margin: 10mm; }
 }

@@ -213,10 +213,17 @@
               >
               <input
                 v-model="checkout.mesa"
+                :readonly="Boolean(mesaDoQr)"
                 type="text"
                 placeholder="Mesa 04"
                 class="w-full px-3.5 py-2.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-all duration-200 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 placeholder-neutral-400"
               />
+              <p
+                v-if="mesaDoQr"
+                class="text-[11px] text-neutral-500 dark:text-neutral-400"
+              >
+                Mesa identificada via QR: <span class="font-semibold">{{ mesaDoQr }}</span>
+              </p>
             </div>
 
             <div v-if="checkout.tipo === 'Entrega'" class="flex flex-col gap-3">
@@ -354,6 +361,14 @@
           Preencha seus dados para continuar.
         </p>
         <p
+          v-else-if="itensIncompativeis.length > 0"
+          class="text-center text-xs text-red-600 dark:text-red-400 mt-2 font-medium"
+        >
+          {{ itensIncompativeis.map(i => i.productName).join(', ') }}
+          {{ itensIncompativeis.length === 1 ? 'não está disponível' : 'não estão disponíveis' }}
+          para {{ checkout.tipo === 'Entrega' ? 'entrega' : 'viagem' }}.
+        </p>
+        <p
           v-else-if="checkout.tipo === 'Entrega' && subtotal < pedidoMinimoEntrega"
           class="text-center text-xs text-red-600 dark:text-red-400 mt-2 font-medium"
         >
@@ -413,6 +428,14 @@ defineProps({
   pedidoMinimoEntrega: {
     type: Number,
     default: 12,
+  },
+  mesaDoQr: {
+    type: String,
+    default: null,
+  },
+  itensIncompativeis: {
+    type: Array,
+    default: () => [],
   },
 });
 

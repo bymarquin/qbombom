@@ -61,6 +61,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.BOOLEAN,
       defaultValue: true
     },
+    allowedOrderTypes: {
+      type: DataTypes.JSONB,
+      defaultValue: ['Mesa', 'Viagem', 'Entrega'],
+      allowNull: false
+    },
     weightBased: {
       type: DataTypes.BOOLEAN,
       defaultValue: false

@@ -501,11 +501,29 @@ exports.create = async (req, res) => {
     const isPendingPix = paymentMethod === 'PIX' && (!paymentStatus || paymentStatus === 'pendente');
 
     let allExpressItems = false;
-    if (!isPendingPix && items?.length > 0) {
+    if (items?.length > 0) {
       const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))];
-      const products = await Product.findAll({ where: { id: productIds }, attributes: ['id', 'requiresPreparation'], transaction });
+      const products = await Product.findAll({
+        where: { id: productIds },
+        attributes: ['id', 'name', 'requiresPreparation', 'allowedOrderTypes'],
+        transaction
+      });
       const productMap = new Map(products.map(p => [p.id, p]));
-      allExpressItems = items.every(i => productMap.get(i.productId)?.requiresPreparation === false);
+
+      const incompatible = products.filter(p => {
+        const allowed = p.allowedOrderTypes;
+        return Array.isArray(allowed) && !allowed.includes(orderType);
+      });
+      if (incompatible.length > 0) {
+        const names = incompatible.map(p => p.name).join(', ');
+        const err = new Error(`Os seguintes itens não estão disponíveis para ${orderType}: ${names}`);
+        err.status = 422;
+        throw err;
+      }
+
+      if (!isPendingPix) {
+        allExpressItems = items.every(i => productMap.get(i.productId)?.requiresPreparation === false);
+      }
     }
 
     const orderStatus = isPendingPix ? 'aguardando_pagamento' : allExpressItems ? 'pronto' : 'novo';

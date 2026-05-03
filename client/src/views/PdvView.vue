@@ -156,7 +156,7 @@
                 "
                 @click="tipoConsumo = 'Mesa'"
               >
-                Mesa / Local
+                Tomar aqui
               </button>
               <button
                 class="flex-1 py-1.5 text-sm font-medium rounded-md transition-all"
@@ -167,7 +167,7 @@
                 "
                 @click="tipoConsumo = 'Viagem'"
               >
-                Viagem
+                Levar
               </button>
               <button
                 class="flex-1 py-1.5 text-sm font-medium rounded-md transition-all"
@@ -178,7 +178,7 @@
                 "
                 @click="tipoConsumo = 'Entrega'"
               >
-                Delivery
+                Entrega
               </button>
             </div>
 
