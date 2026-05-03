@@ -53,7 +53,14 @@
         <!-- Empty State -->
         <div v-if="pedidosListados.length === 0" class="h-full flex flex-col items-center justify-center text-neutral-400 dark:text-neutral-500 text-center gap-3">
           <MapPinOff class="w-12 h-12 opacity-50" />
-          <p class="font-medium">Nenhum pedido <br>{{ abaAtiva === 'pronto' ? 'aguardando coleta' : 'em rota no momento' }}</p>
+          <p class="font-medium">
+            <template v-if="codigoRastreio">
+              Pedido #{{ codigoRastreio }} não está em coleta/rota agora
+            </template>
+            <template v-else>
+              Nenhum pedido <br>{{ abaAtiva === 'pronto' ? 'aguardando coleta' : 'em rota no momento' }}
+            </template>
+          </p>
         </div>
 
         <!-- Cards -->
@@ -170,8 +177,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { useToastStore } from '@/stores/toast';
 import { OrderService, AuthService } from '@/services/http';
 import { useOrderSocket } from '@/composables/useOrderSocket';
@@ -182,6 +189,7 @@ import {
 } from 'lucide-vue-next';
 
 const router = useRouter();
+const route = useRoute();
 const toast = useToastStore();
 
 const pedidos = ref([]);
@@ -192,7 +200,13 @@ const abaAtiva = ref('pronto'); // 'pronto' | 'em_rota'
 const pedidosProntos = computed(() => pedidos.value.filter(p => p.status === 'pronto' && p.type === 'Entrega'));
 const pedidosEmRota = computed(() => pedidos.value.filter(p => p.status === 'em_rota' && p.type === 'Entrega'));
 
-const pedidosListados = computed(() => abaAtiva.value === 'pronto' ? pedidosProntos.value : pedidosEmRota.value);
+const codigoRastreio = computed(() => String(route.query.track || '').trim().toUpperCase());
+
+const pedidosListados = computed(() => {
+  const base = abaAtiva.value === 'pronto' ? pedidosProntos.value : pedidosEmRota.value;
+  if (!codigoRastreio.value) return base;
+  return base.filter((p) => String(p.trackingCode || '').toUpperCase() === codigoRastreio.value);
+});
 
 const carregarPedidos = async () => {
   try {
@@ -249,6 +263,18 @@ const mudarStatus = async (id, novoStatus) => {
 };
 
 const fazerLogout = () => AuthService.logout();
+
+watch([codigoRastreio, pedidos], () => {
+  if (!codigoRastreio.value) return;
+  const matched = pedidos.value.find(
+    (p) => String(p.trackingCode || '').toUpperCase() === codigoRastreio.value,
+  );
+  if (matched?.status === 'em_rota') {
+    abaAtiva.value = 'em_rota';
+  } else {
+    abaAtiva.value = 'pronto';
+  }
+}, { immediate: true });
 
 useOrderSocket({
   onConnect:    () => { isOnline.value = true },

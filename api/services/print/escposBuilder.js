@@ -68,6 +68,34 @@ function wrap(text, cols, indent = 0) {
   return Buffer.from(lines.join('\n') + '\n', 'ascii');
 }
 
+function buildDeliveryAccessUrl(order, storeConfig = {}) {
+  if (order.type !== 'Entrega') return '';
+  const tracking = String(order.trackingCode || '').trim();
+  if (!tracking) return '';
+
+  const configBase = String(storeConfig?.profile?.deliveryUrlBase || '').trim();
+  const envBase = String(process.env.CLIENT_URL || 'http://localhost:5173').split(',')[0].trim();
+  const base = configBase || envBase;
+  return `${base}/delivery?track=${encodeURIComponent(tracking)}`;
+}
+
+function buildEscposQrBuffers(data) {
+  const payload = Buffer.from(String(data || ''), 'ascii');
+  if (!payload.length) return [];
+
+  const storeLen = payload.length + 3;
+  const pL = storeLen & 0xff;
+  const pH = (storeLen >> 8) & 0xff;
+
+  return [
+    Buffer.from([GS, 0x28, 0x6b, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00]), // model 2
+    Buffer.from([GS, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x43, 0x06]),       // module size
+    Buffer.from([GS, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x45, 0x31]),       // EC level M
+    Buffer.concat([Buffer.from([GS, 0x28, 0x6b, pL, pH, 0x31, 0x50, 0x30]), payload]),
+    Buffer.from([GS, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x51, 0x30]),       // print
+  ];
+}
+
 /**
  * Constrói Buffer ESC/POS de comanda para pedido.
  * @param {object} order - objeto de pedido com items populados
@@ -90,6 +118,7 @@ function buildOrderBuffer(order, storeConfig = {}) {
         : sanitize(order.type || '').toUpperCase();
 
   const trackCode = order.trackingCode || (order.id || '').slice(0, 8);
+  const deliveryAccessUrl = buildDeliveryAccessUrl(order, storeConfig);
   const tableLabel = order.type === 'Mesa' && order.tableNumber
     ? String(order.tableNumber).trim()
     : '';
@@ -200,6 +229,19 @@ function buildOrderBuffer(order, storeConfig = {}) {
     parts.push(CMD.BOLD_OFF);
     parts.push(wrap(order.observation, cols, 2));
     parts.push(divider(cols, '='));
+  }
+
+  if (deliveryAccessUrl) {
+    parts.push(divider(cols));
+    parts.push(CMD.ALIGN_CENTER);
+    parts.push(CMD.BOLD_ON);
+    parts.push(center('ACESSO ENTREGADOR', cols));
+    parts.push(CMD.BOLD_OFF);
+    for (const chunk of buildEscposQrBuffers(deliveryAccessUrl)) {
+      parts.push(chunk);
+    }
+    parts.push(Buffer.from([LF]));
+    parts.push(wrap(deliveryAccessUrl, cols, 0));
   }
 
   // Footer

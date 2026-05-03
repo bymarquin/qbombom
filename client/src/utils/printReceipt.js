@@ -1,3 +1,5 @@
+import QRCode from 'qrcode';
+
 const PAPER_SIZES = new Set(['58mm', '72mm', '80mm']);
 const LOAD_TIMEOUT_MS = 8000;
 const FALLBACK_FINISH_MS = 15000;
@@ -86,11 +88,20 @@ const buildTableLabel = (order) => {
   return tableNumber.toLowerCase().startsWith('mesa') ? tableNumber.toUpperCase() : `MESA ${tableNumber}`;
 };
 
-const buildReceiptHtml = (order, paperSize) => {
+const buildDeliveryAccessUrl = (order) => {
+  if (order.type !== 'Entrega') return '';
+  const tracking = String(order.trackingCode || '').trim();
+  if (!tracking) return '';
+  const base = typeof window !== 'undefined' ? window.location.origin : '';
+  return `${base}/delivery?track=${encodeURIComponent(tracking)}`;
+};
+
+const buildReceiptHtml = (order, paperSize, deliveryQrUrl = '') => {
   const itemsHtml = buildItemsHtml(order.items);
   const typeLabel = buildTypeLabel(order.type);
   const tableLabel = buildTableLabel(order);
   const tracking = order.trackingCode || (order.id ? order.id.slice(0, 8) : '0000');
+  const deliveryAccessUrl = buildDeliveryAccessUrl(order);
 
   return `
     <!DOCTYPE html>
@@ -300,6 +311,38 @@ const buildReceiptHtml = (order, paperSize) => {
             line-height: 1.6;
           }
 
+          .driver-box {
+            border: 2px solid #000;
+            padding: 6px;
+            margin: 6px 0;
+            text-align: center;
+          }
+
+          .driver-box .label {
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 800;
+            margin-bottom: 4px;
+            display: block;
+          }
+
+          .driver-qr {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            margin: 4px auto;
+            display: block;
+            border: 1px solid #000;
+            padding: 4px;
+            background: #fff;
+          }
+
+          .driver-url {
+            font-size: 9px;
+            word-break: break-all;
+            margin-top: 4px;
+          }
+
           @media print {
             body { width: 100%; padding: 0; }
             @page { margin: 4mm 10mm; size: ${paperSize} auto; }
@@ -360,6 +403,15 @@ const buildReceiptHtml = (order, paperSize) => {
           </div>
         ` : ''}
 
+        ${deliveryAccessUrl ? `
+          <hr class="divider">
+          <div class="driver-box">
+            <span class="label">Acesso Entregador</span>
+            ${deliveryQrUrl ? `<img class="driver-qr" src="${deliveryQrUrl}" alt="QR de entrega">` : ''}
+            <p class="driver-url">${esc(deliveryAccessUrl)}</p>
+          </div>
+        ` : ''}
+
         <hr class="divider">
 
         <div class="footer">
@@ -385,87 +437,103 @@ export const printReceipt = (order, options = {}) => {
       return;
     }
 
-    const paperSize = normalizePaperSize(options.paperSize || order.paperSize || '80mm');
-    const html = buildReceiptHtml(order, paperSize);
-    const iframe = document.createElement('iframe');
-
-    iframe.style.cssText = 'position:absolute;width:0;height:0;border:none;visibility:hidden;';
-    document.body.appendChild(iframe);
-
-    let done = false;
-    let loadTimer = null;
-    let fallbackTimer = null;
-    let afterPrintHandler = null;
-
-    const cleanup = () => {
-      if (loadTimer) clearTimeout(loadTimer);
-      if (fallbackTimer) clearTimeout(fallbackTimer);
-
-      const win = iframe.contentWindow;
-      if (win && afterPrintHandler) {
-        win.removeEventListener('afterprint', afterPrintHandler);
-      }
-
-      if (iframe.parentNode) {
-        iframe.parentNode.removeChild(iframe);
-      }
-    };
-
-    const finish = (ok, error = null) => {
-      if (done) return;
-      done = true;
-      cleanup();
-
-      if (ok) resolve(true);
-      else reject(error || new Error('Falha ao imprimir.'));
-    };
-
-    loadTimer = setTimeout(() => {
-      finish(false, new Error('Tempo excedido ao preparar a impressão.'));
-    }, LOAD_TIMEOUT_MS);
-
-    iframe.onload = async () => {
-      if (loadTimer) clearTimeout(loadTimer);
-
+    const start = async () => {
       try {
-        const win = iframe.contentWindow;
-        const doc = win?.document;
-        if (!win || !doc) {
-          finish(false, new Error('Janela de impressão indisponível.'));
-          return;
+        const paperSize = normalizePaperSize(options.paperSize || order.paperSize || '80mm');
+        const deliveryAccessUrl = buildDeliveryAccessUrl(order);
+        const deliveryQrUrl = deliveryAccessUrl
+          ? await QRCode.toDataURL(deliveryAccessUrl, {
+            width: 180,
+            margin: 1,
+            errorCorrectionLevel: 'M',
+          })
+          : '';
+        const html = buildReceiptHtml(order, paperSize, deliveryQrUrl);
+        const iframe = document.createElement('iframe');
+
+        iframe.style.cssText = 'position:absolute;width:0;height:0;border:none;visibility:hidden;';
+        document.body.appendChild(iframe);
+
+        let done = false;
+        let loadTimer = null;
+        let fallbackTimer = null;
+        let afterPrintHandler = null;
+
+        const cleanup = () => {
+          if (loadTimer) clearTimeout(loadTimer);
+          if (fallbackTimer) clearTimeout(fallbackTimer);
+
+          const win = iframe.contentWindow;
+          if (win && afterPrintHandler) {
+            win.removeEventListener('afterprint', afterPrintHandler);
+          }
+
+          if (iframe.parentNode) {
+            iframe.parentNode.removeChild(iframe);
+          }
+        };
+
+        const finish = (ok, error = null) => {
+          if (done) return;
+          done = true;
+          cleanup();
+
+          if (ok) resolve(true);
+          else reject(error || new Error('Falha ao imprimir.'));
+        };
+
+        loadTimer = setTimeout(() => {
+          finish(false, new Error('Tempo excedido ao preparar a impressão.'));
+        }, LOAD_TIMEOUT_MS);
+
+        iframe.onload = async () => {
+          if (loadTimer) clearTimeout(loadTimer);
+
+          try {
+            const win = iframe.contentWindow;
+            const doc = win?.document;
+            if (!win || !doc) {
+              finish(false, new Error('Janela de impressão indisponível.'));
+              return;
+            }
+
+            if (doc.fonts?.ready) {
+              await doc.fonts.ready;
+            }
+            await delay(30);
+
+            afterPrintHandler = () => finish(true);
+            win.addEventListener('afterprint', afterPrintHandler, { once: true });
+
+            fallbackTimer = setTimeout(() => {
+              finish(true);
+            }, FALLBACK_FINISH_MS);
+
+            win.focus();
+            win.print();
+          } catch (error) {
+            finish(false, error instanceof Error ? error : new Error('Erro ao abrir diálogo de impressão.'));
+          }
+        };
+
+        try {
+          const doc = iframe.contentWindow?.document;
+          if (!doc) {
+            finish(false, new Error('Não foi possível iniciar o iframe de impressão.'));
+            return;
+          }
+
+          doc.open();
+          doc.write(html);
+          doc.close();
+        } catch (error) {
+          finish(false, error instanceof Error ? error : new Error('Erro ao montar comanda para impressão.'));
         }
-
-        if (doc.fonts?.ready) {
-          await doc.fonts.ready;
-        }
-        await delay(30);
-
-        afterPrintHandler = () => finish(true);
-        win.addEventListener('afterprint', afterPrintHandler, { once: true });
-
-        fallbackTimer = setTimeout(() => {
-          finish(true);
-        }, FALLBACK_FINISH_MS);
-
-        win.focus();
-        win.print();
       } catch (error) {
-        finish(false, error instanceof Error ? error : new Error('Erro ao abrir diálogo de impressão.'));
+        reject(error instanceof Error ? error : new Error('Falha ao gerar QR da comanda.'));
       }
     };
 
-    try {
-      const doc = iframe.contentWindow?.document;
-      if (!doc) {
-        finish(false, new Error('Não foi possível iniciar o iframe de impressão.'));
-        return;
-      }
-
-      doc.open();
-      doc.write(html);
-      doc.close();
-    } catch (error) {
-      finish(false, error instanceof Error ? error : new Error('Erro ao montar comanda para impressão.'));
-    }
+    start();
   });
 };
