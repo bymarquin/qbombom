@@ -56,9 +56,7 @@
             />
             <div v-else class="w-[120px] h-[120px] bg-neutral-100 rounded animate-pulse" />
           </div>
-          <p class="text-[11px] font-medium text-neutral-500 dark:text-neutral-400 -mt-1">
-            Mesa Balcão
-          </p>
+          <p class="text-[11px] font-medium text-neutral-500 dark:text-neutral-400 -mt-1">Balcão</p>
           <button
             @click="imprimirBalcao"
             class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-neutral-500 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
@@ -149,12 +147,12 @@ function imprimir() {
     subLabel: `Mesa ${String(n).padStart(2, '0')}`,
     src,
   }))
-  disparaImpressao([{ label: 'Cardápio', subLabel: 'Mesa Balcão', src: balcaoQrUrl.value }, ...mesaItems])
+  disparaImpressao([{ label: 'Cardápio', subLabel: 'Balcão', src: balcaoQrUrl.value }, ...mesaItems])
 }
 
 function imprimirBalcao() {
   if (balcaoQrUrl.value) {
-    disparaImpressao([{ label: 'Cardápio', subLabel: 'Mesa Balcão', src: balcaoQrUrl.value }])
+    disparaImpressao([{ label: 'Cardápio', subLabel: 'Balcão', src: balcaoQrUrl.value }])
   }
 }
 
