@@ -46,9 +46,6 @@
         <!-- Balcão (fixo, sem parâmetro de mesa) -->
         <div class="bg-white dark:bg-neutral-900 rounded-2xl border-2 border-red-200 dark:border-red-900 p-4 flex flex-col items-center gap-3 shadow-sm">
           <p class="text-sm font-bold text-neutral-800 dark:text-neutral-200">Cardápio</p>
-          <p class="text-[11px] font-medium text-neutral-500 dark:text-neutral-400 -mt-1">
-            QR Code Mesa Balcão
-          </p>
           <div class="bg-white p-2 rounded-xl border border-neutral-200">
             <img
               v-if="balcaoQrUrl"
@@ -80,9 +77,6 @@
           <p class="text-sm font-bold text-neutral-800 dark:text-neutral-200">
             Cardápio
           </p>
-          <p class="text-[11px] font-medium text-neutral-500 dark:text-neutral-400 -mt-1">
-            QR Code Mesa {{ n }}
-          </p>
           <div class="bg-white p-2 rounded-xl border border-neutral-200">
             <img
               v-if="qrUrls[n]"
@@ -111,7 +105,6 @@
     <div id="print-area">
       <div v-for="item in printItems" :key="`${item.label}-${item.subLabel || 'sem-sublabel'}`" class="print-card">
         <p class="print-label">{{ item.label }}</p>
-        <p v-if="item.qrLabel" class="print-sublabel">{{ item.qrLabel }}</p>
         <p v-if="item.subLabel" class="print-sublabel">{{ item.subLabel }}</p>
         <img :src="item.src" width="200" height="200" />
       </div>
@@ -153,23 +146,22 @@ async function disparaImpressao(itens) {
 function imprimir() {
   const mesaItems = Object.entries(qrUrls.value).map(([n, src]) => ({
     label: 'Cardápio',
-    qrLabel: `QR Code Mesa ${Number(n)}`,
     subLabel: `Mesa ${String(n).padStart(2, '0')}`,
     src,
   }))
-  disparaImpressao([{ label: 'Cardápio', qrLabel: 'QR Code Mesa Balcão', subLabel: 'Mesa Balcão', src: balcaoQrUrl.value }, ...mesaItems])
+  disparaImpressao([{ label: 'Cardápio', subLabel: 'Mesa Balcão', src: balcaoQrUrl.value }, ...mesaItems])
 }
 
 function imprimirBalcao() {
   if (balcaoQrUrl.value) {
-    disparaImpressao([{ label: 'Cardápio', qrLabel: 'QR Code Mesa Balcão', subLabel: 'Mesa Balcão', src: balcaoQrUrl.value }])
+    disparaImpressao([{ label: 'Cardápio', subLabel: 'Mesa Balcão', src: balcaoQrUrl.value }])
   }
 }
 
 function imprimirMesa(n) {
   const src = qrUrls.value[n]
   if (src) {
-    disparaImpressao([{ label: 'Cardápio', qrLabel: `QR Code Mesa ${n}`, subLabel: `Mesa ${String(n).padStart(2, '0')}`, src }])
+    disparaImpressao([{ label: 'Cardápio', subLabel: `Mesa ${String(n).padStart(2, '0')}`, src }])
   }
 }
 </script>
