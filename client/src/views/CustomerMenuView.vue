@@ -675,12 +675,20 @@ onMounted(async () => {
   // Lê parâmetro ?mesa= do QR Code da mesa
   const mesaParam = params.get('mesa')
   if (mesaParam) {
-    const mesaNumero = String(mesaParam).replace(/\D/g, '').slice(0, 3)
-    if (mesaNumero) {
+    const mesaValor = String(mesaParam).trim().toLowerCase()
     checkout.value.tipo = 'Mesa'
-      checkout.value.mesa = `Mesa ${mesaNumero.padStart(2, '0')}`
-    mesaDoQr.value = checkout.value.mesa
-    window.history.replaceState({}, '', window.location.pathname)
+
+    if (mesaValor === 'balcao' || mesaValor === 'balcão') {
+      checkout.value.mesa = 'Balcão'
+      mesaDoQr.value = checkout.value.mesa
+      window.history.replaceState({}, '', window.location.pathname)
+    } else {
+      const mesaNumero = mesaValor.replace(/\D/g, '').slice(0, 3)
+      if (mesaNumero) {
+        checkout.value.mesa = `Mesa ${mesaNumero.padStart(2, '0')}`
+        mesaDoQr.value = checkout.value.mesa
+        window.history.replaceState({}, '', window.location.pathname)
+      }
     }
   }
 

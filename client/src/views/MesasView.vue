@@ -123,10 +123,16 @@ const printItems = ref([])
 
 async function gerarQrs() {
   const opts = { width: 120, margin: 1, errorCorrectionLevel: 'M' }
-  balcaoQrUrl.value = await QRCode.toDataURL(baseUrl.value, opts)
+  const base = new URL(baseUrl.value)
+  const balcaoUrl = new URL(base)
+  balcaoUrl.searchParams.set('mesa', 'balcao')
+
+  balcaoQrUrl.value = await QRCode.toDataURL(balcaoUrl.toString(), opts)
   const urls = {}
   for (let n = 1; n <= qtdMesas.value; n++) {
-    urls[n] = await QRCode.toDataURL(`${baseUrl.value}?mesa=${n}`, opts)
+    const mesaUrl = new URL(base)
+    mesaUrl.searchParams.set('mesa', String(n))
+    urls[n] = await QRCode.toDataURL(mesaUrl.toString(), opts)
   }
   qrUrls.value = urls
 }
