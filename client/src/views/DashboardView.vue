@@ -29,6 +29,17 @@
           Hoje
         </button>
         <button
+          @click="changePeriod('3days')"
+          :class="
+            period === '3days'
+              ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
+              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 dark:text-neutral-100'
+          "
+          class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors"
+        >
+          3 Dias
+        </button>
+        <button
           @click="changePeriod('week')"
           :class="
             period === 'week'
@@ -40,15 +51,15 @@
           7 Dias
         </button>
         <button
-          @click="changePeriod('month')"
+          @click="changePeriod('year')"
           :class="
-            period === 'month'
+            period === 'year'
               ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
               : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 dark:text-neutral-100'
           "
           class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors"
         >
-          Mês
+          Ano
         </button>
       </div>
     </header>

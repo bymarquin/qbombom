@@ -14,8 +14,18 @@ function getDateRange(period) {
     return { start: startOf(from), end: endOf(now) };
   }
 
+  if (period === '3days') {
+    const from = new Date(now);
+    from.setDate(now.getDate() - 3);
+    return { start: startOf(from), end: endOf(now) };
+  }
+
   if (period === 'month') {
     return { start: new Date(now.getFullYear(), now.getMonth(), 1), end: endOf(now) };
+  }
+
+  if (period === 'year') {
+    return { start: new Date(now.getFullYear(), 0, 1), end: endOf(now) };
   }
 
   return { start: startOf(now), end: endOf(now) };
@@ -26,11 +36,12 @@ exports.getMetrics = async (req, res) => {
     const { start, end } = getDateRange(req.query.period);
 
     const withinPeriod = { createdAt: { [Op.between]: [start, end] } };
-    const notCancelled = { status: { [Op.ne]: 'cancelado' } };
+    const billableStatuses = { status: { [Op.in]: ['finalizado', 'entregue'] } };
+    const billableFilter = { ...withinPeriod, ...billableStatuses };
 
     const [revenue, totalOrders, cancellations, recentOrders, topProductsRaw] = await Promise.all([
-      Order.sum('total', { where: { ...withinPeriod, ...notCancelled } }),
-      Order.count({ where: { ...withinPeriod, ...notCancelled } }),
+      Order.sum('total', { where: billableFilter }),
+      Order.count({ where: billableFilter }),
       Order.count({ where: { ...withinPeriod, status: 'cancelado' } }),
       Order.findAll({ where: withinPeriod, order: [['createdAt', 'DESC']], limit: 5 }),
       OrderItem.findAll({
@@ -44,7 +55,7 @@ exports.getMetrics = async (req, res) => {
             model: Order,
             as: 'order',
             attributes: [],
-            where: { ...withinPeriod, ...notCancelled },
+            where: billableFilter,
             required: true
           },
           {
