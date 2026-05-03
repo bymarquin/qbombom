@@ -103,8 +103,8 @@
     <div id="print-area">
       <div v-for="item in printItems" :key="`${item.label}-${item.subLabel || 'sem-sublabel'}`" class="print-card">
         <p class="print-label">{{ item.label }}</p>
-        <p v-if="item.subLabel" class="print-sublabel">{{ item.subLabel }}</p>
         <img :src="item.src" width="200" height="200" />
+        <p v-if="item.subLabel" class="print-sublabel">{{ item.subLabel }}</p>
       </div>
     </div>
   </div>
