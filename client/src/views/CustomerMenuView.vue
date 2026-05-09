@@ -482,7 +482,7 @@ const checkout = ref(
   loadFromStorage("qbombom_checkout", {
     nome: "",
     telefone: "",
-    tipo: "Mesa",
+    tipo: "",
     mesa: "",
     whatsappOptIn: false,
     pagamento: "PIX",
@@ -511,6 +511,7 @@ const maintenanceMensagem = computed(
 
 const itensIncompativeis = computed(() => {
   const tipo = checkout.value.tipo
+  if (!tipo) return []
   return carrinho.value.filter(
     item => Array.isArray(item.allowedOrderTypes) && !item.allowedOrderTypes.includes(tipo)
   )
@@ -519,6 +520,7 @@ const itensIncompativeis = computed(() => {
 const podeFinalizarPedido = computed(() => {
   if (maintenanceAtiva.value) return false;
   if (!checkout.value.nome || !checkout.value.telefone) return false;
+  if (!checkout.value.tipo) return false;
   if (itensIncompativeis.value.length > 0) return false;
   if (checkout.value.tipo === "Entrega") {
     if (subtotal.value < PEDIDO_MINIMO_ENTREGA) return false;

@@ -163,48 +163,34 @@
               </label>
             </div>
 
-            <div class="grid grid-cols-3 gap-2 p-1.5 bg-neutral-100 dark:bg-neutral-800/60 rounded-xl border border-neutral-200/60 dark:border-neutral-700/50 relative">
-              <div
-                class="absolute top-1.5 bottom-1.5 w-[calc(33.33%-4px)] bg-white dark:bg-neutral-700 rounded-lg shadow-sm border border-neutral-200/50 dark:border-neutral-600/50 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
-                :class="{
-                  'translate-x-1': checkout.tipo === 'Mesa',
-                  'translate-x-[calc(100%+8px)]': checkout.tipo === 'Viagem',
-                  'translate-x-[calc(200%+8px)]': checkout.tipo === 'Entrega'
-                }"
-              ></div>
-              <button
-                @click="checkout.tipo = 'Mesa'"
-                class="relative py-2 rounded-lg text-sm font-bold transition-colors duration-300 z-10"
-                :class="
-                  checkout.tipo === 'Mesa'
-                    ? 'text-neutral-900 dark:text-neutral-100'
-                    : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
-                "
-              >
-                Local
-              </button>
-              <button
-                @click="checkout.tipo = 'Viagem'"
-                class="relative py-2 rounded-lg text-sm font-bold transition-colors duration-300 z-10"
-                :class="
-                  checkout.tipo === 'Viagem'
-                    ? 'text-neutral-900 dark:text-neutral-100'
-                    : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
-                "
-              >
-                Levar
-              </button>
-              <button
-                @click="checkout.tipo = 'Entrega'"
-                class="relative py-2 rounded-lg text-sm font-bold transition-colors duration-300 z-10"
-                :class="
-                  checkout.tipo === 'Entrega'
-                    ? 'text-neutral-900 dark:text-neutral-100'
-                    : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
-                "
-              >
-                Entrega
-              </button>
+            <div class="space-y-2">
+              <p class="text-xs font-bold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Passo 1: como deseja receber?</p>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  @click="checkout.tipo = 'Mesa'"
+                  class="p-3 rounded-xl border text-left transition-all duration-200"
+                  :class="checkout.tipo === 'Mesa' ? 'border-red-500 bg-red-50 dark:bg-red-900/20 ring-2 ring-red-500/30' : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:border-neutral-300 dark:hover:border-neutral-600'"
+                >
+                  <p class="text-sm font-bold text-neutral-900 dark:text-neutral-100">Mesa</p>
+                  <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Consumir no local</p>
+                </button>
+                <button
+                  @click="checkout.tipo = 'Viagem'"
+                  class="p-3 rounded-xl border text-left transition-all duration-200"
+                  :class="checkout.tipo === 'Viagem' ? 'border-red-500 bg-red-50 dark:bg-red-900/20 ring-2 ring-red-500/30' : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:border-neutral-300 dark:hover:border-neutral-600'"
+                >
+                  <p class="text-sm font-bold text-neutral-900 dark:text-neutral-100">Levar</p>
+                  <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Retirar no balcão</p>
+                </button>
+                <button
+                  @click="checkout.tipo = 'Entrega'"
+                  class="p-3 rounded-xl border text-left transition-all duration-200"
+                  :class="checkout.tipo === 'Entrega' ? 'border-red-500 bg-red-50 dark:bg-red-900/20 ring-2 ring-red-500/30' : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:border-neutral-300 dark:hover:border-neutral-600'"
+                >
+                  <p class="text-sm font-bold text-neutral-900 dark:text-neutral-100">Entrega</p>
+                  <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Receber em casa</p>
+                </button>
+              </div>
             </div>
 
             <div v-if="checkout.tipo === 'Mesa'" class="flex flex-col gap-2">
@@ -359,6 +345,12 @@
           class="text-center text-xs text-red-600 dark:text-red-400 mt-2 font-medium"
         >
           Preencha seus dados para continuar.
+        </p>
+        <p
+          v-else-if="!checkout.tipo"
+          class="text-center text-xs text-red-600 dark:text-red-400 mt-2 font-medium"
+        >
+          Escolha como deseja receber: Mesa, Levar ou Entrega.
         </p>
         <p
           v-else-if="itensIncompativeis.length > 0"
