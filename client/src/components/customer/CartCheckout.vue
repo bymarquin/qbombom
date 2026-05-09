@@ -164,7 +164,7 @@
             </div>
 
             <div class="space-y-2">
-              <p class="text-xs font-bold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Passo 1: como deseja receber?</p>
+              <p class="text-xs font-bold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Como deseja receber?</p>
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <button
                   @click="checkout.tipo = 'Mesa'"
