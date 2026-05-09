@@ -81,6 +81,15 @@ const buildTypeLabel = (type) => {
   return (type || '').toUpperCase();
 };
 
+const isDeliveryType = (type) => {
+  const normalized = String(type || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+  return normalized === 'entrega' || normalized === 'delivery';
+};
+
 const buildTableLabel = (order) => {
   if (order.type !== 'Mesa' || !order.tableNumber) return '';
   const tableNumber = String(order.tableNumber).trim();
@@ -89,7 +98,7 @@ const buildTableLabel = (order) => {
 };
 
 const buildDeliveryAccessUrl = (order) => {
-  if (order.type !== 'Entrega') return '';
+  if (!isDeliveryType(order?.type)) return '';
   const tracking = String(order.trackingCode || '').trim();
   if (!tracking) return '';
   const base = typeof window !== 'undefined' ? window.location.origin : '';

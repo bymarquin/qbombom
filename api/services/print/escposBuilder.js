@@ -68,8 +68,25 @@ function wrap(text, cols, indent = 0) {
   return Buffer.from(lines.join('\n') + '\n', 'ascii');
 }
 
+function normalizeType(type) {
+  return String(type || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+}
+
+function isDeliveryType(type) {
+  const normalized = normalizeType(type);
+  return normalized === 'entrega' || normalized === 'delivery';
+}
+
+function isTableType(type) {
+  return normalizeType(type) === 'mesa';
+}
+
 function buildDeliveryAccessUrl(order, storeConfig = {}) {
-  if (order.type !== 'Entrega') return '';
+  if (!isDeliveryType(order?.type)) return '';
   const tracking = String(order.trackingCode || '').trim();
   if (!tracking) return '';
 
@@ -109,17 +126,17 @@ function buildOrderBuffer(order, storeConfig = {}) {
   const storeName  = sanitize(storeConfig?.profile?.name  || 'Qbombom');
   const storeSub   = sanitize(storeConfig?.profile?.phone || '');
 
-  const typeLabel = order.type === 'Entrega'
+  const typeLabel = isDeliveryType(order.type)
     ? 'ENTREGA'
-    : order.type === 'Balcao' || order.type === 'Balcao' || order.type === 'Balcão'
+    : normalizeType(order.type) === 'balcao'
       ? 'BALCAO / RETIRADA'
-      : order.type === 'Mesa'
+      : isTableType(order.type)
         ? 'MESA'
         : sanitize(order.type || '').toUpperCase();
 
   const trackCode = order.trackingCode || (order.id || '').slice(0, 8);
   const deliveryAccessUrl = buildDeliveryAccessUrl(order, storeConfig);
-  const tableLabel = order.type === 'Mesa' && order.tableNumber
+  const tableLabel = isTableType(order.type) && order.tableNumber
     ? String(order.tableNumber).trim()
     : '';
   const createdAt = new Date(order.createdAt || new Date()).toLocaleString('pt-BR', {
@@ -159,7 +176,7 @@ function buildOrderBuffer(order, storeConfig = {}) {
   parts.push(CMD.BOLD_OFF);
   parts.push(line(order.customerName || 'Nao informado'));
   if (order.customerPhone) parts.push(line(order.customerPhone));
-  if (order.type === 'Entrega' && order.deliveryAddress) {
+  if (isDeliveryType(order.type) && order.deliveryAddress) {
     parts.push(CMD.BOLD_ON);
     parts.push(line('ENDERECO:'));
     parts.push(CMD.BOLD_OFF);

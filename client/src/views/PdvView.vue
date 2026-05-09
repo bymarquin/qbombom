@@ -639,9 +639,25 @@
         <div
           class="p-5 border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex justify-between items-center shrink-0"
         >
-          <div>
+          <div class="space-y-2">
             <p class="text-sm text-neutral-500 dark:text-neutral-400">Total do item</p>
-            <p class="text-2xl font-black text-red-600">{{ formatarMoeda(totalItemAtual) }}</p>
+            <p class="text-2xl font-black text-red-600">{{ formatarMoeda(totalItemAtual * quantidadeProduto) }}</p>
+            <div class="inline-flex items-center bg-neutral-100 dark:bg-neutral-800 rounded-md">
+              <button
+                class="px-2 py-1 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-l-md disabled:opacity-40"
+                :disabled="quantidadeProduto <= 1"
+                @click="quantidadeProduto = Math.max(1, quantidadeProduto - 1)"
+              >
+                -
+              </button>
+              <span class="px-3 text-xs font-semibold min-w-[2rem] text-center">{{ quantidadeProduto }}</span>
+              <button
+                class="px-2 py-1 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-r-md"
+                @click="quantidadeProduto++"
+              >
+                +
+              </button>
+            </div>
           </div>
           <div class="flex gap-3">
             <button
@@ -1197,6 +1213,7 @@ const observacaoProduto = ref('')
 const bolaCount = ref(1)
 const itemQuantidades = ref({})
 const pesoGramas = ref(null)
+const quantidadeProduto = ref(1)
 
 const isWeightBased = computed(() => produtoDetalhado.value?.weightBased ?? false)
 
@@ -1237,6 +1254,7 @@ const carregarDetalhesProduto = async (produtoId) => {
     bolaCount.value = 1
     itemQuantidades.value = {}
     pesoGramas.value = null
+    quantidadeProduto.value = 1
   } catch (err) {
     console.error('Erro ao carregar detalhes do produto:', err)
     if (err?.code === 'ECONNABORTED') {
@@ -1251,6 +1269,7 @@ const carregarDetalhesProduto = async (produtoId) => {
 }
 
 const abrirModalProduto = async (produtoSimples) => {
+  quantidadeProduto.value = 1
   produtoSelecionadoId.value = produtoSimples.id
   produtoDetalhado.value = {
     ...produtoSimples,
@@ -1271,6 +1290,7 @@ const fecharModalProduto = () => {
   produtoDetalhado.value = null
   produtoSelecionadoId.value = null
   erroProdutoDetalhe.value = ''
+  quantidadeProduto.value = 1
 }
 
 const itensSelecionadosNoGrupo = (grupoId) => {
@@ -1377,7 +1397,7 @@ const confirmarItem = () => {
       : isSorvete.value
         ? `${bolaCount.value} ${bolaCount.value === 1 ? 'Bola' : 'Bolas'}`
         : (tamanhoSelecionado.value?.name ?? ''),
-    quantity: 1,
+    quantity: quantidadeProduto.value,
     selectedAdditionals: [...adicionaisComPrecoCalculado.value, ...casquinhaAdds],
     observation: observacaoProduto.value,
     totalPrice: totalItemAtual.value,

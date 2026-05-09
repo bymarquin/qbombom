@@ -96,6 +96,21 @@ async function syncPixPaymentStatus(order, { onOrderUpdated } = {}) {
       await onOrderUpdated(order, result);
     }
   } catch (error) {
+    if (error?.response?.status === 404) {
+      const previousReference = order.paymentProviderReference;
+      order.paymentProviderReference = null;
+      order.pixQrCode = null;
+      order.pixQrCodeBase64 = null;
+      order.pixExpiresAt = null;
+      await order.save();
+
+      logger.warn('orders.pix.sync_not_found', {
+        orderId: order.id,
+        paymentProviderReference: previousReference,
+      });
+      return order;
+    }
+
     logger.error('orders.pix.sync_failed', error, { orderId: order.id });
   }
 
