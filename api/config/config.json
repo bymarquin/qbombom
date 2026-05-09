@@ -4,20 +4,38 @@
     "password": "Senha123!",
     "database": "qbombom",
     "host": "127.0.0.1",
-    "dialect": "postgres"
+    "dialect": "postgres",
+    "pool": {
+      "max": 10,
+      "min": 2,
+      "acquire": 30000,
+      "idle": 10000
+    }
   },
   "test": {
     "username": "marquin",
     "password": "Senha123!",
     "database": "qbombom_test",
     "host": "127.0.0.1",
-    "dialect": "postgres"
+    "dialect": "postgres",
+    "pool": {
+      "max": 10,
+      "min": 1,
+      "acquire": 30000,
+      "idle": 10000
+    }
   },
   "production": {
     "username": "marquin",
     "password": "Senha123!",
     "database": "qbombom_production",
     "host": "127.0.0.1",
-    "dialect": "postgres"
+    "dialect": "postgres",
+    "pool": {
+      "max": 40,
+      "min": 2,
+      "acquire": 30000,
+      "idle": 10000
+    }
   }
 }

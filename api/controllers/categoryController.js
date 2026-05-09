@@ -1,7 +1,14 @@
 const { Category, Product, ProductVariation } = require('../models');
+const cache = require('../utils/simpleCache');
+
+const CATALOG_CACHE_TTL_MS = Number(process.env.CATALOG_CACHE_TTL_MS || 15000);
 
 exports.index = async (req, res) => {
   try {
+    const cacheKey = req.query.all ? 'categories:all' : 'categories:public';
+    const cached = await cache.get(cacheKey);
+    if (cached) return res.json(cached);
+
     const categoryWhere = req.query.all ? {} : { status: true };
     const productWhere = req.query.all ? {} : { status: true };
 
@@ -28,6 +35,7 @@ exports.index = async (req, res) => {
         [{ model: Product, as: 'products' }, { model: ProductVariation, as: 'variations' }, 'price', 'ASC']
       ]
     });
+    await cache.set(cacheKey, categories, CATALOG_CACHE_TTL_MS);
     res.json(categories);
   } catch (error) {
     console.error('Error listing categories:', error);
@@ -61,6 +69,7 @@ exports.create = async (req, res) => {
     const last = await Category.max('position');
     const position = (last || 0) + 1;
     const category = await Category.create({ name, status, position });
+    await cache.delByPrefix('categories:');
     res.status(201).json(category);
   } catch (error) {
     res.status(500).json({ error: 'Failed to create category' });
@@ -74,6 +83,7 @@ exports.update = async (req, res) => {
     
     const { name, status, position } = req.body;
     await category.update({ name, status, ...(position !== undefined && { position }) });
+    await cache.delByPrefix('categories:');
     res.json(category);
   } catch (error) {
     res.status(500).json({ error: 'Failed to update category' });
@@ -87,6 +97,7 @@ exports.destroy = async (req, res) => {
     
     // Deleta os produtos vinculados via Cascade (se configurado) ou avisa
     await category.destroy();
+    await cache.delByPrefix('categories:');
     res.json({ message: 'Category deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete category' });

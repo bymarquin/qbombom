@@ -1,6 +1,9 @@
 const { Product, ProductVariation, ProductImage, AdditionalGroup, AdditionalItem, ProductAdditionalGroup } = require('../models');
 const { Sequelize } = require('sequelize');
 const { uploadFile } = require('../services/storageService');
+const cache = require('../utils/simpleCache');
+
+const PRODUCTS_CACHE_TTL_MS = Number(process.env.PRODUCTS_CACHE_TTL_MS || 15000);
 
 async function extractAndUploadImage(imageBase64) {
   if (!imageBase64) return null;
@@ -22,6 +25,10 @@ const imagesInclude = {
 
 exports.index = async (req, res) => {
   try {
+    const cacheKey = req.query.all ? 'products:all' : 'products:public';
+    const cached = await cache.get(cacheKey);
+    if (cached) return res.json(cached);
+
     const whereClause = req.query.all ? {} : { status: true };
     const products = await Product.findAll({
       where: whereClause,
@@ -31,6 +38,7 @@ exports.index = async (req, res) => {
       ],
       order: [[{ model: ProductImage, as: 'images' }, 'position', 'ASC']],
     });
+    await cache.set(cacheKey, products, PRODUCTS_CACHE_TTL_MS);
     res.json(products);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
@@ -39,6 +47,10 @@ exports.index = async (req, res) => {
 
 exports.show = async (req, res) => {
   try {
+    const cacheKey = `product:${req.params.id}:${req.query.all ? 'all' : 'public'}`;
+    const cached = await cache.get(cacheKey);
+    if (cached) return res.json(cached);
+
     const itemsWhere = req.query.all ? {} : { status: true };
     const product = await Product.findByPk(req.params.id, {
       include: [
@@ -58,6 +70,7 @@ exports.show = async (req, res) => {
       ],
     });
     if (!product) return res.status(404).json({ error: 'Product not found' });
+    await cache.set(cacheKey, product, PRODUCTS_CACHE_TTL_MS);
     res.json(product);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
@@ -128,6 +141,10 @@ exports.create = async (req, res) => {
       );
     }
 
+    await cache.delByPrefix('products:');
+    await cache.delByPrefix('product:');
+    await cache.delByPrefix('categories:');
+
     await product.reload({ include: [{ model: ProductVariation, as: 'variations' }, imagesInclude] });
     res.status(201).json(product);
   } catch (error) {
@@ -164,6 +181,10 @@ exports.update = async (req, res) => {
       }
     }
 
+    await cache.delByPrefix('products:');
+    await cache.delByPrefix('product:');
+    await cache.delByPrefix('categories:');
+
     await product.reload({ include: [{ model: ProductVariation, as: 'variations' }, imagesInclude] });
     res.json(product);
   } catch (error) {
@@ -177,6 +198,9 @@ exports.destroy = async (req, res) => {
     const product = await Product.findByPk(req.params.id, { include: [imagesInclude] });
     if (!product) return res.status(404).json({ error: 'Product not found' });
     await product.destroy();
+    await cache.delByPrefix('products:');
+    await cache.delByPrefix('product:');
+    await cache.delByPrefix('categories:');
     res.json({ message: 'Product deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete product' });

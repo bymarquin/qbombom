@@ -25,6 +25,10 @@ const ETA_FINISHED_STATUSES = ['pronto', 'em_rota', 'entregue', 'finalizado'];
 const ETA_DEFAULT_SECONDS_PER_UNIT = 210;
 const ETA_MIN_SECONDS_PER_UNIT = 90;
 const ETA_MAX_SECONDS_PER_UNIT = 600;
+const ETA_SNAPSHOT_TTL_MS = Number(process.env.ETA_SNAPSHOT_TTL_MS || 5000);
+let etaSnapshotCache = null;
+let etaSnapshotCacheAt = 0;
+let etaSnapshotPromise = null;
 
 const ORDER_INCLUDES = [
   {
@@ -165,6 +169,27 @@ async function buildEtaSnapshot() {
   };
 }
 
+async function getEtaSnapshot() {
+  const now = Date.now();
+  if (etaSnapshotCache && (now - etaSnapshotCacheAt) < ETA_SNAPSHOT_TTL_MS) {
+    return etaSnapshotCache;
+  }
+
+  if (!etaSnapshotPromise) {
+    etaSnapshotPromise = buildEtaSnapshot()
+      .then((snapshot) => {
+        etaSnapshotCache = snapshot;
+        etaSnapshotCacheAt = Date.now();
+        return snapshot;
+      })
+      .finally(() => {
+        etaSnapshotPromise = null;
+      });
+  }
+
+  return etaSnapshotPromise;
+}
+
 function mapEtaToOrder(order, snapshot) {
   if (snapshot.byOrderId.has(order.id)) {
     return snapshot.byOrderId.get(order.id);
@@ -173,11 +198,41 @@ function mapEtaToOrder(order, snapshot) {
   return createNonQueueEta(order.status, snapshot.secondsPerUnit, snapshot.generatedAt);
 }
 
+// Synchronous ETA for freshly-created orders: avoids the two DB queries in
+// buildEtaSnapshot. Queue position is unknown (null) — client refreshes via
+// socket or /track polling which runs the full snapshot.
+function buildLocalEtaForCreate(order) {
+  const generatedAt = new Date().toISOString();
+
+  if (order.status === 'aguardando_pagamento') {
+    return createNonQueueEta('aguardando_pagamento', ETA_DEFAULT_SECONDS_PER_UNIT, generatedAt);
+  }
+
+  if (!ETA_ACTIVE_STATUSES.has(order.status)) {
+    return createNonQueueEta(order.status, ETA_DEFAULT_SECONDS_PER_UNIT, generatedAt);
+  }
+
+  const units = countPreparationUnits(order);
+  const estimatedSeconds = Math.max(4 * 60, Math.round(units * ETA_DEFAULT_SECONDS_PER_UNIT));
+
+  return {
+    inQueue: true,
+    state: 'in_queue',
+    queuePosition: null,
+    etaMinutes: Math.max(1, Math.ceil(estimatedSeconds / 60)),
+    etaAt: new Date(Date.now() + estimatedSeconds * 1000).toISOString(),
+    modelSecondsPerUnit: ETA_DEFAULT_SECONDS_PER_UNIT,
+    generatedAt,
+    prepUnits: units,
+    estimatedRemainingSeconds: estimatedSeconds,
+  };
+}
+
 async function attachEtaToOrders(orders) {
   const list = Array.isArray(orders) ? orders : [orders];
   if (!list.length) return;
 
-  const snapshot = await buildEtaSnapshot();
+  const snapshot = await getEtaSnapshot();
 
   list.forEach((order) => {
     order.setDataValue('eta', mapEtaToOrder(order, snapshot));
