@@ -66,22 +66,10 @@
                 <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                   {{ bolaCount }} {{ bolaCount === 1 ? 'Bola' : 'Bolas' }}
                 </span>
-                <div class="flex items-center border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden">
-                  <button
-                    @click="bolaCount > 1 && bolaCount--"
-                    :disabled="bolaCount <= 1"
-                    class="px-3 py-1.5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-lg leading-none font-medium disabled:opacity-40"
-                  >−</button>
-                  <span class="px-3 text-sm font-bold text-neutral-900 dark:text-neutral-100 min-w-[2rem] text-center">{{ bolaCount }}</span>
-                  <button
-                    @click="bolaCount++"
-                    class="px-3 py-1.5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-lg leading-none font-medium"
-                  >+</button>
-                </div>
                 <span class="text-sm font-bold text-red-600 dark:text-red-400">{{ formatarMoeda(bolaPrice) }}</span>
               </div>
               <p class="text-xs text-neutral-400 mt-2 ml-1">
-                1ª bola R$4,00 • a partir da 2ª R$3,50/bola
+                Defina as bolas no grupo de sabores abaixo.
               </p>
             </section>
 
@@ -206,8 +194,36 @@
                 </span>
               </div>
 
+              <div v-if="isSaborGroup(grupo)" class="flex flex-col gap-3">
+                <div
+                  v-for="add in grupo.items"
+                  :key="add.id"
+                  class="flex items-center justify-between p-3 rounded-lg border transition-all"
+                  :class="(saborQuantidades[add.id] || 0) > 0
+                    ? 'border-red-600 bg-red-50/30 dark:bg-red-900/20 ring-1 ring-red-600'
+                    : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900'"
+                >
+                  <div>
+                    <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">{{ add.name }}</span>
+                  </div>
+                  <div class="flex items-center border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden">
+                    <button
+                      @click="decrementarSabor(add.id)"
+                      :disabled="(saborQuantidades[add.id] || 0) === 0"
+                      class="px-3 py-1.5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-lg leading-none font-medium disabled:opacity-40"
+                    >−</button>
+                    <span class="px-3 text-sm font-bold text-neutral-900 dark:text-neutral-100 min-w-[2rem] text-center">{{ saborQuantidades[add.id] || 0 }}</span>
+                    <button
+                      @click="incrementarSabor(add.id, grupo)"
+                      :disabled="atingiuMaximoSabores(grupo)"
+                      class="px-3 py-1.5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-lg leading-none font-medium disabled:opacity-40"
+                    >+</button>
+                  </div>
+                </div>
+              </div>
+
               <!-- Stepper de casquinha -->
-              <div v-if="grupo.stepperMode" class="flex flex-col gap-3">
+              <div v-else-if="grupo.stepperMode" class="flex flex-col gap-3">
                 <div
                   v-for="add in grupo.items"
                   :key="add.id"
@@ -367,8 +383,8 @@ const tamanhoSelecionado = ref(null);
 const adicionaisSelecionados = ref([]);
 const observacaoProduto = ref("");
 const quantidade = ref(1);
-const bolaCount = ref(1);
 const itemQuantidades = ref({});
+const saborQuantidades = ref({});
 const pesoGramas = ref(null);
 
 watch(() => props.produtoDetalhado, () => {
@@ -376,8 +392,8 @@ watch(() => props.produtoDetalhado, () => {
   adicionaisSelecionados.value = [];
   observacaoProduto.value = "";
   quantidade.value = 1;
-  bolaCount.value = 1;
   itemQuantidades.value = {};
+  saborQuantidades.value = {};
   pesoGramas.value = null;
 });
 
@@ -405,9 +421,34 @@ const isSorvete = computed(() =>
   (props.produtoDetalhado?.additionalGroups?.some(g => g.stepperMode) ?? false)
 );
 
-const bolaPrice = computed(() =>
-  bolaCount.value === 1 ? 4.00 : bolaCount.value * 3.50
+const grupoSabor = computed(() =>
+  (props.produtoDetalhado?.additionalGroups ?? []).find(g => !!g.isSaborGroup) ?? null
 );
+
+const bolaCount = computed(() =>
+  Object.values(saborQuantidades.value).reduce((acc, atual) => acc + Number(atual || 0), 0)
+);
+
+const bolaPrice = computed(() =>
+  bolaCount.value <= 0 ? 0 : (bolaCount.value === 1 ? 4.00 : bolaCount.value * 3.50)
+);
+
+const incrementarSabor = (itemId, grupo) => {
+  if (atingiuMaximoSabores(grupo)) return;
+  saborQuantidades.value = { ...saborQuantidades.value, [itemId]: (saborQuantidades.value[itemId] || 0) + 1 };
+};
+
+const decrementarSabor = (itemId) => {
+  const atual = saborQuantidades.value[itemId] || 0;
+  if (atual <= 0) return;
+  saborQuantidades.value = { ...saborQuantidades.value, [itemId]: atual - 1 };
+};
+
+const atingiuMaximoSabores = (grupo) => {
+  const max = Number(grupo?.maxChoices);
+  if (!Number.isFinite(max) || max <= 0) return false;
+  return bolaCount.value >= max;
+};
 
 const incrementarItem = (itemId) => {
   itemQuantidades.value = { ...itemQuantidades.value, [itemId]: (itemQuantidades.value[itemId] || 0) + 1 };
@@ -437,18 +478,6 @@ const totalSelecionado = computed(() => {
 });
 const atingiuLimite = computed(() => limiteGlobal.value !== null && totalSelecionado.value >= limiteGlobal.value);
 
-watch(bolaCount, (novo) => {
-  if (!isSorvete.value) return;
-  const gruposSabor = (props.produtoDetalhado?.additionalGroups ?? []).filter(g => !g.stepperMode && g.minChoices > 0);
-  for (const g of gruposSabor) {
-    const selecionados = itensSelecionadosNoGrupo(g.id);
-    if (selecionados.length > novo) {
-      const remover = new Set(selecionados.slice(novo).map(a => a.id));
-      adicionaisSelecionados.value = adicionaisSelecionados.value.filter(a => !remover.has(a.id));
-    }
-  }
-});
-
 watch(tamanhoSelecionado, () => {
   const max = limiteGlobal.value;
   if (max === null) return;
@@ -467,13 +496,16 @@ watch(totalSelecionado, (novo, anterior) => {
 
 const itensSelecionadosNoGrupo = (grupoId) =>
   adicionaisSelecionados.value.filter((a) => a.grupoId === grupoId);
-const qtdSelecionadaNoGrupo = (grupoId) => itensSelecionadosNoGrupo(grupoId).length;
+const qtdSelecionadaNoGrupo = (grupoId) => {
+  if (grupoSabor.value?.id === grupoId) return bolaCount.value;
+  return itensSelecionadosNoGrupo(grupoId).length;
+};
 const isAdicionalSelecionado = (adicional) =>
   adicionaisSelecionados.value.some((a) => a.id === adicional.id);
 
 const isSaborGroup = (grupo) => !!grupo.isSaborGroup;
-const maxEfetivoGrupo = (grupo) => isSaborGroup(grupo) ? bolaCount.value : grupo.maxChoices;
-const minEfetivoGrupo = (grupo) => isSaborGroup(grupo) ? bolaCount.value : grupo.minChoices;
+const maxEfetivoGrupo = (grupo) => grupo.maxChoices;
+const minEfetivoGrupo = (grupo) => grupo.minChoices;
 
 const estaBloqueado = (adicional, grupo) => {
   if (isAdicionalSelecionado(adicional)) return false;
@@ -489,20 +521,22 @@ const selecionarUnico = (add, grupo) => {
 const podeProsseguir = computed(() => {
   if (!props.produtoDetalhado) return false;
   if (isOutOfStock.value) return false;
+  if (isSorvete.value && !grupoSabor.value) return false;
+  if (isSorvete.value && grupoSabor.value && (bolaCount.value < Number(grupoSabor.value.minChoices || 0))) return false;
   if (isWeightBased.value) {
     const min = Number(props.produtoDetalhado.minPrice) || 0;
     return pesoGramas.value > 0 && pesoGramas.value >= min;
   }
   if (!isSorvete.value && props.produtoDetalhado.variations?.length > 0 && !tamanhoSelecionado.value) return false;
   return props.produtoDetalhado.additionalGroups?.every(
-    (grupo) => grupo.stepperMode || grupo.minChoices === 0 || qtdSelecionadaNoGrupo(grupo.id) >= minEfetivoGrupo(grupo)
+    (grupo) => isSaborGroup(grupo) || grupo.stepperMode || grupo.minChoices === 0 || qtdSelecionadaNoGrupo(grupo.id) >= minEfetivoGrupo(grupo)
   ) ?? true;
 });
 
 const adicionaisComPreco = computed(() => {
   if (!props.produtoDetalhado?.additionalGroups) return [];
-  return props.produtoDetalhado.additionalGroups
-    .filter(grupo => grupo.name !== 'Casquinha')
+  const selecionadosComPreco = props.produtoDetalhado.additionalGroups
+    .filter(grupo => grupo.name !== 'Casquinha' && !isSaborGroup(grupo))
     .flatMap((grupo) => {
       const itens = [...itensSelecionadosNoGrupo(grupo.id)].sort((a, b) => Number(a.price) - Number(b.price));
       return itens.map((item, index) => ({
@@ -512,6 +546,19 @@ const adicionaisComPreco = computed(() => {
         grupoName: grupo.name,
       }));
     });
+
+  const saboresSelecionados = grupoSabor.value
+    ? grupoSabor.value.items
+      .filter((item) => (saborQuantidades.value[item.id] || 0) > 0)
+      .map((item) => ({
+        id: item.id,
+        name: `${item.name} x${saborQuantidades.value[item.id]}`,
+        price: 0,
+        grupoName: grupoSabor.value.name,
+      }))
+    : [];
+
+  return [...selecionadosComPreco, ...saboresSelecionados];
 });
 
 const totalItemAtual = computed(() => {
@@ -529,7 +576,7 @@ const montarItemPayload = () => {
     const grupo = props.produtoDetalhado.additionalGroups?.find(g => g.name === 'Casquinha');
     grupo?.items.forEach(item => {
       const qty = itemQuantidades.value[item.id] || 0;
-      if (qty > 0) casquinhaAdds.push({ id: item.id, name: `${item.name} ×${qty}`, price: Number(item.price) * qty });
+      if (qty > 0) casquinhaAdds.push({ id: item.id, name: `${item.name} x${qty}`, price: Number(item.price) * qty, grupoName: grupo.name });
     });
   }
 
