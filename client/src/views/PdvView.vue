@@ -1236,12 +1236,11 @@ const calcularPeso = (preco, pricePerKg) => {
   const gramas = (preco / pricePerKg) * 1000
   return gramas >= 1000 ? `${(gramas / 1000).toFixed(2).replace('.', ',')} kg` : `${Math.round(gramas)} g`
 }
-const isSorvete = computed(() =>
-  !isWeightBased.value &&
-  (produtoDetalhado.value?.additionalGroups?.some(g => g.stepperMode) ?? false)
-)
 const grupoSabor = computed(() =>
   (produtoDetalhado.value?.additionalGroups ?? []).find(g => !!g.isSaborGroup) ?? null
+)
+const isSorvete = computed(() =>
+  !isWeightBased.value && !!grupoSabor.value
 )
 const bolaCount = computed(() =>
   Object.values(saborQuantidades.value).reduce((acc, atual) => acc + Number(atual || 0), 0)
@@ -1270,10 +1269,12 @@ const decrementarItem = (itemId) => {
   const atual = itemQuantidades.value[itemId] || 0
   if (atual > 0) itemQuantidades.value = { ...itemQuantidades.value, [itemId]: atual - 1 }
 }
-const casquinhaTotal = computed(() => {
-  const grupo = produtoDetalhado.value?.additionalGroups?.find(g => g.stepperMode)
-  if (!grupo) return 0
-  return grupo.items.reduce((acc, item) => acc + Number(item.price) * (itemQuantidades.value[item.id] || 0), 0)
+const stepperTotal = computed(() => {
+  const grupos = (produtoDetalhado.value?.additionalGroups ?? []).filter(g => g.stepperMode)
+  if (!grupos.length) return 0
+  return grupos.reduce((accGrupo, grupo) =>
+    accGrupo + grupo.items.reduce((accItem, item) => accItem + Number(item.price) * (itemQuantidades.value[item.id] || 0), 0)
+  , 0)
 })
 
 const carregarDetalhesProduto = async (produtoId) => {
@@ -1333,6 +1334,10 @@ const itensSelecionadosNoGrupo = (grupoId) => {
 }
 const qtdSelecionadaNoGrupo = (grupoId) => {
   if (grupoSabor.value?.id === grupoId) return bolaCount.value
+  const grupo = grupoById.value.get(grupoId)
+  if (grupo?.stepperMode) {
+    return (grupo.items ?? []).reduce((acc, item) => acc + Number(itemQuantidades.value[item.id] || 0), 0)
+  }
   return itensSelecionadosNoGrupo(grupoId).length
 }
 
@@ -1422,24 +1427,34 @@ const adicionaisComPrecoCalculado = computed(() => {
   return processados
 })
 
+const stepperSelecionadosComPreco = computed(() => {
+  if (!produtoDetalhado.value?.additionalGroups) return []
+  return produtoDetalhado.value.additionalGroups
+    .filter(grupo => grupo.stepperMode)
+    .flatMap((grupo) =>
+      (grupo.items ?? [])
+        .filter((item) => (itemQuantidades.value[item.id] || 0) > 0)
+        .map((item) => {
+          const qty = itemQuantidades.value[item.id] || 0
+          return {
+            id: item.id,
+            name: `${item.name} x${qty}`,
+            price: Number(item.price) * qty,
+            groupName: grupo.name,
+          }
+        })
+    )
+})
+
 const totalItemAtual = computed(() => {
   if (!produtoDetalhado.value) return 0
-  if (isWeightBased.value) return (pesoGramas.value || 0) + adicionaisComPrecoCalculado.value.reduce((acc, curr) => acc + curr.price, 0)
+  if (isWeightBased.value) return (pesoGramas.value || 0) + stepperTotal.value + adicionaisComPrecoCalculado.value.reduce((acc, curr) => acc + curr.price, 0)
   const base = isSorvete.value ? bolaPrice.value : (tamanhoSelecionado.value ? Number(tamanhoSelecionado.value.price) : 0)
-  return base + casquinhaTotal.value + adicionaisComPrecoCalculado.value.reduce((acc, curr) => acc + curr.price, 0)
+  return base + stepperTotal.value + adicionaisComPrecoCalculado.value.reduce((acc, curr) => acc + curr.price, 0)
 })
 
 const confirmarItem = () => {
   if (!podeConfirmarProduto.value) return
-
-  const casquinhaAdds = []
-  if (isSorvete.value) {
-    const grupo = produtoDetalhado.value.additionalGroups?.find(g => g.stepperMode)
-    grupo?.items.forEach(item => {
-      const qty = itemQuantidades.value[item.id] || 0
-      if (qty > 0) casquinhaAdds.push({ id: item.id, name: `${item.name} x${qty}`, price: Number(item.price) * qty, groupName: grupo.name })
-    })
-  }
 
   carrinho.value.push({
     productId: produtoDetalhado.value.id,
@@ -1451,7 +1466,7 @@ const confirmarItem = () => {
         ? `${bolaCount.value} ${bolaCount.value === 1 ? 'Bola' : 'Bolas'}`
         : (tamanhoSelecionado.value?.name ?? ''),
     quantity: quantidadeProduto.value,
-    selectedAdditionals: [...adicionaisComPrecoCalculado.value, ...casquinhaAdds],
+    selectedAdditionals: [...adicionaisComPrecoCalculado.value, ...stepperSelecionadosComPreco.value],
     observation: observacaoProduto.value,
     totalPrice: totalItemAtual.value,
   })

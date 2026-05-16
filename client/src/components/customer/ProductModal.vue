@@ -416,13 +416,12 @@ const calcularPeso = (preco, pricePerKg) => {
   const gramas = (preco / pricePerKg) * 1000;
   return gramas >= 1000 ? `${(gramas / 1000).toFixed(2).replace('.', ',')} kg` : `${Math.round(gramas)} g`;
 };
-const isSorvete = computed(() =>
-  !isWeightBased.value &&
-  (props.produtoDetalhado?.additionalGroups?.some(g => g.stepperMode) ?? false)
-);
-
 const grupoSabor = computed(() =>
   (props.produtoDetalhado?.additionalGroups ?? []).find(g => !!g.isSaborGroup) ?? null
+);
+
+const isSorvete = computed(() =>
+  !isWeightBased.value && !!grupoSabor.value
 );
 
 const bolaCount = computed(() =>
@@ -458,10 +457,12 @@ const decrementarItem = (itemId) => {
   if (atual > 0) itemQuantidades.value = { ...itemQuantidades.value, [itemId]: atual - 1 };
 };
 
-const casquinhaTotal = computed(() => {
-  const grupo = props.produtoDetalhado?.additionalGroups?.find(g => g.stepperMode);
-  if (!grupo) return 0;
-  return grupo.items.reduce((acc, item) => acc + Number(item.price) * (itemQuantidades.value[item.id] || 0), 0);
+const stepperTotal = computed(() => {
+  const grupos = (props.produtoDetalhado?.additionalGroups ?? []).filter(g => g.stepperMode);
+  if (!grupos.length) return 0;
+  return grupos.reduce((accGrupo, grupo) =>
+    accGrupo + grupo.items.reduce((accItem, item) => accItem + Number(item.price) * (itemQuantidades.value[item.id] || 0), 0)
+  , 0);
 });
 
 const fechar = () => { modelValue.value = false; };
@@ -498,6 +499,10 @@ const itensSelecionadosNoGrupo = (grupoId) =>
   adicionaisSelecionados.value.filter((a) => a.grupoId === grupoId);
 const qtdSelecionadaNoGrupo = (grupoId) => {
   if (grupoSabor.value?.id === grupoId) return bolaCount.value;
+  const grupo = grupoByIdModal.value.get(grupoId);
+  if (grupo?.stepperMode) {
+    return (grupo.items ?? []).reduce((acc, item) => acc + Number(itemQuantidades.value[item.id] || 0), 0);
+  }
   return itensSelecionadosNoGrupo(grupoId).length;
 };
 const isAdicionalSelecionado = (adicional) =>
@@ -536,7 +541,7 @@ const podeProsseguir = computed(() => {
 const adicionaisComPreco = computed(() => {
   if (!props.produtoDetalhado?.additionalGroups) return [];
   const selecionadosComPreco = props.produtoDetalhado.additionalGroups
-    .filter(grupo => grupo.name !== 'Casquinha' && !isSaborGroup(grupo))
+    .filter(grupo => !grupo.stepperMode && !isSaborGroup(grupo))
     .flatMap((grupo) => {
       const itens = [...itensSelecionadosNoGrupo(grupo.id)].sort((a, b) => Number(a.price) - Number(b.price));
       return itens.map((item, index) => ({
@@ -561,25 +566,35 @@ const adicionaisComPreco = computed(() => {
   return [...selecionadosComPreco, ...saboresSelecionados];
 });
 
+const stepperSelecionadosComPreco = computed(() => {
+  if (!props.produtoDetalhado?.additionalGroups) return [];
+  return props.produtoDetalhado.additionalGroups
+    .filter(grupo => grupo.stepperMode)
+    .flatMap((grupo) =>
+      (grupo.items ?? [])
+        .filter((item) => (itemQuantidades.value[item.id] || 0) > 0)
+        .map((item) => {
+          const qty = itemQuantidades.value[item.id] || 0;
+          return {
+            id: item.id,
+            name: `${item.name} x${qty}`,
+            price: Number(item.price) * qty,
+            grupoName: grupo.name,
+          };
+        })
+    );
+});
+
 const totalItemAtual = computed(() => {
   if (!props.produtoDetalhado) return 0;
-  if (isWeightBased.value) return (pesoGramas.value || 0) + adicionaisComPreco.value.reduce((acc, item) => acc + item.price, 0);
+  if (isWeightBased.value) return (pesoGramas.value || 0) + stepperTotal.value + adicionaisComPreco.value.reduce((acc, item) => acc + item.price, 0);
   const base = isSorvete.value
     ? bolaPrice.value
     : (tamanhoSelecionado.value ? Number(tamanhoSelecionado.value.price) : 0);
-  return base + casquinhaTotal.value + adicionaisComPreco.value.reduce((acc, item) => acc + item.price, 0);
+  return base + stepperTotal.value + adicionaisComPreco.value.reduce((acc, item) => acc + item.price, 0);
 });
 
 const montarItemPayload = () => {
-  const casquinhaAdds = [];
-  if (isSorvete.value) {
-    const grupo = props.produtoDetalhado.additionalGroups?.find(g => g.name === 'Casquinha');
-    grupo?.items.forEach(item => {
-      const qty = itemQuantidades.value[item.id] || 0;
-      if (qty > 0) casquinhaAdds.push({ id: item.id, name: `${item.name} x${qty}`, price: Number(item.price) * qty, grupoName: grupo.name });
-    });
-  }
-
   return {
     productId: props.produtoDetalhado.id,
     productName: props.produtoDetalhado.name,
@@ -591,7 +606,7 @@ const montarItemPayload = () => {
         ? `${bolaCount.value} ${bolaCount.value === 1 ? 'Bola' : 'Bolas'}`
         : (tamanhoSelecionado.value?.name || ''),
     quantity: quantidade.value,
-    selectedAdditionals: [...adicionaisComPreco.value, ...casquinhaAdds],
+    selectedAdditionals: [...adicionaisComPreco.value, ...stepperSelecionadosComPreco.value],
     observation: observacaoProduto.value,
     totalPrice: totalItemAtual.value,
   };
