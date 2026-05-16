@@ -6,26 +6,34 @@ const simpleCache = require('../utils/simpleCache');
 
 const DASHBOARD_CACHE_TTL_MS = Number(process.env.DASHBOARD_CACHE_TTL_MS || 30000);
 
+const parseDateAtSaoPaulo = (ymd, time) => new Date(`${ymd}T${time}-03:00`);
+const startOfYmd = (ymd) => parseDateAtSaoPaulo(ymd, '00:00:00.000');
+const endOfYmd = (ymd) => parseDateAtSaoPaulo(ymd, '23:59:59.999');
+
+function shiftYmd(ymd, days) {
+  const base = parseDateAtSaoPaulo(ymd, '12:00:00.000');
+  base.setUTCDate(base.getUTCDate() + days);
+  return base.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+}
+
+function getTodayYmd() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+}
+
 function getDateRange(period) {
-  const now = new Date();
-  const todayYmd = now.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
-  const parseDateAtSaoPaulo = (ymd, time) => new Date(`${ymd}T${time}-03:00`);
-  const startOfYmd = (ymd) => parseDateAtSaoPaulo(ymd, '00:00:00.000');
-  const endOfYmd = (ymd) => parseDateAtSaoPaulo(ymd, '23:59:59.999');
-  const shiftYmd = (ymd, days) => {
-    const base = parseDateAtSaoPaulo(ymd, '12:00:00.000');
-    base.setUTCDate(base.getUTCDate() + days);
-    return base.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
-  };
+  const todayYmd = getTodayYmd();
+
+  if (period === 'yesterday') {
+    const ymd = shiftYmd(todayYmd, -1);
+    return { start: startOfYmd(ymd), end: endOfYmd(ymd) };
+  }
 
   if (period === 'week') {
-    const fromYmd = shiftYmd(todayYmd, -7);
-    return { start: startOfYmd(fromYmd), end: endOfYmd(todayYmd) };
+    return { start: startOfYmd(shiftYmd(todayYmd, -7)), end: endOfYmd(todayYmd) };
   }
 
   if (period === '3days') {
-    const fromYmd = shiftYmd(todayYmd, -3);
-    return { start: startOfYmd(fromYmd), end: endOfYmd(todayYmd) };
+    return { start: startOfYmd(shiftYmd(todayYmd, -3)), end: endOfYmd(todayYmd) };
   }
 
   if (period === 'month') {
@@ -44,11 +52,21 @@ function getDateRange(period) {
 exports.getMetrics = async (req, res) => {
   try {
     const period = req.query.period || 'today';
-    const cacheKey = `dashboard:${period}`;
+
+    let start, end, cacheKey;
+    if (period === 'custom' && req.query.start && req.query.end) {
+      const startYmd = req.query.start;
+      const endYmd = req.query.end;
+      start = startOfYmd(startYmd);
+      end = endOfYmd(endYmd);
+      cacheKey = `dashboard:custom:${startYmd}:${endYmd}`;
+    } else {
+      ({ start, end } = getDateRange(period));
+      cacheKey = `dashboard:${period}`;
+    }
+
     const cached = await simpleCache.get(cacheKey);
     if (cached) return res.json(cached);
-
-    const { start, end } = getDateRange(period);
 
     const withinPeriod = { createdAt: { [Op.between]: [start, end] } };
 

@@ -347,8 +347,13 @@ export const GeocodeService = {
 }
 
 export const DashboardService = {
-  getMetrics(period = 'today') {
-    return api.get('/dashboard', { params: { period } })
+  getMetrics(period = 'today', customRange = null) {
+    const params = { period }
+    if (period === 'custom' && customRange?.start && customRange?.end) {
+      params.start = customRange.start
+      params.end = customRange.end
+    }
+    return api.get('/dashboard', { params })
   },
 }
 

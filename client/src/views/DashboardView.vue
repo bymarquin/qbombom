@@ -13,66 +13,54 @@
         </p>
       </div>
 
-      <div class="flex items-center gap-3">
-      <!-- Botão ocultar valores -->
-      <button
-        @click="valoresVisiveis = !valoresVisiveis"
-        class="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-100 transition-colors text-sm font-medium shadow-sm"
-        :title="valoresVisiveis ? 'Ocultar valores' : 'Mostrar valores'"
-      >
-        <EyeOff v-if="valoresVisiveis" class="w-4 h-4" />
-        <Eye v-else class="w-4 h-4" />
-      </button>
+      <div class="flex items-center gap-3 flex-wrap">
+        <!-- Botão ocultar valores -->
+        <button
+          @click="valoresVisiveis = !valoresVisiveis"
+          class="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-100 transition-colors text-sm font-medium shadow-sm shrink-0"
+          :title="valoresVisiveis ? 'Ocultar valores' : 'Mostrar valores'"
+        >
+          <EyeOff v-if="valoresVisiveis" class="w-4 h-4" />
+          <Eye v-else class="w-4 h-4" />
+        </button>
 
-      <!-- Filtro -->
-      <div
-        class="flex bg-white dark:bg-neutral-900 rounded-lg shadow-sm dark:shadow-none border border-neutral-200 dark:border-neutral-800 p-1"
-      >
-        <button
-          @click="changePeriod('today')"
-          :class="
-            period === 'today'
-              ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
-              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 dark:text-neutral-100'
-          "
-          class="px-4 py-1.5 text-sm font-semibold rounded-md transition-colors"
-        >
-          Hoje
-        </button>
-        <button
-          @click="changePeriod('3days')"
-          :class="
-            period === '3days'
-              ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
-              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 dark:text-neutral-100'
-          "
-          class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors"
-        >
-          3 Dias
-        </button>
-        <button
-          @click="changePeriod('week')"
-          :class="
-            period === 'week'
-              ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
-              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 dark:text-neutral-100'
-          "
-          class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors"
-        >
-          7 Dias
-        </button>
-        <button
-          @click="changePeriod('year')"
-          :class="
-            period === 'year'
-              ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
-              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 dark:text-neutral-100'
-          "
-          class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors"
-        >
-          Ano
-        </button>
-      </div>
+        <!-- Filtro de período -->
+        <div class="flex bg-white dark:bg-neutral-900 rounded-lg shadow-sm dark:shadow-none border border-neutral-200 dark:border-neutral-800 p-1 overflow-x-auto max-w-full">
+          <button
+            v-for="opt in periodOptions"
+            :key="opt.value"
+            @click="changePeriod(opt.value)"
+            :class="period === opt.value
+              ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 font-semibold'
+              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 font-medium'"
+            class="px-3 py-1.5 text-sm rounded-md transition-colors whitespace-nowrap flex items-center gap-1"
+          >
+            <Calendar v-if="opt.value === 'custom'" class="w-3.5 h-3.5 shrink-0" />
+            {{ opt.label }}
+          </button>
+        </div>
+
+        <!-- Seletor de datas (período personalizado) -->
+        <Transition name="fade-in">
+          <div v-if="period === 'custom'" class="flex items-center gap-2 flex-wrap">
+            <input
+              v-model="customStart"
+              type="date"
+              :max="customEnd || todayYmd"
+              @change="applyCustomRange"
+              class="px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-600 focus:ring-2 focus:ring-red-600/15 dark:[color-scheme:dark]"
+            />
+            <span class="text-neutral-400 text-sm">até</span>
+            <input
+              v-model="customEnd"
+              type="date"
+              :min="customStart"
+              :max="todayYmd"
+              @change="applyCustomRange"
+              class="px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-600 focus:ring-2 focus:ring-red-600/15 dark:[color-scheme:dark]"
+            />
+          </div>
+        </Transition>
       </div>
     </header>
 
@@ -445,8 +433,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { DollarSign, ShoppingBag, Receipt, ClipboardList, TrendingDown, Activity, CreditCard, Utensils, Eye, EyeOff } from 'lucide-vue-next'
+import { ref, computed, onMounted } from 'vue'
+import { DollarSign, ShoppingBag, Receipt, ClipboardList, TrendingDown, Activity, CreditCard, Utensils, Eye, EyeOff, Calendar } from 'lucide-vue-next'
 import { DashboardService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 import { formatarMoeda } from '@/utils/formatters'
@@ -456,6 +444,23 @@ const toast = useToastStore()
 const loading = ref(true)
 const period = ref('today')
 const valoresVisiveis = ref(false)
+
+const customStart = ref('')
+const customEnd = ref('')
+
+const todayYmd = computed(() =>
+  new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
+)
+
+const periodOptions = [
+  { value: 'today', label: 'Hoje' },
+  { value: 'yesterday', label: 'Ontem' },
+  { value: '3days', label: '3 Dias' },
+  { value: 'week', label: '7 Dias' },
+  { value: 'month', label: 'Mês' },
+  { value: 'year', label: 'Ano' },
+  { value: 'custom', label: 'Período' },
+]
 
 const metrics = ref({
   revenue: 0,
@@ -471,9 +476,13 @@ const paymentMethods = ref([])
 const orderTypes = ref([])
 
 const loadDashboard = async () => {
+  if (period.value === 'custom' && (!customStart.value || !customEnd.value)) return
   loading.value = true
   try {
-    const res = await DashboardService.getMetrics(period.value)
+    const customRange = period.value === 'custom'
+      ? { start: customStart.value, end: customEnd.value }
+      : null
+    const res = await DashboardService.getMetrics(period.value, customRange)
     metrics.value = res.data.metrics
     recentOrders.value = res.data.recentOrders
     topProducts.value = res.data.topProducts
@@ -490,7 +499,11 @@ const loadDashboard = async () => {
 
 const changePeriod = (newPeriod) => {
   period.value = newPeriod
-  loadDashboard()
+  if (newPeriod !== 'custom') loadDashboard()
+}
+
+const applyCustomRange = () => {
+  if (customStart.value && customEnd.value) loadDashboard()
 }
 
 const { statusLabel, statusClass } = useOrderStatus()
@@ -509,3 +522,15 @@ const orderTypeBarWidth = (count) => {
 
 onMounted(loadDashboard)
 </script>
+
+<style scoped>
+.fade-in-enter-active,
+.fade-in-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.fade-in-enter-from,
+.fade-in-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+</style>
