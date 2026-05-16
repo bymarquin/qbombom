@@ -8,30 +8,37 @@ const DASHBOARD_CACHE_TTL_MS = Number(process.env.DASHBOARD_CACHE_TTL_MS || 3000
 
 function getDateRange(period) {
   const now = new Date();
-  const endOf = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
-  const startOf = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+  const todayYmd = now.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+  const parseDateAtSaoPaulo = (ymd, time) => new Date(`${ymd}T${time}-03:00`);
+  const startOfYmd = (ymd) => parseDateAtSaoPaulo(ymd, '00:00:00.000');
+  const endOfYmd = (ymd) => parseDateAtSaoPaulo(ymd, '23:59:59.999');
+  const shiftYmd = (ymd, days) => {
+    const base = parseDateAtSaoPaulo(ymd, '12:00:00.000');
+    base.setUTCDate(base.getUTCDate() + days);
+    return base.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+  };
 
   if (period === 'week') {
-    const from = new Date(now);
-    from.setDate(now.getDate() - 7);
-    return { start: startOf(from), end: endOf(now) };
+    const fromYmd = shiftYmd(todayYmd, -7);
+    return { start: startOfYmd(fromYmd), end: endOfYmd(todayYmd) };
   }
 
   if (period === '3days') {
-    const from = new Date(now);
-    from.setDate(now.getDate() - 3);
-    return { start: startOf(from), end: endOf(now) };
+    const fromYmd = shiftYmd(todayYmd, -3);
+    return { start: startOfYmd(fromYmd), end: endOfYmd(todayYmd) };
   }
 
   if (period === 'month') {
-    return { start: new Date(now.getFullYear(), now.getMonth(), 1), end: endOf(now) };
+    const [year, month] = todayYmd.split('-');
+    return { start: startOfYmd(`${year}-${month}-01`), end: endOfYmd(todayYmd) };
   }
 
   if (period === 'year') {
-    return { start: new Date(now.getFullYear(), 0, 1), end: endOf(now) };
+    const [year] = todayYmd.split('-');
+    return { start: startOfYmd(`${year}-01-01`), end: endOfYmd(todayYmd) };
   }
 
-  return { start: startOf(now), end: endOf(now) };
+  return { start: startOfYmd(todayYmd), end: endOfYmd(todayYmd) };
 }
 
 exports.getMetrics = async (req, res) => {
