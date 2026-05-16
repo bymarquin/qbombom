@@ -39,6 +39,13 @@ const authLimiter = rateLimit({
   message: { error: 'Muitas tentativas de login. Tente novamente em 15 minutos.' },
 });
 
+const pinLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skipSuccessfulRequests: false,
+  message: { error: 'Muitas tentativas de login. Tente novamente em 15 minutos.' },
+});
+
 const trackingLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
@@ -46,6 +53,7 @@ const trackingLimiter = rateLimit({
 });
 
 app.use('/api', limiter);
+app.use('/api/auth/login/pin', pinLimiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/orders/track', trackingLimiter);
 
