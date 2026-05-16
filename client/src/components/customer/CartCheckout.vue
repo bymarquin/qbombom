@@ -319,7 +319,17 @@
               <span>Subtotal</span>
               <span>{{ formatarMoeda(subtotal) }}</span>
             </div>
-            <div class="flex justify-between text-sm text-neutral-700 dark:text-neutral-300">
+            <div
+              v-if="deliveryFee > 0"
+              class="flex justify-between text-sm text-neutral-700 dark:text-neutral-300"
+            >
+              <span>Taxa de entrega</span>
+              <span>{{ formatarMoeda(deliveryFee) }}</span>
+            </div>
+            <div
+              v-if="serviceFee > 0"
+              class="flex justify-between text-sm text-neutral-700 dark:text-neutral-300"
+            >
               <span>Taxa de serviço</span>
               <span>{{ formatarMoeda(serviceFee) }}</span>
             </div>
@@ -361,12 +371,6 @@
           para {{ checkout.tipo === 'Entrega' ? 'entrega' : 'viagem' }}.
         </p>
         <p
-          v-else-if="checkout.tipo === 'Entrega' && subtotal < pedidoMinimoEntrega"
-          class="text-center text-xs text-red-600 dark:text-red-400 mt-2 font-medium"
-        >
-          Pedido mínimo para entrega: {{ formatarMoeda(pedidoMinimoEntrega) }}
-        </p>
-        <p
           v-else-if="
             checkout.tipo === 'Entrega' &&
             (!checkout.endereco.rua || !checkout.endereco.numero || !checkout.endereco.bairro)
@@ -401,6 +405,10 @@ defineProps({
     type: Number,
     default: 0,
   },
+  deliveryFee: {
+    type: Number,
+    default: 0,
+  },
   total: {
     type: Number,
     required: true,
@@ -416,10 +424,6 @@ defineProps({
   isStoreOpen: {
     type: Boolean,
     default: true,
-  },
-  pedidoMinimoEntrega: {
-    type: Number,
-    default: 12,
   },
   mesaDoQr: {
     type: String,

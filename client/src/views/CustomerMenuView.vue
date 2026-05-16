@@ -326,12 +326,12 @@
       :mesa-do-qr="mesaDoQr"
       :subtotal="subtotal"
       :service-fee="taxaServico"
+      :delivery-fee="taxaEntrega"
       :total="totalComTaxaServico"
       :pode-finalizar-pedido="podeFinalizarPedido"
       :itens-incompativeis="itensIncompativeis"
       :enviando="enviando"
       :is-store-open="isStoreOpen"
-      :pedido-minimo-entrega="PEDIDO_MINIMO_ENTREGA"
       @enviar-pedido="enviarPedido"
       @remover-item="removerItem"
     />
@@ -502,6 +502,7 @@ syncToLocalStorage("qbombom_carrinho", carrinho);
 syncToLocalStorage("qbombom_checkout", checkout);
 
 const PEDIDO_MINIMO_ENTREGA = 12;
+const TAXA_ENTREGA_ABAIXO_MINIMO = 2;
 const roundToCents = (value) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 
 const maintenanceAtiva = computed(() => Boolean(storeSettings.value?.maintenance?.enabled));
@@ -523,7 +524,6 @@ const podeFinalizarPedido = computed(() => {
   if (!checkout.value.tipo) return false;
   if (itensIncompativeis.value.length > 0) return false;
   if (checkout.value.tipo === "Entrega") {
-    if (subtotal.value < PEDIDO_MINIMO_ENTREGA) return false;
     return Boolean(
       checkout.value.endereco.rua &&
       checkout.value.endereco.numero &&
@@ -533,6 +533,12 @@ const podeFinalizarPedido = computed(() => {
   return true;
 });
 const enviando = ref(false);
+
+const taxaEntrega = computed(() => {
+  if (checkout.value.tipo !== "Entrega") return 0;
+  if (subtotal.value >= PEDIDO_MINIMO_ENTREGA) return 0;
+  return TAXA_ENTREGA_ABAIXO_MINIMO;
+});
 
 const taxaServico = computed(() => {
   const config = storeSettings.value?.serviceCharge;
@@ -549,7 +555,7 @@ const taxaServico = computed(() => {
   return roundToCents((subtotal.value * numericValue) / 100);
 });
 
-const totalComTaxaServico = computed(() => roundToCents(subtotal.value + taxaServico.value));
+const totalComTaxaServico = computed(() => roundToCents(subtotal.value + taxaServico.value + taxaEntrega.value));
 
 
 // --- Lógica Rastreio (Tracking) ---
@@ -989,7 +995,7 @@ const enviarPedido = async () => {
       paymentStatus: "pendente", // Pedido online nasce como pagamento pendente sempre
       paymentMethod: checkout.value.pagamento,
       subtotal: subtotal.value,
-      serviceFee: taxaServico.value,
+      serviceFee: roundToCents(taxaServico.value + taxaEntrega.value),
       discount: 0,
       total: totalComTaxaServico.value,
       observation: obsAdicional || undefined,
