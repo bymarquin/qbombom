@@ -39,7 +39,7 @@ exports.getMetrics = async (req, res) => {
     const billableStatuses = { status: { [Op.in]: ['finalizado', 'entregue'] } };
     const billableFilter = { ...withinPeriod, ...billableStatuses };
 
-    const [revenue, totalOrders, cancellations, recentOrders, topProductsRaw] = await Promise.all([
+    const [revenue, totalOrders, cancellations, recentOrders, topProductsRaw, activeOrdersRaw, paymentMethodsRaw, orderTypesRaw] = await Promise.all([
       Order.sum('total', { where: billableFilter }),
       Order.count({ where: billableFilter }),
       Order.count({ where: { ...withinPeriod, status: 'cancelado' } }),
@@ -68,6 +68,24 @@ exports.getMetrics = async (req, res) => {
         order: [[sequelize.fn('SUM', sequelize.col('quantity')), 'DESC']],
         limit: 5,
         raw: true
+      }),
+      Order.findAll({
+        attributes: ['status', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
+        where: { status: { [Op.notIn]: ['finalizado', 'cancelado'] } },
+        group: ['status'],
+        raw: true,
+      }),
+      Order.findAll({
+        attributes: ['paymentMethod', [sequelize.fn('COUNT', sequelize.col('id')), 'count'], [sequelize.fn('SUM', sequelize.col('total')), 'revenue']],
+        where: billableFilter,
+        group: ['paymentMethod'],
+        raw: true,
+      }),
+      Order.findAll({
+        attributes: ['type', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
+        where: billableFilter,
+        group: ['type'],
+        raw: true,
       })
     ]);
 
@@ -79,16 +97,41 @@ exports.getMetrics = async (req, res) => {
     }));
 
     const safeRevenue = revenue || 0;
+    const activeOrders = {
+      novo: 0,
+      em_preparo: 0,
+      pronto: 0,
+      aguardando_pagamento: 0,
+      em_rota: 0,
+    };
+    activeOrdersRaw.forEach((item) => {
+      if (Object.prototype.hasOwnProperty.call(activeOrders, item.status)) {
+        activeOrders[item.status] = parseInt(item.count, 10);
+      }
+    });
+    const paymentMethods = paymentMethodsRaw.map((item) => ({
+      method: item.paymentMethod,
+      count: parseInt(item.count, 10),
+      revenue: parseFloat(item.revenue || 0)
+    }));
+    const orderTypes = orderTypesRaw.map((item) => ({
+      type: item.type,
+      count: parseInt(item.count, 10)
+    }));
 
     res.json({
       metrics: {
         revenue: safeRevenue,
         totalOrders,
         averageTicket: totalOrders > 0 ? safeRevenue / totalOrders : 0,
-        cancellations
+        cancellations,
+        cancellationRate: totalOrders + cancellations > 0 ? Math.round((cancellations / (totalOrders + cancellations)) * 100) : 0
       },
       recentOrders,
-      topProducts
+      topProducts,
+      activeOrders,
+      paymentMethods,
+      orderTypes
     });
   } catch (error) {
     console.error('[dashboard.getMetrics]', error);

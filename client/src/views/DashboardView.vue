@@ -138,7 +138,7 @@
             <div
               class="w-10 h-10 bg-neutral-50 dark:bg-neutral-950 rounded-lg flex items-center justify-center text-neutral-600 dark:text-neutral-400 border border-neutral-100 dark:border-neutral-800/50"
             >
-              <XOctagon class="w-5 h-5" />
+              <TrendingDown class="w-5 h-5" />
             </div>
           </div>
           <h3 class="text-sm font-medium text-neutral-500 dark:text-neutral-500 mb-1">
@@ -147,6 +147,143 @@
           <p class="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
             {{ metrics.cancellations }}
           </p>
+          <p class="text-xs text-neutral-500 dark:text-neutral-500 mt-1">{{ metrics.cancellationRate }}% do total</p>
+        </div>
+      </div>
+
+      <!-- Operação ao Vivo -->
+      <div
+        class="bg-white dark:bg-neutral-900 p-5 rounded-2xl shadow-xl dark:shadow-none shadow-red-900/5 border border-neutral-100 dark:border-neutral-800/50 mb-6 shrink-0"
+      >
+        <div class="flex items-center justify-between gap-3 mb-4">
+          <div class="flex items-center gap-2">
+            <Activity class="w-4 h-4 text-red-600" />
+            <h2 class="text-base font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+              Operação ao Vivo
+            </h2>
+          </div>
+          <span
+            class="px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-500/20"
+          >
+            Tempo Real
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div class="flex items-center justify-between rounded-xl border border-orange-100 dark:border-orange-500/20 bg-orange-50/60 dark:bg-orange-500/10 px-3 py-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="w-2 h-2 rounded-full bg-orange-500 shrink-0"></span>
+              <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300 truncate">Aguardando PIX</span>
+            </div>
+            <span class="px-2 py-0.5 rounded-md text-xs font-bold bg-white dark:bg-neutral-950 text-orange-600 dark:text-orange-400 border border-orange-100 dark:border-orange-500/20">
+              {{ activeOrders.aguardando_pagamento || 0 }}
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between rounded-xl border border-red-100 dark:border-red-500/20 bg-red-50/60 dark:bg-red-500/10 px-3 py-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="w-2 h-2 rounded-full bg-red-500 shrink-0" :class="(activeOrders.novo || 0) > 0 ? 'animate-pulse' : ''"></span>
+              <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300 truncate">Novos</span>
+            </div>
+            <span class="px-2 py-0.5 rounded-md text-xs font-bold bg-white dark:bg-neutral-950 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-500/20">
+              {{ activeOrders.novo || 0 }}
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between rounded-xl border border-yellow-100 dark:border-yellow-500/20 bg-yellow-50/60 dark:bg-yellow-500/10 px-3 py-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="w-2 h-2 rounded-full bg-yellow-500 shrink-0"></span>
+              <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300 truncate">Em Preparo</span>
+            </div>
+            <span class="px-2 py-0.5 rounded-md text-xs font-bold bg-white dark:bg-neutral-950 text-yellow-700 dark:text-yellow-400 border border-yellow-100 dark:border-yellow-500/20">
+              {{ activeOrders.em_preparo || 0 }}
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between rounded-xl border border-green-100 dark:border-green-500/20 bg-green-50/60 dark:bg-green-500/10 px-3 py-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="w-2 h-2 rounded-full bg-green-500 shrink-0"></span>
+              <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300 truncate">Prontos</span>
+            </div>
+            <span class="px-2 py-0.5 rounded-md text-xs font-bold bg-white dark:bg-neutral-950 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-500/20">
+              {{ activeOrders.pronto || 0 }}
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between rounded-xl border border-violet-100 dark:border-violet-500/20 bg-violet-50/60 dark:bg-violet-500/10 px-3 py-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="w-2 h-2 rounded-full bg-violet-500 shrink-0"></span>
+              <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300 truncate">Em Rota</span>
+            </div>
+            <span class="px-2 py-0.5 rounded-md text-xs font-bold bg-white dark:bg-neutral-950 text-violet-700 dark:text-violet-400 border border-violet-100 dark:border-violet-500/20">
+              {{ activeOrders.em_rota || 0 }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pagamentos e Tipos -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 shrink-0">
+        <div
+          class="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl dark:shadow-none shadow-red-900/5 border border-neutral-100 dark:border-neutral-800/50 overflow-hidden"
+        >
+          <div class="px-6 py-5 border-b border-neutral-100 dark:border-neutral-800/50 flex items-center gap-2">
+            <CreditCard class="w-4 h-4 text-red-600" />
+            <h2 class="text-base font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+              Formas de Pagamento
+            </h2>
+          </div>
+
+          <div class="p-6">
+            <div v-if="paymentMethods.length === 0" class="text-sm text-neutral-500 dark:text-neutral-500">
+              Nenhum dado no período.
+            </div>
+            <ul v-else class="space-y-4">
+              <li v-for="item in paymentMethods" :key="item.method" class="space-y-1.5">
+                <div class="flex items-center justify-between gap-3 text-sm">
+                  <span class="font-medium text-neutral-900 dark:text-neutral-100">{{ item.method }}</span>
+                  <span class="text-neutral-500 dark:text-neutral-400">{{ item.count }} • {{ formatarMoeda(item.revenue) }}</span>
+                </div>
+                <div class="h-2 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+                  <div
+                    class="h-full bg-red-500 dark:bg-red-400 rounded-full transition-all"
+                    :style="{ width: `${paymentBarWidth(item.count)}%` }"
+                  ></div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div
+          class="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl dark:shadow-none shadow-red-900/5 border border-neutral-100 dark:border-neutral-800/50 overflow-hidden"
+        >
+          <div class="px-6 py-5 border-b border-neutral-100 dark:border-neutral-800/50 flex items-center gap-2">
+            <Utensils class="w-4 h-4 text-red-600" />
+            <h2 class="text-base font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+              Tipos de Pedido
+            </h2>
+          </div>
+
+          <div class="p-6">
+            <div v-if="orderTypes.length === 0" class="text-sm text-neutral-500 dark:text-neutral-500">
+              Nenhum dado no período.
+            </div>
+            <ul v-else class="space-y-4">
+              <li v-for="item in orderTypes" :key="item.type" class="space-y-1.5">
+                <div class="flex items-center justify-between gap-3 text-sm">
+                  <span class="font-medium text-neutral-900 dark:text-neutral-100">{{ item.type }}</span>
+                  <span class="text-neutral-500 dark:text-neutral-400">{{ item.count }}</span>
+                </div>
+                <div class="h-2 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+                  <div
+                    class="h-full bg-neutral-700 dark:bg-neutral-300 rounded-full transition-all"
+                    :style="{ width: `${orderTypeBarWidth(item.count)}%` }"
+                  ></div>
+                </div>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
 
@@ -289,7 +426,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { DollarSign, ShoppingBag, Receipt, XOctagon, ClipboardList } from 'lucide-vue-next'
+import { DollarSign, ShoppingBag, Receipt, ClipboardList, TrendingDown, Activity, CreditCard, Utensils } from 'lucide-vue-next'
 import { DashboardService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 import { formatarMoeda } from '@/utils/formatters'
@@ -304,9 +441,13 @@ const metrics = ref({
   totalOrders: 0,
   averageTicket: 0,
   cancellations: 0,
+  cancellationRate: 0,
 })
 const recentOrders = ref([])
 const topProducts = ref([])
+const activeOrders = ref({})
+const paymentMethods = ref([])
+const orderTypes = ref([])
 
 const loadDashboard = async () => {
   loading.value = true
@@ -315,6 +456,9 @@ const loadDashboard = async () => {
     metrics.value = res.data.metrics
     recentOrders.value = res.data.recentOrders
     topProducts.value = res.data.topProducts
+    activeOrders.value = res.data.activeOrders || {}
+    paymentMethods.value = res.data.paymentMethods || []
+    orderTypes.value = res.data.orderTypes || []
   } catch (error) {
     console.error(error)
     toast.error('Erro ao carregar dados do dashboard.')
@@ -329,6 +473,18 @@ const changePeriod = (newPeriod) => {
 }
 
 const { statusLabel, statusClass } = useOrderStatus()
+
+const paymentBarWidth = (count) => {
+  const max = Math.max(...paymentMethods.value.map((item) => Number(item.count) || 0), 0)
+  if (max <= 0) return 0
+  return Math.round(((Number(count) || 0) / max) * 100)
+}
+
+const orderTypeBarWidth = (count) => {
+  const max = Math.max(...orderTypes.value.map((item) => Number(item.count) || 0), 0)
+  if (max <= 0) return 0
+  return Math.round(((Number(count) || 0) / max) * 100)
+}
 
 onMounted(loadDashboard)
 </script>
