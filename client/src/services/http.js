@@ -229,6 +229,9 @@ export const CatalogService = {
   deleteCategory(id) {
     return api.delete(`/categories/${id}`)
   },
+  reorderCategories(order) {
+    return api.put('/categories/reorder', { order })
+  },
 
   getProducts(params = {}) {
     return api.get('/products', { params })

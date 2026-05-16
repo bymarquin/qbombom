@@ -44,7 +44,7 @@
             <tr
               class="text-xs uppercase text-neutral-500 dark:text-neutral-400 border-b border-neutral-100 dark:border-neutral-800/50 bg-neutral-50/50 dark:bg-neutral-800/30"
             >
-              <th class="py-4 px-6 font-medium">ID</th>
+              <th class="py-4 pl-4 pr-2 w-8"></th>
               <th class="py-4 px-6 font-medium">Nome</th>
               <th class="py-4 px-6 font-medium">Status</th>
               <th class="py-4 px-6 font-medium text-right">Ações</th>
@@ -57,11 +57,23 @@
               </td>
             </tr>
             <tr
-              v-for="cat in categories"
+              v-for="(cat, index) in categories"
               :key="cat.id"
-              class="border-b border-neutral-100 dark:border-neutral-800/50 last:border-0 hover:bg-neutral-50/50 dark:hover:bg-neutral-800/30 transition-colors"
+              draggable="true"
+              @dragstart="onDragStart(index)"
+              @dragover.prevent="onDragOver(index)"
+              @drop="onDrop"
+              @dragend="onDragEnd"
+              :class="[
+                'border-b border-neutral-100 dark:border-neutral-800/50 last:border-0 transition-colors',
+                dragOverIndex === index && dragIndex !== index
+                  ? 'bg-red-50/60 dark:bg-red-900/10'
+                  : 'hover:bg-neutral-50/50 dark:hover:bg-neutral-800/30',
+              ]"
             >
-              <td class="py-4 px-6 text-neutral-500 dark:text-neutral-500">#{{ cat.id }}</td>
+              <td class="py-4 pl-4 pr-2">
+                <GripVertical class="w-4 h-4 text-neutral-300 dark:text-neutral-600 cursor-grab active:cursor-grabbing" />
+              </td>
               <td class="py-4 px-6 font-medium text-neutral-900 dark:text-neutral-100">
                 {{ cat.name }}
               </td>
@@ -240,7 +252,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Pencil, Trash2, Upload, Download, Plus, X } from 'lucide-vue-next'
+import { Pencil, Trash2, Upload, Download, Plus, X, GripVertical } from 'lucide-vue-next'
 import { CatalogService, ImportService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 import { useDialogStore } from '@/stores/dialog'
@@ -253,6 +265,40 @@ const editingItem = ref(null)
 const form = ref({ name: '', status: true })
 
 onMounted(() => loadData())
+
+const dragIndex = ref(null)
+const dragOverIndex = ref(null)
+
+const onDragStart = (index) => {
+  dragIndex.value = index
+}
+
+const onDragOver = (index) => {
+  dragOverIndex.value = index
+}
+
+const onDrop = async () => {
+  const from = dragIndex.value
+  const to = dragOverIndex.value
+  if (from === null || to === null || from === to) return
+
+  const reordered = [...categories.value]
+  const [moved] = reordered.splice(from, 1)
+  reordered.splice(to, 0, moved)
+  categories.value = reordered
+
+  try {
+    await CatalogService.reorderCategories(reordered.map((c) => c.id))
+  } catch {
+    toast.error('Erro ao salvar ordem.')
+    await loadData()
+  }
+}
+
+const onDragEnd = () => {
+  dragIndex.value = null
+  dragOverIndex.value = null
+}
 
 const loadData = async () => {
   try {

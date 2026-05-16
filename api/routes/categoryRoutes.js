@@ -9,6 +9,7 @@ router.get('/', categoryController.index);
 router.get('/:id', categoryController.show);
 
 // Rotas de Admin: Requerem o token e a permissão específica!
+router.put('/reorder', auth, checkPermission('products.update'), categoryController.reorder);
 router.post('/', auth, checkPermission('products.create'), categoryController.create);
 router.put('/:id', auth, checkPermission('products.update'), categoryController.update);
 router.delete('/:id', auth, checkPermission('products.toggle_active'), categoryController.destroy);

@@ -90,6 +90,22 @@ exports.update = async (req, res) => {
   }
 };
 
+exports.reorder = async (req, res) => {
+  try {
+    const { order } = req.body; // array of ids in desired order
+    if (!Array.isArray(order) || order.length === 0) {
+      return res.status(400).json({ error: 'order must be a non-empty array of ids' });
+    }
+    await Promise.all(
+      order.map((id, index) => Category.update({ position: index + 1 }, { where: { id } }))
+    );
+    await cache.delByPrefix('categories:');
+    res.json({ message: 'Order updated' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to reorder categories' });
+  }
+};
+
 exports.destroy = async (req, res) => {
   try {
     const category = await Category.findByPk(req.params.id);
