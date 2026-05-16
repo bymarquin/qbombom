@@ -20,6 +20,10 @@ module.exports = (req, res, next) => {
       return res.status(401).json({ error: 'Token invalid' });
     }
 
+    if (decoded.type === 'customer') {
+      return res.status(403).json({ error: 'Acesso não permitido.' });
+    }
+
     req.userId = decoded.id;
     // Salva o Role do usuário para podermos verificar as permissões depois
     req.userRole = decoded.role;

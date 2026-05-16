@@ -26,6 +26,11 @@ const ETA_DEFAULT_SECONDS_PER_UNIT = 210;
 const ETA_MIN_SECONDS_PER_UNIT = 90;
 const ETA_MAX_SECONDS_PER_UNIT = 600;
 const ETA_SNAPSHOT_TTL_MS = Number(process.env.ETA_SNAPSHOT_TTL_MS || 5000);
+
+if (!process.env.MERCADOPAGO_WEBHOOK_TOKEN) {
+  logger.warn('SECURITY: MERCADOPAGO_WEBHOOK_TOKEN não configurado — webhooks de pagamento não são autenticados. Configure a variável de ambiente para proteger o endpoint.');
+}
+
 let etaSnapshotCache = null;
 let etaSnapshotCacheAt = 0;
 let etaSnapshotPromise = null;

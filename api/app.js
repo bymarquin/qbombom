@@ -39,8 +39,15 @@ const authLimiter = rateLimit({
   message: { error: 'Muitas tentativas de login. Tente novamente em 15 minutos.' },
 });
 
+const trackingLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: 'Muitas tentativas de tracking. Tente novamente em 15 minutos.' },
+});
+
 app.use('/api', limiter);
 app.use('/api/auth/login', authLimiter);
+app.use('/api/orders/track', trackingLimiter);
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));

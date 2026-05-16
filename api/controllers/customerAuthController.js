@@ -6,7 +6,7 @@ const { Customer } = require('../models');
 const { SECRET } = require('../config/jwt');
 
 function generateCustomerToken(customer) {
-  return jwt.sign({ id: customer.id, role: 'CUSTOMER' }, SECRET, { expiresIn: '7d' });
+  return jwt.sign({ id: customer.id, role: 'CUSTOMER', type: 'customer' }, SECRET, { expiresIn: '7d' });
 }
 
 function formatCustomer(customer) {
