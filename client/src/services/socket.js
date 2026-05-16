@@ -5,6 +5,7 @@ const SOCKET_URL =
 
 const socket = io(SOCKET_URL, {
   autoConnect: false,
+  transports: ['websocket'],
 })
 
 export default socket
