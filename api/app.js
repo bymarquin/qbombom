@@ -25,6 +25,7 @@ function makeRedisStore(prefix) {
   return new RedisStore({ prefix: 'rl:' + prefix + ':', sendCommand: (...args) => client.sendCommand(args) });
 }
 
+app.set('trust proxy', 1); // behind nginx reverse proxy
 app.use(helmet());
 app.use(compression());
 app.use(cors({
