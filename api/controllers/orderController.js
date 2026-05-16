@@ -6,6 +6,7 @@ const pixGatewayService = require('../services/pixGatewayService');
 const orderPaymentService = require('../services/orderPaymentService');
 const logger = require('../utils/logger');
 const { handleControllerError } = require('../utils/controllerError');
+const simpleCache = require('../utils/simpleCache');
 
 // Transições permitidas por updateStatus.
 // Cancelamento não está aqui — tem endpoint e lógica própria (restaura estoque).
@@ -31,8 +32,6 @@ if (!process.env.MERCADOPAGO_WEBHOOK_TOKEN) {
   logger.warn('SECURITY: MERCADOPAGO_WEBHOOK_TOKEN não configurado — webhooks de pagamento não são autenticados. Configure a variável de ambiente para proteger o endpoint.');
 }
 
-let etaSnapshotCache = null;
-let etaSnapshotCacheAt = 0;
 let etaSnapshotPromise = null;
 
 const ORDER_INCLUDES = [
@@ -175,16 +174,16 @@ async function buildEtaSnapshot() {
 }
 
 async function getEtaSnapshot() {
-  const now = Date.now();
-  if (etaSnapshotCache && (now - etaSnapshotCacheAt) < ETA_SNAPSHOT_TTL_MS) {
-    return etaSnapshotCache;
+  const cached = await simpleCache.get('eta:snapshot');
+  if (cached) {
+    return { ...cached, byOrderId: new Map(cached.byOrderId) };
   }
 
   if (!etaSnapshotPromise) {
     etaSnapshotPromise = buildEtaSnapshot()
-      .then((snapshot) => {
-        etaSnapshotCache = snapshot;
-        etaSnapshotCacheAt = Date.now();
+      .then(async (snapshot) => {
+        const serializable = { ...snapshot, byOrderId: Array.from(snapshot.byOrderId.entries()) };
+        await simpleCache.set('eta:snapshot', serializable, ETA_SNAPSHOT_TTL_MS);
         return snapshot;
       })
       .finally(() => {
@@ -428,22 +427,35 @@ async function runPixGatewayReconcile(io) {
   }
 }
 
-function ensurePixGatewayReconciler(io) {
-  if (pixReconcilerStarted || !pixGatewayService.isEnabled()) return;
+async function ensurePixGatewayReconciler(io) {
+  if (!pixGatewayService.isEnabled()) return;
+  if (pixReconcilerStarted) return;
+
+  const LOCK_KEY = 'pix:reconciler:leader';
+  const LOCK_TTL = PIX_RECONCILE_INTERVAL_MS * 3;
+
+  const existing = await simpleCache.get(LOCK_KEY);
+  if (existing) return;
+
   pixReconcilerStarted = true;
-  setInterval(() => {
-    runPixGatewayReconcile(io);
+  await simpleCache.set(LOCK_KEY, process.pid, LOCK_TTL);
+
+  setInterval(async () => {
+    try {
+      await simpleCache.set(LOCK_KEY, process.pid, LOCK_TTL);
+      await runPixGatewayReconcile(io);
+    } catch (error) {
+      logger.error('orders.reconciler.tick.failed', error);
+    }
   }, PIX_RECONCILE_INTERVAL_MS);
-  runPixGatewayReconcile(io);
-  logger.info('orders.reconciler.started', {
-    intervalMs: PIX_RECONCILE_INTERVAL_MS,
-    batchSize: PIX_RECONCILE_BATCH_SIZE,
-  });
+
+  await runPixGatewayReconcile(io);
+  logger.info('orders.reconciler.started', { intervalMs: PIX_RECONCILE_INTERVAL_MS, batchSize: PIX_RECONCILE_BATCH_SIZE });
 }
 
 exports.index = async (req, res) => {
   try {
-    ensurePixGatewayReconciler(req.app.get('io'));
+    await ensurePixGatewayReconciler(req.app.get('io'));
     const where = {}
     if (req.query.status) where.status = req.query.status
 
@@ -471,7 +483,7 @@ exports.index = async (req, res) => {
 
 exports.show = async (req, res) => {
   try {
-    ensurePixGatewayReconciler(req.app.get('io'));
+    await ensurePixGatewayReconciler(req.app.get('io'));
     const order = await Order.findByPk(req.params.id, { include: ORDER_INCLUDES });
     if (!order) return res.status(404).json({ error: 'Order not found' });
 
@@ -487,7 +499,7 @@ exports.create = async (req, res) => {
   const transaction = await sequelize.transaction();
 
   try {
-    ensurePixGatewayReconciler(req.app.get('io'));
+    await ensurePixGatewayReconciler(req.app.get('io'));
     const {
       type, customerName, customerPhone, tableNumber, deliveryAddress,
       deliveryLatitude, deliveryLongitude, deliveryAccuracyMeters, deliveryLocationCapturedAt,
@@ -694,7 +706,7 @@ exports.optOutWhatsappByTracking = async (req, res) => {
 
 exports.track = async (req, res) => {
   try {
-    ensurePixGatewayReconciler(req.app.get('io'));
+    await ensurePixGatewayReconciler(req.app.get('io'));
     const order = await Order.findOne({
       where: { trackingCode: req.params.code },
       include: ORDER_INCLUDES
@@ -906,7 +918,7 @@ exports.confirmDeliveryByTracking = async (req, res) => {
 
 exports.pixGatewayWebhook = async (req, res) => {
   try {
-    ensurePixGatewayReconciler(req.app.get('io'));
+    await ensurePixGatewayReconciler(req.app.get('io'));
     logger.info('orders.webhook.received', {
       type: req.query?.type || req.body?.type || null,
       action: req.body?.action || null,

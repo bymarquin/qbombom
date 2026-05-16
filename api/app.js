@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const { RedisStore } = require('rate-limit-redis');
 const http = require('http');
 const { Server } = require('socket.io');
 
@@ -15,6 +16,14 @@ const PORT = process.env.PORT || 3006;
 
 const ALLOWED_ORIGINS = (process.env.CLIENT_URL || 'http://localhost:5173').split(',').map(s => s.trim());
 
+function makeRedisStore(prefix) {
+  if (!process.env.REDIS_URL) return undefined;
+  const { createClient } = require('redis');
+  const client = createClient({ url: process.env.REDIS_URL });
+  client.connect().catch(err => console.error('RateLimit Redis error:', err));
+  return new RedisStore({ prefix: 'rl:' + prefix + ':', sendCommand: (...args) => client.sendCommand(args) });
+}
+
 app.use(helmet());
 app.use(cors({
   origin: (origin, callback) => {
@@ -25,6 +34,7 @@ app.use(cors({
 }));
 
 const limiter = rateLimit({
+  store: makeRedisStore('global'),
   windowMs: 15 * 60 * 1000,
   max: 300,
   standardHeaders: true,
@@ -33,6 +43,7 @@ const limiter = rateLimit({
 });
 
 const authLimiter = rateLimit({
+  store: makeRedisStore('auth'),
   windowMs: 15 * 60 * 1000,
   max: 10,
   skipSuccessfulRequests: true,
@@ -40,6 +51,7 @@ const authLimiter = rateLimit({
 });
 
 const pinLimiter = rateLimit({
+  store: makeRedisStore('pin'),
   windowMs: 15 * 60 * 1000,
   max: 10,
   skipSuccessfulRequests: false,
@@ -47,6 +59,7 @@ const pinLimiter = rateLimit({
 });
 
 const trackingLimiter = rateLimit({
+  store: makeRedisStore('track'),
   windowMs: 15 * 60 * 1000,
   max: 20,
   message: { error: 'Muitas tentativas de tracking. Tente novamente em 15 minutos.' },
@@ -78,6 +91,19 @@ const io = new Server(server, {
     credentials: true,
   }
 });
+
+if (process.env.REDIS_URL) {
+  const { createClient } = require('redis');
+  const { createAdapter } = require('@socket.io/redis-adapter');
+  const pubClient = createClient({ url: process.env.REDIS_URL });
+  const subClient = pubClient.duplicate();
+  Promise.all([pubClient.connect(), subClient.connect()])
+    .then(() => {
+      io.adapter(createAdapter(pubClient, subClient));
+      console.log('Socket.IO: Redis adapter ativo');
+    })
+    .catch(err => console.error('Socket.IO: falha ao conectar Redis adapter', err));
+}
 
 // Anexa a instância do IO no Express para usarmos nos Controllers (como no orderController.js)
 app.set('io', io);
