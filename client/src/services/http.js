@@ -37,7 +37,8 @@ const processRefreshQueue = (error, token = null) => {
 api.interceptors.response.use(
   (response) => {
     const responseType = response?.config?.responseType
-    if (responseType !== 'blob' && responseType !== 'arraybuffer') {
+    const skipNormalize = response?.config?.skipNormalize
+    if (!skipNormalize && responseType !== 'blob' && responseType !== 'arraybuffer') {
       response.data = normalizeMediaUrlsDeep(response.data)
     }
     return response
@@ -417,7 +418,7 @@ export const UserService = {
 
 export const R2Service = {
   listFiles(params = {}) {
-    return api.get('/r2/files', { params })
+    return api.get('/r2/files', { params, skipNormalize: true })
   },
   getProxyUrl(key) {
     return toMediaProxyUrlFromKey(key)
