@@ -91,7 +91,7 @@ async function delByPrefix(prefix) {
 
   if (redisReady && redisClient) {
     try {
-      let cursor = '0';
+      let cursor = 0;
       const match = withPrefix(`${prefix}*`);
       do {
         const result = await redisClient.scan(cursor, { MATCH: match, COUNT: 100 });
@@ -100,7 +100,7 @@ async function delByPrefix(prefix) {
           if (result.keys.length === 1) await redisClient.del(result.keys[0]);
           else await redisClient.del(result.keys);
         }
-      } while (cursor !== '0');
+      } while (cursor !== 0);
     } catch (_) {
       // fallback to memory cleanup
     }
