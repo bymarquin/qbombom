@@ -13,6 +13,17 @@
         </p>
       </div>
 
+      <div class="flex items-center gap-3">
+      <!-- Botão ocultar valores -->
+      <button
+        @click="valoresVisiveis = !valoresVisiveis"
+        class="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-100 transition-colors text-sm font-medium shadow-sm"
+        :title="valoresVisiveis ? 'Ocultar valores' : 'Mostrar valores'"
+      >
+        <EyeOff v-if="valoresVisiveis" class="w-4 h-4" />
+        <Eye v-else class="w-4 h-4" />
+      </button>
+
       <!-- Filtro -->
       <div
         class="flex bg-white dark:bg-neutral-900 rounded-lg shadow-sm dark:shadow-none border border-neutral-200 dark:border-neutral-800 p-1"
@@ -62,6 +73,7 @@
           Ano
         </button>
       </div>
+      </div>
     </header>
 
     <div v-if="loading" class="flex flex-1 items-center justify-center">
@@ -88,7 +100,8 @@
             Faturamento
           </h3>
           <p class="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
-            {{ formatarMoeda(metrics.revenue) }}
+            <span v-if="valoresVisiveis">{{ formatarMoeda(metrics.revenue) }}</span>
+            <span v-else class="tracking-widest text-neutral-400 dark:text-neutral-600">••••••</span>
           </p>
         </div>
 
@@ -126,7 +139,8 @@
             Ticket Médio
           </h3>
           <p class="text-2xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
-            {{ formatarMoeda(metrics.averageTicket) }}
+            <span v-if="valoresVisiveis">{{ formatarMoeda(metrics.averageTicket) }}</span>
+            <span v-else class="tracking-widest text-neutral-400 dark:text-neutral-600">••••••</span>
           </p>
         </div>
 
@@ -242,7 +256,11 @@
               <li v-for="item in paymentMethods" :key="item.method" class="space-y-1.5">
                 <div class="flex items-center justify-between gap-3 text-sm">
                   <span class="font-medium text-neutral-900 dark:text-neutral-100">{{ item.method }}</span>
-                  <span class="text-neutral-500 dark:text-neutral-400">{{ item.count }} • {{ formatarMoeda(item.revenue) }}</span>
+                  <span class="text-neutral-500 dark:text-neutral-400">
+                    {{ item.count }} •
+                    <span v-if="valoresVisiveis">{{ formatarMoeda(item.revenue) }}</span>
+                    <span v-else class="tracking-widest text-neutral-400 dark:text-neutral-600">•••••</span>
+                  </span>
                 </div>
                 <div class="h-2 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
                   <div
@@ -367,7 +385,8 @@
                     </span>
                   </td>
                   <td class="px-6 py-4 font-medium text-neutral-900 dark:text-neutral-100">
-                    {{ formatarMoeda(order.total) }}
+                    <span v-if="valoresVisiveis">{{ formatarMoeda(order.total) }}</span>
+                    <span v-else class="tracking-widest text-neutral-400 dark:text-neutral-600">•••••</span>
                   </td>
                 </tr>
               </tbody>
@@ -413,7 +432,8 @@
                   </p>
                 </div>
                 <div class="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                  {{ formatarMoeda(prod.revenue) }}
+                  <span v-if="valoresVisiveis">{{ formatarMoeda(prod.revenue) }}</span>
+                  <span v-else class="tracking-widest text-neutral-400 dark:text-neutral-600">•••••</span>
                 </div>
               </li>
             </ul>
@@ -426,7 +446,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { DollarSign, ShoppingBag, Receipt, ClipboardList, TrendingDown, Activity, CreditCard, Utensils } from 'lucide-vue-next'
+import { DollarSign, ShoppingBag, Receipt, ClipboardList, TrendingDown, Activity, CreditCard, Utensils, Eye, EyeOff } from 'lucide-vue-next'
 import { DashboardService } from '@/services/http'
 import { useToastStore } from '@/stores/toast'
 import { formatarMoeda } from '@/utils/formatters'
@@ -435,6 +455,7 @@ import { useOrderStatus } from '@/composables/useOrderStatus'
 const toast = useToastStore()
 const loading = ref(true)
 const period = ref('today')
+const valoresVisiveis = ref(false)
 
 const metrics = ref({
   revenue: 0,
