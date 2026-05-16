@@ -2,6 +2,9 @@
 
 const { Order, OrderItem, Product, sequelize } = require('../models');
 const { Op } = require('sequelize');
+const simpleCache = require('../utils/simpleCache');
+
+const DASHBOARD_CACHE_TTL_MS = Number(process.env.DASHBOARD_CACHE_TTL_MS || 30000);
 
 function getDateRange(period) {
   const now = new Date();
@@ -33,9 +36,15 @@ function getDateRange(period) {
 
 exports.getMetrics = async (req, res) => {
   try {
-    const { start, end } = getDateRange(req.query.period);
+    const period = req.query.period || 'today';
+    const cacheKey = `dashboard:${period}`;
+    const cached = await simpleCache.get(cacheKey);
+    if (cached) return res.json(cached);
+
+    const { start, end } = getDateRange(period);
 
     const withinPeriod = { createdAt: { [Op.between]: [start, end] } };
+
     const billableStatuses = { status: { [Op.in]: ['finalizado', 'entregue'] } };
     const billableFilter = { ...withinPeriod, ...billableStatuses };
 
@@ -119,7 +128,7 @@ exports.getMetrics = async (req, res) => {
       count: parseInt(item.count, 10)
     }));
 
-    res.json({
+    const payload = {
       metrics: {
         revenue: safeRevenue,
         totalOrders,
@@ -132,7 +141,10 @@ exports.getMetrics = async (req, res) => {
       activeOrders,
       paymentMethods,
       orderTypes
-    });
+    };
+
+    await simpleCache.set(cacheKey, payload, DASHBOARD_CACHE_TTL_MS);
+    res.json(payload);
   } catch (error) {
     console.error('[dashboard.getMetrics]', error);
     res.status(500).json({ error: 'Internal server error' });
