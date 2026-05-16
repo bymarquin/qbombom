@@ -111,9 +111,9 @@ if (process.env.REDIS_URL) {
 app.set('io', io);
 
 io.on('connection', (socket) => {
-  console.log('Cliente WS conectado:', socket.id);
-  socket.on('disconnect', () => {
-    console.log('Cliente WS desconectado:', socket.id);
+  console.log('Cliente WS conectado:', socket.id, 'transport=', socket.conn.transport.name);
+  socket.on('disconnect', (reason) => {
+    console.log('Cliente WS desconectado:', socket.id, 'reason=', reason);
   });
 });
 
