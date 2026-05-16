@@ -105,7 +105,10 @@ exports.getMetrics = async (req, res) => {
       }),
       Order.findAll({
         attributes: ['status', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
-        where: { status: { [Op.notIn]: ['finalizado', 'cancelado'] } },
+        where: {
+          status: { [Op.notIn]: ['finalizado', 'cancelado'] },
+          createdAt: { [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        },
         group: ['status'],
         raw: true,
       }),
