@@ -364,12 +364,11 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { computed, watch } from "vue";
 import ImageCarousel from "@/components/ImageCarousel.vue";
 import { formatarMoeda } from "@/utils/formatters";
-import { useToastStore } from "@/stores/toast";
+import { useProductBuilder } from "@/composables/useProductBuilder";
 
-const toast = useToastStore();
 const modelValue = defineModel({ type: Boolean, default: false });
 
 const props = defineProps({
@@ -379,25 +378,42 @@ const props = defineProps({
 
 const emit = defineEmits(['add-item', 'add-item-and-checkout']);
 
-const tamanhoSelecionado = ref(null);
-const adicionaisSelecionados = ref([]);
-const observacaoProduto = ref("");
-const quantidade = ref(1);
-const itemQuantidades = ref({});
-const saborQuantidades = ref({});
-const pesoGramas = ref(null);
+const produtoRef = computed(() => props.produtoDetalhado)
 
-watch(() => props.produtoDetalhado, () => {
-  tamanhoSelecionado.value = null;
-  adicionaisSelecionados.value = [];
-  observacaoProduto.value = "";
-  quantidade.value = 1;
-  itemQuantidades.value = {};
-  saborQuantidades.value = {};
-  pesoGramas.value = null;
-});
+const {
+  tamanhoSelecionado,
+  adicionaisSelecionados,
+  observacaoProduto,
+  itemQuantidades,
+  saborQuantidades,
+  pesoGramas,
+  quantidade,
+  isSorvete,
+  bolaCount,
+  bolaPrice,
+  limiteGlobal,
+  totalSelecionado,
+  atingiuLimite,
+  totalItemAtual,
+  podeConfirmar,
+  resetState,
+  calcularPeso,
+  isSaborGroup,
+  minEfetivoGrupo,
+  atingiuMaximoSabores,
+  incrementarSabor,
+  decrementarSabor,
+  incrementarItem,
+  decrementarItem,
+  qtdSelecionadaNoGrupo,
+  isAdicionalSelecionado,
+  estaBloqueado,
+  selecionarUnico,
+  montarPayload,
+} = useProductBuilder(produtoRef)
 
-const isWeightBased = computed(() => props.produtoDetalhado?.weightBased ?? false);
+watch(() => props.produtoDetalhado, () => resetState())
+
 const isOutOfStock = computed(() => {
   if (!props.produtoDetalhado?.manageStock) return false
   return Number(props.produtoDetalhado?.stock || 0) <= 0
@@ -405,224 +421,25 @@ const isOutOfStock = computed(() => {
 
 const stockBadge = computed(() => {
   if (!props.produtoDetalhado?.manageStock) return null
-
   const stock = Number(props.produtoDetalhado?.stock || 0)
   if (stock <= 0) return { label: 'Esgotado', tone: 'danger' }
   if (stock <= 5) return { label: 'Ultimas unidades', tone: 'warning' }
   return { label: 'Em estoque', tone: 'success' }
 })
 
-const calcularPeso = (preco, pricePerKg) => {
-  const gramas = (preco / pricePerKg) * 1000;
-  return gramas >= 1000 ? `${(gramas / 1000).toFixed(2).replace('.', ',')} kg` : `${Math.round(gramas)} g`;
-};
-const grupoSabor = computed(() =>
-  (props.produtoDetalhado?.additionalGroups ?? []).find(g => !!g.isSaborGroup) ?? null
-);
+const podeProsseguir = computed(() => !isOutOfStock.value && podeConfirmar.value)
 
-const isSorvete = computed(() =>
-  !isWeightBased.value && !!grupoSabor.value
-);
-
-const bolaCount = computed(() =>
-  Object.values(saborQuantidades.value).reduce((acc, atual) => acc + Number(atual || 0), 0)
-);
-
-const bolaPrice = computed(() =>
-  bolaCount.value <= 0 ? 0 : (bolaCount.value === 1 ? 4.00 : bolaCount.value * 3.50)
-);
-
-const incrementarSabor = (itemId, grupo) => {
-  if (atingiuMaximoSabores(grupo)) return;
-  saborQuantidades.value = { ...saborQuantidades.value, [itemId]: (saborQuantidades.value[itemId] || 0) + 1 };
-};
-
-const decrementarSabor = (itemId) => {
-  const atual = saborQuantidades.value[itemId] || 0;
-  if (atual <= 0) return;
-  saborQuantidades.value = { ...saborQuantidades.value, [itemId]: atual - 1 };
-};
-
-const atingiuMaximoSabores = (grupo) => {
-  const max = Number(grupo?.maxChoices);
-  if (!Number.isFinite(max) || max <= 0) return false;
-  return bolaCount.value >= max;
-};
-
-const incrementarItem = (itemId) => {
-  itemQuantidades.value = { ...itemQuantidades.value, [itemId]: (itemQuantidades.value[itemId] || 0) + 1 };
-};
-const decrementarItem = (itemId) => {
-  const atual = itemQuantidades.value[itemId] || 0;
-  if (atual > 0) itemQuantidades.value = { ...itemQuantidades.value, [itemId]: atual - 1 };
-};
-
-const stepperTotal = computed(() => {
-  const grupos = (props.produtoDetalhado?.additionalGroups ?? []).filter(g => g.stepperMode);
-  if (!grupos.length) return 0;
-  return grupos.reduce((accGrupo, grupo) =>
-    accGrupo + grupo.items.reduce((accItem, item) => accItem + Number(item.price) * (itemQuantidades.value[item.id] || 0), 0)
-  , 0);
-});
-
-const fechar = () => { modelValue.value = false; };
-
-const limiteGlobal = computed(() => tamanhoSelecionado.value?.maxAdditionals ?? null);
-const grupoByIdModal = computed(() => new Map((props.produtoDetalhado?.additionalGroups ?? []).map(g => [g.id, g])));
-const totalSelecionado = computed(() => {
-  const gruposQueContam = new Set(
-    (props.produtoDetalhado?.additionalGroups ?? [])
-      .filter(g => g.minChoices === 0 && !g.stepperMode && g.countsTowardLimit !== false)
-      .map(g => g.id)
-  );
-  return adicionaisSelecionados.value.filter(a => gruposQueContam.has(a.grupoId)).length;
-});
-const atingiuLimite = computed(() => limiteGlobal.value !== null && totalSelecionado.value >= limiteGlobal.value);
-
-watch(tamanhoSelecionado, () => {
-  const max = limiteGlobal.value;
-  if (max === null) return;
-  const contam = adicionaisSelecionados.value.filter(a => grupoByIdModal.value.get(a.grupoId)?.countsTowardLimit !== false);
-  if (contam.length > max) {
-    const naoContam = adicionaisSelecionados.value.filter(a => grupoByIdModal.value.get(a.grupoId)?.countsTowardLimit === false);
-    adicionaisSelecionados.value = [...contam.slice(0, max), ...naoContam];
-  }
-});
-
-watch(totalSelecionado, (novo, anterior) => {
-  if (limiteGlobal.value !== null && novo === limiteGlobal.value && novo > anterior) {
-    toast.info('Máximo de complementos atingido!');
-  }
-});
-
-const itensSelecionadosNoGrupo = (grupoId) =>
-  adicionaisSelecionados.value.filter((a) => a.grupoId === grupoId);
-const qtdSelecionadaNoGrupo = (grupoId) => {
-  if (grupoSabor.value?.id === grupoId) return bolaCount.value;
-  const grupo = grupoByIdModal.value.get(grupoId);
-  if (grupo?.stepperMode) {
-    return (grupo.items ?? []).reduce((acc, item) => acc + Number(itemQuantidades.value[item.id] || 0), 0);
-  }
-  return itensSelecionadosNoGrupo(grupoId).length;
-};
-const isAdicionalSelecionado = (adicional) =>
-  adicionaisSelecionados.value.some((a) => a.id === adicional.id);
-
-const isSaborGroup = (grupo) => !!grupo.isSaborGroup;
-const maxEfetivoGrupo = (grupo) => grupo.maxChoices;
-const minEfetivoGrupo = (grupo) => grupo.minChoices;
-
-const estaBloqueado = (adicional, grupo) => {
-  if (isAdicionalSelecionado(adicional)) return false;
-  if (qtdSelecionadaNoGrupo(grupo.id) >= maxEfetivoGrupo(grupo)) return true;
-  return grupo.countsTowardLimit !== false && atingiuLimite.value;
-};
-
-const selecionarUnico = (add, grupo) => {
-  adicionaisSelecionados.value = adicionaisSelecionados.value.filter((a) => a.grupoId !== grupo.id);
-  adicionaisSelecionados.value.push({ ...add, grupoId: grupo.id });
-};
-
-const podeProsseguir = computed(() => {
-  if (!props.produtoDetalhado) return false;
-  if (isOutOfStock.value) return false;
-  if (isSorvete.value && !grupoSabor.value) return false;
-  if (isSorvete.value && grupoSabor.value && (bolaCount.value < Number(grupoSabor.value.minChoices || 0))) return false;
-  if (isWeightBased.value) {
-    const min = Number(props.produtoDetalhado.minPrice) || 0;
-    return pesoGramas.value > 0 && pesoGramas.value >= min;
-  }
-  if (!isSorvete.value && props.produtoDetalhado.variations?.length > 0 && !tamanhoSelecionado.value) return false;
-  return props.produtoDetalhado.additionalGroups?.every(
-    (grupo) => isSaborGroup(grupo) || grupo.stepperMode || grupo.minChoices === 0 || qtdSelecionadaNoGrupo(grupo.id) >= minEfetivoGrupo(grupo)
-  ) ?? true;
-});
-
-const adicionaisComPreco = computed(() => {
-  if (!props.produtoDetalhado?.additionalGroups) return [];
-  const selecionadosComPreco = props.produtoDetalhado.additionalGroups
-    .filter(grupo => !grupo.stepperMode && !isSaborGroup(grupo))
-    .flatMap((grupo) => {
-      const itens = [...itensSelecionadosNoGrupo(grupo.id)].sort((a, b) => Number(a.price) - Number(b.price));
-      return itens.map((item, index) => ({
-        id: item.id,
-        name: item.name,
-        price: index < grupo.freeChoices ? 0 : Number(item.price),
-        grupoName: grupo.name,
-      }));
-    });
-
-  const saboresSelecionados = grupoSabor.value
-    ? grupoSabor.value.items
-      .filter((item) => (saborQuantidades.value[item.id] || 0) > 0)
-      .map((item) => ({
-        id: item.id,
-        name: `${item.name} x${saborQuantidades.value[item.id]}`,
-        price: 0,
-        grupoName: grupoSabor.value.name,
-      }))
-    : [];
-
-  return [...selecionadosComPreco, ...saboresSelecionados];
-});
-
-const stepperSelecionadosComPreco = computed(() => {
-  if (!props.produtoDetalhado?.additionalGroups) return [];
-  return props.produtoDetalhado.additionalGroups
-    .filter(grupo => grupo.stepperMode)
-    .flatMap((grupo) =>
-      (grupo.items ?? [])
-        .filter((item) => (itemQuantidades.value[item.id] || 0) > 0)
-        .map((item) => {
-          const qty = itemQuantidades.value[item.id] || 0;
-          return {
-            id: item.id,
-            name: `${item.name} x${qty}`,
-            price: Number(item.price) * qty,
-            grupoName: grupo.name,
-          };
-        })
-    );
-});
-
-const totalItemAtual = computed(() => {
-  if (!props.produtoDetalhado) return 0;
-  if (isWeightBased.value) return (pesoGramas.value || 0) + stepperTotal.value + adicionaisComPreco.value.reduce((acc, item) => acc + item.price, 0);
-  const base = isSorvete.value
-    ? bolaPrice.value
-    : (tamanhoSelecionado.value ? Number(tamanhoSelecionado.value.price) : 0);
-  return base + stepperTotal.value + adicionaisComPreco.value.reduce((acc, item) => acc + item.price, 0);
-});
-
-const montarItemPayload = () => {
-  return {
-    productId: props.produtoDetalhado.id,
-    productName: props.produtoDetalhado.name,
-    allowedOrderTypes: props.produtoDetalhado.allowedOrderTypes ?? ['Mesa', 'Viagem', 'Entrega'],
-    variationId: (isSorvete.value || isWeightBased.value) ? null : (tamanhoSelecionado.value?.id || null),
-    variationName: isWeightBased.value
-      ? `${pesoGramas.value}g`
-      : isSorvete.value
-        ? `${bolaCount.value} ${bolaCount.value === 1 ? 'Bola' : 'Bolas'}`
-        : (tamanhoSelecionado.value?.name || ''),
-    quantity: quantidade.value,
-    selectedAdditionals: [...adicionaisComPreco.value, ...stepperSelecionadosComPreco.value],
-    observation: observacaoProduto.value,
-    totalPrice: totalItemAtual.value,
-  };
-};
+const fechar = () => { modelValue.value = false }
 
 const confirmarItem = () => {
-  if (!podeProsseguir.value) return;
-  emit('add-item', montarItemPayload());
-
-  fechar();
-};
+  if (!podeProsseguir.value) return
+  emit('add-item', montarPayload())
+  fechar()
+}
 
 const confirmarItemEFinalizar = () => {
-  if (!podeProsseguir.value) return;
-  emit('add-item-and-checkout', montarItemPayload());
-
-  fechar();
-};
+  if (!podeProsseguir.value) return
+  emit('add-item-and-checkout', montarPayload())
+  fechar()
+}
 </script>
