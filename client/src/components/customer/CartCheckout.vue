@@ -289,18 +289,23 @@
 
             <div v-show="etapaAtual === 4" class="space-y-4">
               <div class="flex flex-col gap-2">
-              <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300"
-                >Forma de Pagamento</label
-              >
-              <select
-                v-model="checkout.pagamento"
-                class="w-full h-[42px] px-3.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-all duration-200 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 cursor-pointer dark:[color-scheme:dark]"
-              >
-                <option value="PIX">PIX</option>
-                <option value="Cartão de Crédito">Cartão de Crédito</option>
-                <option value="Cartão de Débito">Cartão de Débito</option>
-                <option value="Dinheiro">Dinheiro</option>
-              </select>
+                <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                  >Forma de Pagamento</label
+                >
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    v-for="option in paymentOptions"
+                    :key="option"
+                    type="button"
+                    @click="checkout.pagamento = option"
+                    class="p-3 rounded-xl border text-left text-sm font-semibold transition-all duration-200"
+                    :class="checkout.pagamento === option
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 ring-2 ring-red-500/30'
+                      : 'border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-900 hover:border-neutral-300 dark:hover:border-neutral-600'"
+                  >
+                    {{ option }}
+                  </button>
+                </div>
               </div>
 
               <div v-if="checkout.pagamento === 'Dinheiro'" class="flex flex-col gap-2">
@@ -501,6 +506,8 @@ const checkoutSteps = [
   { id: 3, label: 'Recebimento', icon: MapPin },
   { id: 4, label: 'Pagamento', icon: CreditCard },
 ];
+
+const paymentOptions = ['PIX', 'Cartão de Crédito', 'Cartão de Débito', 'Dinheiro'];
 
 const dadosValidos = computed(() => Boolean(checkout.value.nome && checkout.value.telefone));
 const entregaValida = computed(() => {
