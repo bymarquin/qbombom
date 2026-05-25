@@ -1,10 +1,10 @@
 <template>
-  <div class="flex h-screen bg-neutral-50 dark:bg-neutral-950 font-sans overflow-hidden">
+  <div class="flex min-h-screen bg-neutral-50 dark:bg-neutral-950 font-sans">
     <!-- Sidebar Component -->
     <SidebarComp />
 
     <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col h-screen overflow-hidden">
+    <div class="flex-1 flex flex-col min-h-screen">
       <!-- Header -->
       <header
         class="h-16 flex items-center justify-between px-8 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800"
