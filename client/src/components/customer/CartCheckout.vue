@@ -123,7 +123,7 @@
           >
             <div class="border-b border-neutral-100 dark:border-neutral-800/50 pb-3 space-y-3">
               <h3 class="font-bold text-neutral-900 dark:text-neutral-100 text-sm tracking-tight">
-                Detalhes do Pedido
+                {{ tituloEtapa }}
               </h3>
               <p class="text-xs text-neutral-500 dark:text-neutral-400">Etapa {{ etapaAtual }} de 4</p>
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -160,7 +160,7 @@
                   Etapa 4
                 </button>
               </div>
-              <p class="text-xs text-neutral-500 dark:text-neutral-400">
+              <p v-if="etapaAtual > 1" class="text-xs text-neutral-500 dark:text-neutral-400">
                 Etapa 1: Pedido -> Etapa 2: Dados -> Etapa 3: Recebimento -> Etapa 4: Pagamento
               </p>
             </div>
@@ -535,6 +535,13 @@ const labelContinuar = computed(() => {
   if (etapaAtual.value === 1) return 'Continuar para dados';
   if (etapaAtual.value === 2) return 'Continuar para recebimento';
   return 'Continuar para pagamento';
+});
+
+const tituloEtapa = computed(() => {
+  if (etapaAtual.value === 2) return 'Etapa 2: Dados';
+  if (etapaAtual.value === 3) return 'Etapa 3: Recebimento';
+  if (etapaAtual.value === 4) return 'Etapa 4: Pagamento';
+  return 'Etapa 1: Pedido';
 });
 
 const irParaEtapa = (etapa) => {
