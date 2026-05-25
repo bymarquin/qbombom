@@ -121,50 +121,6 @@
             v-show="etapaAtual > 1"
             class="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl dark:shadow-none shadow-red-900/5 border border-neutral-100 dark:border-neutral-800/50 p-5 space-y-5"
           >
-            <div class="border-b border-neutral-100 dark:border-neutral-800/50 pb-3 space-y-3">
-              <h3 class="font-bold text-neutral-900 dark:text-neutral-100 text-sm tracking-tight">
-                {{ tituloEtapa }}
-              </h3>
-              <p class="text-xs text-neutral-500 dark:text-neutral-400">Etapa {{ etapaAtual }} de 4</p>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <button
-                  type="button"
-                  @click="irParaEtapa(1)"
-                  class="rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors"
-                  :class="etapaAtual === 1 ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400'"
-                >
-                  Etapa 1
-                </button>
-                <button
-                  type="button"
-                  @click="irParaEtapa(2)"
-                  class="rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors"
-                  :class="etapaAtual === 2 ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400'"
-                >
-                  Etapa 2
-                </button>
-                <button
-                  type="button"
-                  @click="irParaEtapa(3)"
-                  class="rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors"
-                  :class="etapaAtual === 3 ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400'"
-                >
-                  Etapa 3
-                </button>
-                <button
-                  type="button"
-                  @click="irParaEtapa(4)"
-                  class="rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors"
-                  :class="etapaAtual === 4 ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400'"
-                >
-                  Etapa 4
-                </button>
-              </div>
-              <p v-if="etapaAtual > 1" class="text-xs text-neutral-500 dark:text-neutral-400">
-                Etapa 1: Pedido -> Etapa 2: Dados -> Etapa 3: Recebimento -> Etapa 4: Pagamento
-              </p>
-            </div>
-
             <div v-show="etapaAtual === 2" class="space-y-4">
               <div class="flex flex-col gap-2">
               <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300"
@@ -523,36 +479,11 @@ const etapaPodeAvancar = computed(() => {
   return true;
 });
 
-const canAccessStep = (step) => {
-  if (step <= 1) return true;
-  if (step === 2) return carrinho.value.length > 0;
-  if (step === 3) return dadosValidos.value;
-  if (step === 4) return dadosValidos.value && entregaValida.value;
-  return false;
-};
-
 const labelContinuar = computed(() => {
   if (etapaAtual.value === 1) return 'Continuar para dados';
   if (etapaAtual.value === 2) return 'Continuar para recebimento';
   return 'Continuar para pagamento';
 });
-
-const tituloEtapa = computed(() => {
-  if (etapaAtual.value === 2) return 'Etapa 2: Dados';
-  if (etapaAtual.value === 3) return 'Etapa 3: Recebimento';
-  if (etapaAtual.value === 4) return 'Etapa 4: Pagamento';
-  return 'Etapa 1: Pedido';
-});
-
-const irParaEtapa = (etapa) => {
-  if (etapa <= etapaAtual.value && canAccessStep(etapa)) {
-    etapaAtual.value = etapa;
-    return;
-  }
-  if (canAccessStep(etapa)) {
-    etapaAtual.value = etapa;
-  }
-};
 
 const proximaEtapa = () => {
   if (!etapaPodeAvancar.value) return;
