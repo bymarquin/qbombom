@@ -1,5 +1,5 @@
 <template>
-  <div class="h-full flex flex-col font-sans">
+  <div class="flex flex-col font-sans">
     <!-- Header -->
     <header
       class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 shrink-0"
@@ -294,7 +294,7 @@
       </div>
 
       <!-- Main Content -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Tabela Pedidos -->
         <div
           class="lg:col-span-2 bg-white dark:bg-neutral-900 rounded-2xl shadow-xl dark:shadow-none shadow-red-900/5 border border-neutral-100 dark:border-neutral-800/50 flex flex-col overflow-hidden"
