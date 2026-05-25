@@ -58,9 +58,13 @@
                 </div>
                 <div
                   v-if="index < checkoutSteps.length - 1"
-                  class="flex-1 h-[3px] mx-2 rounded-full transition-colors overflow-hidden"
-                  :class="step.id < etapaAtual ? 'step-connector-active' : 'bg-neutral-200 dark:bg-neutral-800'"
-                ></div>
+                  class="flex-1 h-[8px] -mx-1 rounded-full overflow-hidden bg-neutral-200 dark:bg-neutral-800"
+                >
+                  <div
+                    v-if="step.id < etapaAtual"
+                    class="h-full w-full step-connector-active"
+                  ></div>
+                </div>
               </template>
             </div>
           </div>
@@ -614,9 +618,9 @@ const usarLocalizacaoAtual = () => {
 }
 
 .step-connector-active {
-  background: linear-gradient(90deg, #dc2626 0%, #fb7185 45%, #dc2626 100%);
-  background-size: 200% 100%;
-  animation: flow-line 1.2s linear infinite;
+  background: linear-gradient(90deg, #dc2626 0%, #fb7185 35%, #fecdd3 50%, #fb7185 65%, #dc2626 100%);
+  background-size: 240% 100%;
+  animation: flow-line 1.1s linear infinite;
 }
 
 @keyframes flow-line {
