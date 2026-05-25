@@ -34,6 +34,32 @@
         </div>
 
         <div v-else class="space-y-6">
+          <div class="px-1">
+            <div class="flex items-center">
+              <template v-for="(step, index) in checkoutSteps" :key="step.id">
+                <div class="flex flex-col items-center min-w-0">
+                  <div
+                    class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors"
+                    :class="step.id <= etapaAtual ? 'border-red-600 bg-red-600 text-white' : 'border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-400 dark:text-neutral-500'"
+                  >
+                    <component :is="step.icon" class="w-4 h-4" />
+                  </div>
+                  <span
+                    class="mt-1 text-[11px] font-medium text-center leading-tight"
+                    :class="step.id === etapaAtual ? 'text-red-600 dark:text-red-400' : 'text-neutral-500 dark:text-neutral-400'"
+                  >
+                    {{ step.label }}
+                  </span>
+                </div>
+                <div
+                  v-if="index < checkoutSteps.length - 1"
+                  class="flex-1 h-[2px] mx-2 rounded-full transition-colors"
+                  :class="step.id < etapaAtual ? 'bg-red-600' : 'bg-neutral-200 dark:bg-neutral-800'"
+                ></div>
+              </template>
+            </div>
+          </div>
+
           <div
             v-show="etapaAtual === 1"
             class="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl dark:shadow-none shadow-red-900/5 border border-neutral-100 dark:border-neutral-800/50 p-2"
@@ -413,7 +439,7 @@
 
 <script setup>
 import { computed, ref, watch } from "vue";
-import { ShoppingBag, Trash2, MapPin, Loader2 } from "lucide-vue-next";
+import { ShoppingBag, Trash2, MapPin, Loader2, Package, UserRound, CreditCard } from "lucide-vue-next";
 import { formatarMoeda, mascararTelefone } from "@/utils/formatters";
 import { GeocodeService } from "@/services/http";
 
@@ -463,6 +489,13 @@ const props = defineProps({
 const emit = defineEmits(["remover-item", "enviar-pedido"]);
 
 const etapaAtual = ref(1);
+
+const checkoutSteps = [
+  { id: 1, label: 'Pedido', icon: Package },
+  { id: 2, label: 'Dados', icon: UserRound },
+  { id: 3, label: 'Recebimento', icon: MapPin },
+  { id: 4, label: 'Pagamento', icon: CreditCard },
+];
 
 const dadosValidos = computed(() => Boolean(checkout.value.nome && checkout.value.telefone));
 const entregaValida = computed(() => {
