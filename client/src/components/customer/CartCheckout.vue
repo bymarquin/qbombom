@@ -40,7 +40,12 @@
                 <div class="flex flex-col items-center min-w-0">
                   <div
                     class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors"
-                    :class="step.id <= etapaAtual ? 'border-red-600 bg-red-600 text-white' : 'border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-400 dark:text-neutral-500'"
+                    :class="[
+                      step.id === etapaAtual ? 'step-bubble-active' : '',
+                      step.id <= etapaAtual
+                        ? 'border-red-600 bg-red-600 text-white'
+                        : 'border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-400 dark:text-neutral-500'
+                    ]"
                   >
                     <component :is="step.icon" class="w-4 h-4" />
                   </div>
@@ -53,8 +58,8 @@
                 </div>
                 <div
                   v-if="index < checkoutSteps.length - 1"
-                  class="flex-1 h-[2px] mx-2 rounded-full transition-colors"
-                  :class="step.id < etapaAtual ? 'bg-red-600' : 'bg-neutral-200 dark:bg-neutral-800'"
+                  class="flex-1 h-[3px] mx-2 rounded-full transition-colors overflow-hidden"
+                  :class="step.id < etapaAtual ? 'step-connector-active' : 'bg-neutral-200 dark:bg-neutral-800'"
                 ></div>
               </template>
             </div>
@@ -602,5 +607,34 @@ const usarLocalizacaoAtual = () => {
 .slide-up-leave-to {
   transform: translateY(100%);
   opacity: 0;
+}
+
+.step-bubble-active {
+  animation: bubble-pulse 1.4s ease-in-out infinite;
+}
+
+.step-connector-active {
+  background: linear-gradient(90deg, #dc2626 0%, #fb7185 45%, #dc2626 100%);
+  background-size: 200% 100%;
+  animation: flow-line 1.2s linear infinite;
+}
+
+@keyframes flow-line {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+
+@keyframes bubble-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.0);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(220, 38, 38, 0.18);
+  }
 }
 </style>
