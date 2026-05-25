@@ -941,6 +941,7 @@ const capturarGeolocalizacaoEntrega = async () => {
 };
 
 const enviarPedido = async () => {
+  if (enviando.value) return;
   if (!podeFinalizarPedido.value) return;
   if (maintenanceAtiva.value) {
     toast.error(maintenanceMensagem.value);
