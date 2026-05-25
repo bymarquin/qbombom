@@ -133,7 +133,7 @@
                   class="rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors"
                   :class="etapaAtual === 1 ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400'"
                 >
-                  1 Pedido
+                  Etapa 1
                 </button>
                 <button
                   type="button"
@@ -141,7 +141,7 @@
                   class="rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors"
                   :class="etapaAtual === 2 ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400'"
                 >
-                  2 Dados
+                  Etapa 2
                 </button>
                 <button
                   type="button"
@@ -149,7 +149,7 @@
                   class="rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors"
                   :class="etapaAtual === 3 ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400'"
                 >
-                  3 Recebimento
+                  Etapa 3
                 </button>
                 <button
                   type="button"
@@ -157,9 +157,12 @@
                   class="rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors"
                   :class="etapaAtual === 4 ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400'"
                 >
-                  4 Pagamento
+                  Etapa 4
                 </button>
               </div>
+              <p class="text-xs text-neutral-500 dark:text-neutral-400">
+                Etapa 1: Pedido -> Etapa 2: Dados -> Etapa 3: Recebimento -> Etapa 4: Pagamento
+              </p>
             </div>
 
             <div v-show="etapaAtual === 2" class="space-y-4">
