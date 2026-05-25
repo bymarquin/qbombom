@@ -345,6 +345,7 @@
       :status-maior-ou-igual="statusMaiorOuIgual"
       @limpar="limparRastreio"
       @order-cancelled="carregarRastreio"
+      @refresh-track="carregarRastreio"
     />
 
     <!-- Botão Flutuante "Acompanhar Pedido" na Tela Inicial (caso exista pedido rastreado) -->
@@ -791,9 +792,16 @@ const pararPollPix = () => {
 };
 
 watch(
-  () => pedidoRastreado.value?.status,
-  (status) => {
-    if (status === "aguardando_pagamento") {
+  () => ({
+    status: pedidoRastreado.value?.status,
+    paymentMethod: pedidoRastreado.value?.paymentMethod,
+    paymentStatus: pedidoRastreado.value?.paymentStatus,
+  }),
+  (state) => {
+    const shouldPollPix = state.status === "aguardando_pagamento"
+      || (state.paymentMethod === "PIX" && state.paymentStatus === "pendente");
+
+    if (shouldPollPix) {
       iniciarPollPix();
     } else {
       pararPollPix();

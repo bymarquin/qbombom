@@ -46,7 +46,18 @@
                 "
                 class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-xl p-5 mb-6 text-center shadow-sm"
               >
-                <h4 class="font-bold text-red-700 dark:text-red-400 mb-2">Aguardando Pagamento</h4>
+                <div class="flex flex-wrap items-center justify-center gap-2 mb-3">
+                  <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
+                    Aguardando pagamento
+                  </span>
+                  <span
+                    v-if="countdownLabel"
+                    class="px-2.5 py-1 rounded-full text-xs font-semibold"
+                    :class="pixExpirado ? 'bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300' : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'"
+                  >
+                    {{ pixExpirado ? 'PIX expirado' : `expira em ${countdownLabel}` }}
+                  </span>
+                </div>
 
                 <template v-if="pixPayload">
                   <p class="text-sm text-neutral-700 dark:text-neutral-300 mb-4">
@@ -73,10 +84,18 @@
                     <div class="max-h-20 overflow-y-auto text-left text-xs">{{ pixPayload }}</div>
                     <button
                       @click="copiarChave"
+                      :disabled="pixExpirado"
                       class="mt-2 text-xs bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 font-bold px-3 py-2 rounded-md hover:bg-red-200 dark:hover:bg-red-900/60 transition flex items-center justify-center gap-1 w-full uppercase"
+                      :class="pixExpirado ? 'opacity-60 cursor-not-allowed' : ''"
                     >
                       <Copy class="w-4 h-4" />
                       Copiar Código PIX
+                    </button>
+                    <button
+                      @click="emit('refresh-track')"
+                      class="text-xs bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 font-semibold px-3 py-2 rounded-md hover:bg-neutral-50 dark:hover:bg-neutral-800 transition flex items-center justify-center gap-1 w-full"
+                    >
+                      Já paguei, verificar agora
                     </button>
                   </div>
                 </template>
@@ -109,6 +128,15 @@
                   <CheckCircle class="w-5 h-5" />
                   Mensagem enviada para a loja.
                 </div>
+              </div>
+
+              <div
+                v-if="pedidoRastreado.paymentMethod === 'PIX' && pedidoRastreado.paymentStatus === 'pago'"
+                class="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-900/30 rounded-xl p-3 mb-6 text-center"
+              >
+                <p class="text-sm font-semibold text-green-700 dark:text-green-400">
+                  Pagamento confirmado. Seu pedido vai para preparo.
+                </p>
               </div>
 
               <h3
@@ -249,7 +277,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { Copy, CheckCircle, Check } from "lucide-vue-next";
 import { useToastStore } from "@/stores/toast";
 import { formatarMoeda } from "@/utils/formatters";
@@ -279,7 +307,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["update:modelValue", "limpar", "order-cancelled"]);
+const emit = defineEmits(["update:modelValue", "limpar", "order-cancelled", "refresh-track"]);
 const toast = useToastStore();
 
 const cancellingOrder = ref(false);
@@ -334,6 +362,64 @@ const pixPayload = computed(() => {
   return props.pedidoRastreado.pixQrCode || "";
 });
 
+const nowMs = ref(Date.now());
+let countdownTimer = null;
+
+const pixExpiryMs = computed(() => {
+  const raw = props.pedidoRastreado?.pixExpiresAt;
+  if (!raw) return null;
+  const expiry = new Date(raw).getTime();
+  return Number.isNaN(expiry) ? null : expiry;
+});
+
+const pixRemainingMs = computed(() => {
+  if (!pixExpiryMs.value) return null;
+  return pixExpiryMs.value - nowMs.value;
+});
+
+const pixExpirado = computed(() => pixRemainingMs.value != null && pixRemainingMs.value <= 0);
+
+const countdownLabel = computed(() => {
+  if (pixRemainingMs.value == null) return '';
+  const totalSeconds = Math.max(0, Math.floor(pixRemainingMs.value / 1000));
+  const mm = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+  const ss = String(totalSeconds % 60).padStart(2, '0');
+  return `${mm}:${ss}`;
+});
+
+const shouldRunCountdown = computed(() => (
+  props.modelValue
+  && props.pedidoRastreado?.paymentMethod === 'PIX'
+  && props.pedidoRastreado?.paymentStatus === 'pendente'
+  && pixExpiryMs.value != null
+));
+
+const stopCountdown = () => {
+  if (!countdownTimer) return;
+  clearInterval(countdownTimer);
+  countdownTimer = null;
+};
+
+const startCountdown = () => {
+  if (countdownTimer) return;
+  countdownTimer = setInterval(() => {
+    nowMs.value = Date.now();
+  }, 1000);
+};
+
+watch(shouldRunCountdown, (active) => {
+  if (active) {
+    nowMs.value = Date.now();
+    startCountdown();
+  } else {
+    stopCountdown();
+  }
+}, { immediate: true });
+
+onUnmounted(() => {
+  stopCountdown();
+});
+
 const whatsappUrl = computed(() => {
   if (!telefoneLojaWhatsApp.value || !props.pedidoRastreado) return "";
   const numero = telefoneLojaWhatsApp.value.startsWith("55")
@@ -370,6 +456,7 @@ const confirmarRecebimento = async () => {
 };
 
 const copiarChave = async () => {
+  if (!pixPayload.value || pixExpirado.value) return;
   try {
     await navigator.clipboard.writeText(pixPayload.value);
     toast.success("Código PIX copiado para a área de transferência!");

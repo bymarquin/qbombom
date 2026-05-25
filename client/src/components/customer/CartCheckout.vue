@@ -120,13 +120,40 @@
           <div
             class="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl dark:shadow-none shadow-red-900/5 border border-neutral-100 dark:border-neutral-800/50 p-5 space-y-5"
           >
-            <h3
-              class="font-bold text-neutral-900 dark:text-neutral-100 text-sm tracking-tight border-b border-neutral-100 dark:border-neutral-800/50 pb-3"
-            >
-              Detalhes do Pedido
-            </h3>
+            <div class="border-b border-neutral-100 dark:border-neutral-800/50 pb-3 space-y-3">
+              <h3 class="font-bold text-neutral-900 dark:text-neutral-100 text-sm tracking-tight">
+                Detalhes do Pedido
+              </h3>
+              <div class="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  @click="irParaEtapa(1)"
+                  class="rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors"
+                  :class="etapaAtual === 1 ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400'"
+                >
+                  1 Dados
+                </button>
+                <button
+                  type="button"
+                  @click="irParaEtapa(2)"
+                  class="rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors"
+                  :class="etapaAtual === 2 ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400'"
+                >
+                  2 Entrega
+                </button>
+                <button
+                  type="button"
+                  @click="irParaEtapa(3)"
+                  class="rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors"
+                  :class="etapaAtual === 3 ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400'"
+                >
+                  3 Pagamento
+                </button>
+              </div>
+            </div>
 
-            <div class="flex flex-col gap-2">
+            <div v-show="etapaAtual === 1" class="space-y-4">
+              <div class="flex flex-col gap-2">
               <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 >Seu Nome (Como ser chamado)</label
               >
@@ -136,9 +163,9 @@
                 placeholder="Ex: Maria"
                 class="w-full px-3.5 py-2.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-all duration-200 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 placeholder-neutral-400"
               />
-            </div>
+              </div>
 
-            <div class="flex flex-col gap-2 mt-4">
+              <div class="flex flex-col gap-2 mt-4">
               <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 >WhatsApp / Telefone</label
               >
@@ -161,9 +188,11 @@
                   Quero receber atualizações do pedido no WhatsApp. Posso desativar depois no rastreio.
                 </span>
               </label>
+              </div>
             </div>
 
-            <div class="space-y-2">
+            <div v-show="etapaAtual === 2" class="space-y-4">
+              <div class="space-y-2">
               <p class="text-xs font-bold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Como deseja receber?</p>
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <button
@@ -191,9 +220,9 @@
                   <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Receber em casa</p>
                 </button>
               </div>
-            </div>
+              </div>
 
-            <div v-if="checkout.tipo === 'Mesa'" class="flex flex-col gap-2">
+              <div v-if="checkout.tipo === 'Mesa'" class="flex flex-col gap-2">
               <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 >Nº da Mesa (Opcional)</label
               >
@@ -210,9 +239,9 @@
               >
                 Mesa identificada via QR: <span class="font-semibold">{{ mesaDoQr }}</span>
               </p>
-            </div>
+              </div>
 
-            <div v-if="checkout.tipo === 'Entrega'" class="flex flex-col gap-3">
+              <div v-if="checkout.tipo === 'Entrega'" class="flex flex-col gap-3">
               <div class="flex items-center justify-between">
                 <label class="text-sm font-bold text-neutral-900 dark:text-neutral-100">Endereço de Entrega</label>
                 <button
@@ -252,9 +281,11 @@
                 placeholder="Complemento / Ponto de Referência"
                 class="w-full px-3.5 py-2.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-all duration-200 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 placeholder-neutral-400"
               />
+              </div>
             </div>
 
-            <div class="flex flex-col gap-2">
+            <div v-show="etapaAtual === 3" class="space-y-4">
+              <div class="flex flex-col gap-2">
               <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 >Forma de Pagamento</label
               >
@@ -267,9 +298,9 @@
                 <option value="Cartão de Débito">Cartão de Débito</option>
                 <option value="Dinheiro">Dinheiro</option>
               </select>
-            </div>
+              </div>
 
-            <div v-if="checkout.pagamento === 'Dinheiro'" class="flex flex-col gap-2">
+              <div v-if="checkout.pagamento === 'Dinheiro'" class="flex flex-col gap-2">
               <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 >Precisa de troco?</label
               >
@@ -304,6 +335,7 @@
                 placeholder="Troco para quanto? (Ex: 50)"
                 class="w-full px-3.5 py-2.5 mt-1 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-all duration-200 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15"
               />
+              </div>
             </div>
           </div>
         </div>
@@ -339,31 +371,51 @@
             </div>
           </div>
         </div>
-        <button
-          @click="emit('enviar-pedido')"
-          :disabled="!podeFinalizarPedido || enviando || !isStoreOpen"
-          class="w-full py-3 bg-red-600 text-white rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-red-700 active:scale-[0.98] shadow-sm dark:shadow-none hover:shadow-md dark:shadow-none disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
-        >
-          <div
-            v-if="enviando"
-            class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
-          ></div>
-          {{ enviando ? "Enviando Pedido..." : "Finalizar Pedido" }}
-        </button>
+        <div class="flex gap-2">
+          <button
+            v-if="etapaAtual > 1"
+            type="button"
+            @click="voltarEtapa"
+            class="py-3 px-4 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 rounded-lg text-sm font-semibold transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-700"
+          >
+            Voltar
+          </button>
+          <button
+            v-if="etapaAtual < 3"
+            type="button"
+            @click="proximaEtapa"
+            :disabled="!etapaPodeAvancar"
+            class="flex-1 py-3 bg-red-600 text-white rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-red-700 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            Continuar
+          </button>
+          <button
+            v-else
+            @click="emit('enviar-pedido')"
+            :disabled="!podeFinalizarPedido || enviando || !isStoreOpen"
+            class="flex-1 py-3 bg-red-600 text-white rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-red-700 active:scale-[0.98] shadow-sm dark:shadow-none hover:shadow-md dark:shadow-none disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+          >
+            <div
+              v-if="enviando"
+              class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+            ></div>
+            {{ enviando ? "Enviando Pedido..." : "Finalizar Pedido" }}
+          </button>
+        </div>
         <p
-          v-if="!checkout.nome || !checkout.telefone"
+          v-if="etapaAtual === 1 && !dadosValidos"
           class="text-center text-xs text-red-600 dark:text-red-400 mt-2 font-medium"
         >
           Preencha seus dados para continuar.
         </p>
         <p
-          v-else-if="!checkout.tipo"
+          v-else-if="etapaAtual === 2 && !checkout.tipo"
           class="text-center text-xs text-red-600 dark:text-red-400 mt-2 font-medium"
         >
           Escolha como deseja receber: Mesa, Levar ou Entrega.
         </p>
         <p
-          v-else-if="itensIncompativeis.length > 0"
+          v-else-if="etapaAtual === 2 && itensIncompativeis.length > 0"
           class="text-center text-xs text-red-600 dark:text-red-400 mt-2 font-medium"
         >
           {{ itensIncompativeis.map(i => i.productName).join(', ') }}
@@ -372,6 +424,7 @@
         </p>
         <p
           v-else-if="
+            etapaAtual === 2 &&
             checkout.tipo === 'Entrega' &&
             (!checkout.endereco.rua || !checkout.endereco.numero || !checkout.endereco.bairro)
           "
@@ -387,7 +440,7 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { ShoppingBag, Trash2, MapPin, Loader2 } from "lucide-vue-next";
 import { formatarMoeda, mascararTelefone } from "@/utils/formatters";
 import { GeocodeService } from "@/services/http";
@@ -396,7 +449,7 @@ const isOpen = defineModel("isOpen", { type: Boolean, required: true });
 const carrinho = defineModel("carrinho", { type: Array, required: true });
 const checkout = defineModel("checkout", { type: Object, required: true });
 
-defineProps({
+const props = defineProps({
   subtotal: {
     type: Number,
     required: true,
@@ -437,9 +490,52 @@ defineProps({
 
 const emit = defineEmits(["remover-item", "enviar-pedido"]);
 
+const etapaAtual = ref(1);
+
+const dadosValidos = computed(() => Boolean(checkout.value.nome && checkout.value.telefone));
+const entregaValida = computed(() => {
+  if (!checkout.value.tipo) return false;
+  if (props.itensIncompativeis.length > 0) return false;
+  if (checkout.value.tipo !== 'Entrega') return true;
+  return Boolean(checkout.value.endereco.rua && checkout.value.endereco.numero && checkout.value.endereco.bairro);
+});
+
+const etapaPodeAvancar = computed(() => {
+  if (etapaAtual.value === 1) return dadosValidos.value;
+  if (etapaAtual.value === 2) return entregaValida.value;
+  return true;
+});
+
+const irParaEtapa = (etapa) => {
+  if (etapa <= etapaAtual.value) {
+    etapaAtual.value = etapa;
+    return;
+  }
+  if (etapa === 2 && dadosValidos.value) {
+    etapaAtual.value = etapa;
+    return;
+  }
+  if (etapa === 3 && dadosValidos.value && entregaValida.value) {
+    etapaAtual.value = etapa;
+  }
+};
+
+const proximaEtapa = () => {
+  if (!etapaPodeAvancar.value) return;
+  if (etapaAtual.value < 3) etapaAtual.value += 1;
+};
+
+const voltarEtapa = () => {
+  if (etapaAtual.value > 1) etapaAtual.value -= 1;
+};
+
 const fechar = () => {
   isOpen.value = false;
 };
+
+watch(isOpen, (opened) => {
+  if (opened) etapaAtual.value = 1;
+});
 
 const agruparAdicionais = (adicionais) => {
   return adicionais.reduce((acc, add) => {
