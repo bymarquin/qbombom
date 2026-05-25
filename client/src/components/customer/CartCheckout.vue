@@ -34,8 +34,8 @@
         </div>
 
         <div v-else class="space-y-6">
-          <!-- Itens -->
           <div
+            v-show="etapaAtual === 1"
             class="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl dark:shadow-none shadow-red-900/5 border border-neutral-100 dark:border-neutral-800/50 p-2"
           >
             <div
@@ -118,20 +118,22 @@
 
           <!-- Dados do Cliente (Checkout) -->
           <div
+            v-show="etapaAtual > 1"
             class="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl dark:shadow-none shadow-red-900/5 border border-neutral-100 dark:border-neutral-800/50 p-5 space-y-5"
           >
             <div class="border-b border-neutral-100 dark:border-neutral-800/50 pb-3 space-y-3">
               <h3 class="font-bold text-neutral-900 dark:text-neutral-100 text-sm tracking-tight">
                 Detalhes do Pedido
               </h3>
-              <div class="grid grid-cols-3 gap-2">
+              <p class="text-xs text-neutral-500 dark:text-neutral-400">Etapa {{ etapaAtual }} de 4</p>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <button
                   type="button"
                   @click="irParaEtapa(1)"
                   class="rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors"
                   :class="etapaAtual === 1 ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400'"
                 >
-                  1 Dados
+                  1 Pedido
                 </button>
                 <button
                   type="button"
@@ -139,7 +141,7 @@
                   class="rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors"
                   :class="etapaAtual === 2 ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400'"
                 >
-                  2 Entrega
+                  2 Dados
                 </button>
                 <button
                   type="button"
@@ -147,12 +149,20 @@
                   class="rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors"
                   :class="etapaAtual === 3 ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400'"
                 >
-                  3 Pagamento
+                  3 Recebimento
+                </button>
+                <button
+                  type="button"
+                  @click="irParaEtapa(4)"
+                  class="rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors"
+                  :class="etapaAtual === 4 ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400'"
+                >
+                  4 Pagamento
                 </button>
               </div>
             </div>
 
-            <div v-show="etapaAtual === 1" class="space-y-4">
+            <div v-show="etapaAtual === 2" class="space-y-4">
               <div class="flex flex-col gap-2">
               <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 >Seu Nome (Como ser chamado)</label
@@ -191,7 +201,10 @@
               </div>
             </div>
 
-            <div v-show="etapaAtual === 2" class="space-y-4">
+            <div v-show="etapaAtual === 3" class="space-y-4">
+              <p class="text-xs text-neutral-500 dark:text-neutral-400">
+                Escolha como quer receber o pedido.
+              </p>
               <div class="space-y-2">
               <p class="text-xs font-bold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Como deseja receber?</p>
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -284,7 +297,7 @@
               </div>
             </div>
 
-            <div v-show="etapaAtual === 3" class="space-y-4">
+            <div v-show="etapaAtual === 4" class="space-y-4">
               <div class="flex flex-col gap-2">
               <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 >Forma de Pagamento</label
@@ -381,13 +394,13 @@
             Voltar
           </button>
           <button
-            v-if="etapaAtual < 3"
+            v-if="etapaAtual < 4"
             type="button"
             @click="proximaEtapa"
             :disabled="!etapaPodeAvancar"
             class="flex-1 py-3 bg-red-600 text-white rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-red-700 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            Continuar
+            {{ labelContinuar }}
           </button>
           <button
             v-else
@@ -403,19 +416,19 @@
           </button>
         </div>
         <p
-          v-if="etapaAtual === 1 && !dadosValidos"
+          v-if="etapaAtual === 2 && !dadosValidos"
           class="text-center text-xs text-red-600 dark:text-red-400 mt-2 font-medium"
         >
           Preencha seus dados para continuar.
         </p>
         <p
-          v-else-if="etapaAtual === 2 && !checkout.tipo"
+          v-else-if="etapaAtual === 3 && !checkout.tipo"
           class="text-center text-xs text-red-600 dark:text-red-400 mt-2 font-medium"
         >
           Escolha como deseja receber: Mesa, Levar ou Entrega.
         </p>
         <p
-          v-else-if="etapaAtual === 2 && itensIncompativeis.length > 0"
+          v-else-if="etapaAtual === 3 && itensIncompativeis.length > 0"
           class="text-center text-xs text-red-600 dark:text-red-400 mt-2 font-medium"
         >
           {{ itensIncompativeis.map(i => i.productName).join(', ') }}
@@ -424,7 +437,7 @@
         </p>
         <p
           v-else-if="
-            etapaAtual === 2 &&
+            etapaAtual === 3 &&
             checkout.tipo === 'Entrega' &&
             (!checkout.endereco.rua || !checkout.endereco.numero || !checkout.endereco.bairro)
           "
@@ -501,28 +514,39 @@ const entregaValida = computed(() => {
 });
 
 const etapaPodeAvancar = computed(() => {
-  if (etapaAtual.value === 1) return dadosValidos.value;
-  if (etapaAtual.value === 2) return entregaValida.value;
+  if (etapaAtual.value === 1) return carrinho.value.length > 0;
+  if (etapaAtual.value === 2) return dadosValidos.value;
+  if (etapaAtual.value === 3) return entregaValida.value;
   return true;
 });
 
+const canAccessStep = (step) => {
+  if (step <= 1) return true;
+  if (step === 2) return carrinho.value.length > 0;
+  if (step === 3) return dadosValidos.value;
+  if (step === 4) return dadosValidos.value && entregaValida.value;
+  return false;
+};
+
+const labelContinuar = computed(() => {
+  if (etapaAtual.value === 1) return 'Continuar para dados';
+  if (etapaAtual.value === 2) return 'Continuar para recebimento';
+  return 'Continuar para pagamento';
+});
+
 const irParaEtapa = (etapa) => {
-  if (etapa <= etapaAtual.value) {
+  if (etapa <= etapaAtual.value && canAccessStep(etapa)) {
     etapaAtual.value = etapa;
     return;
   }
-  if (etapa === 2 && dadosValidos.value) {
-    etapaAtual.value = etapa;
-    return;
-  }
-  if (etapa === 3 && dadosValidos.value && entregaValida.value) {
+  if (canAccessStep(etapa)) {
     etapaAtual.value = etapa;
   }
 };
 
 const proximaEtapa = () => {
   if (!etapaPodeAvancar.value) return;
-  if (etapaAtual.value < 3) etapaAtual.value += 1;
+  if (etapaAtual.value < 4) etapaAtual.value += 1;
 };
 
 const voltarEtapa = () => {
@@ -535,6 +559,13 @@ const fechar = () => {
 
 watch(isOpen, (opened) => {
   if (opened) etapaAtual.value = 1;
+});
+
+watch(() => checkout.value.tipo, (tipo) => {
+  if (etapaAtual.value !== 3) return;
+  if (tipo === 'Mesa' || tipo === 'Viagem') {
+    etapaAtual.value = 4;
+  }
 });
 
 const agruparAdicionais = (adicionais) => {
