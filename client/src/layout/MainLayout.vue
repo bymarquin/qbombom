@@ -1,10 +1,10 @@
 <template>
-  <div class="flex min-h-screen bg-neutral-50 dark:bg-neutral-950 font-sans">
+  <div class="flex h-screen bg-neutral-50 dark:bg-neutral-950 font-sans overflow-hidden">
     <!-- Sidebar Component -->
     <SidebarComp />
 
     <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col min-h-screen">
+    <div class="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
       <!-- Header -->
       <header
         class="h-16 flex items-center justify-between px-8 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800"
@@ -17,7 +17,7 @@
       </header>
 
       <!-- Page Content -->
-      <main class="flex-1 overflow-x-hidden overflow-y-auto bg-neutral-50 dark:bg-neutral-950 p-8">
+      <main class="flex-1 min-h-0 overflow-x-hidden overflow-y-auto bg-neutral-50 dark:bg-neutral-950 p-8">
         <!-- O conteúdo das páginas filhas será injetado aqui pelo Vue Router -->
         <RouterView />
       </main>
