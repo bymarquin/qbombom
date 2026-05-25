@@ -380,7 +380,7 @@ async function notifyCustomer(order, status) {
       ? `${CLIENT_URL}/cardapio?track=${order.trackingCode}`
       : null;
     const pixExpiresAt = status === 'aguardando_pagamento' ? order.pixExpiresAt : null;
-    whatsappService.sendStatusMessage(customer.phone, status, order.id.slice(-6).toUpperCase(), trackingUrl, order.id, customer.name, pixExpiresAt);
+    whatsappService.sendStatusMessage(customer.phone, status, order.id.slice(-6).toUpperCase(), trackingUrl, order.id, customer.name, pixExpiresAt, order.type);
   }
 }
 

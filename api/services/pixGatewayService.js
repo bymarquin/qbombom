@@ -46,11 +46,15 @@ function normalizePixData(payment) {
 async function createPixPayment({ order, payerEmail, description, amount }) {
   if (!isEnabled()) return null;
 
+  const expirationMinutes = Number(process.env.PIX_EXPIRATION_MINUTES || 30);
+  const dateOfExpiration = new Date(Date.now() + expirationMinutes * 60 * 1000).toISOString();
+
   const notificationUrl = buildNotificationUrl();
   const payload = {
     transaction_amount: Number(amount),
     description,
     payment_method_id: 'pix',
+    date_of_expiration: dateOfExpiration,
     payer: {
       email: payerEmail,
     },

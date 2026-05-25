@@ -82,37 +82,31 @@ const normalizeStatus = (rawStatus) => {
 
 const DEFAULT_MESSAGES = {
   aguardando_pagamento: [
-    '⏳ Recebemos seu pedido! Ele será confirmado assim que o pagamento for aprovado.',
-    '⏳ Pedido recebido! Estamos apenas aguardando a confirmação do seu PIX para começar.',
+    'Para começarmos a preparar seu pedido, realize o pagamento do PIX em até 30 minutos.',
   ],
   novo: [
-    '✅ Recebemos seu pedido! Assim que começarmos a preparar te aviso por aqui.',
-    '👍 Seu pedido já está com a gente! Logo logo entra em preparo.',
-    '🍦 Oba! Recebemos seu pedido. Vamos te mantendo informado por aqui.',
+    'Já recebemos tudo por aqui. Assim que entrar em preparo eu te aviso!',
   ],
   em_preparo: [
-    '🍧 Seu pedido está sendo preparado! Em breve ficará pronto.',
-    '🍧 Já estamos preparando seu pedido! Logo logo fica prontinho.',
-    '🍧 Seu pedido entrou em preparo! Não vai demorar muito.',
+    'Estamos preparando seu pedido com todo carinho. Falta pouco!',
   ],
-  pronto: [
-    '✅ Seu pedido está pronto! Pode retirar ou aguardar a entrega.',
-    '✅ Prontinho! Seu pedido já está te esperando.',
-    '✅ Tudo certo! Seu pedido está pronto para retirada ou entrega.',
-  ],
+  pronto: {
+    Entrega: 'Nosso entregador já está se preparando para levar até você.',
+    Viagem: 'Já pode vir buscar aqui no balcão.',
+    Mesa: 'Em instantes estaremos levando até sua mesa.',
+    default: 'Já pode vir buscar ou aguardar o atendimento.',
+  },
   em_rota: [
-    '🛵 Seu pedido saiu para entrega! Acompanhe e confirme o recebimento pelo link abaixo:',
-    '🛵 A entrega do seu pedido está a caminho! Confirme o recebimento pelo link:',
-    '🛵 Seu pedido está na estrada! Acompanhe pelo link abaixo:',
+    'Você pode acompanhar o trajeto ou confirmar o recebimento pelo link abaixo:',
+  ],
+  entregue: [
+    'Esperamos que aproveite cada colherada! Se puder, nos conte o que achou.',
   ],
   finalizado: [
-    '🎉 Pedido finalizado. Obrigado pela preferência! Volte sempre 😊',
-    '🎉 Tudo certo! Pedido finalizado. Até a próxima! 😊',
-    '🎉 Obrigado pela preferência! Esperamos te ver em breve 😊',
+    'Obrigado pela preferência e esperamos te ver em breve!',
   ],
   cancelado: [
-    '❌ Seu pedido foi cancelado. Entre em contato se tiver dúvidas.',
-    '❌ Infelizmente seu pedido foi cancelado. Qualquer dúvida estamos à disposição.',
+    'Se houve algum problema ou se tiver dúvidas, por favor entre em contato conosco.',
   ],
 }
 
@@ -216,7 +210,7 @@ const canSendToPhone = async (phone) => {
   return optedIn.has(normalized) && !optedOut.has(normalized)
 }
 
-exports.sendStatusMessage = async (phone, status, orderNumber, trackingUrl = null, orderId = null, customerName = null, pixExpiresAt = null) => {
+exports.sendStatusMessage = async (phone, status, orderNumber, trackingUrl = null, orderId = null, customerName = null, pixExpiresAt = null, orderType = null) => {
   if (!phone) return
   const normalizedPhone = formatPhone(phone)
   if (!normalizedPhone) return
@@ -244,22 +238,47 @@ exports.sendStatusMessage = async (phone, status, orderNumber, trackingUrl = nul
     console.warn(`[WhatsApp] Nenhum template encontrado para status: ${status}`)
     return
   }
-  const messageBody = pickRandom(Array.isArray(pool) ? pool : [pool])
+  
+  let messageBody = ''
+  if (typeof pool === 'object' && !Array.isArray(pool)) {
+    messageBody = pool[orderType] || pool.default || pickRandom(Object.values(pool))
+  } else {
+    messageBody = pickRandom(Array.isArray(pool) ? pool : [pool])
+  }
 
   const orderKey = String(orderId || orderNumber)
   const isFirstMessage = ![...sentStatusByOrder.keys()].some((k) => k.startsWith(`${orderKey}:`))
-  const name = (customerName || '').trim().split(/\s+/)[0]
-  const header = isFirstMessage && name ? `Olá, ${name}!\n` : ''
+  
+  const statusLabels = {
+    aguardando_pagamento: 'Aguardando Pagamento ⏳',
+    novo: 'Pedido Recebido ✅',
+    em_preparo: 'Em Preparo 🍧',
+    pronto: 'Pedido Pronto! ✨',
+    em_rota: 'Saiu para Entrega 🛵',
+    entregue: 'Pedido Entregue 🏁',
+    finalizado: 'Pedido Finalizado 🎉',
+    cancelado: 'Pedido Cancelado ❌',
+  }
 
-  let text = `*Qbombom Sorvetes* — Pedido #${orderNumber}\n\n${header}${messageBody}`
+  const statusTitle = statusLabels[status] || 'Atualização do Pedido'
+  const name = (customerName || '').trim().split(/\s+/)[0]
+  const header = isFirstMessage && name ? `Olá, ${name}!\n\n` : ''
+
+  const typeLabel = orderType ? ` (${orderType})` : ''
+
+  let text = `*🍦 Qbombom Sorvetes*\n`
+  text += `Pedido: *#${orderNumber}*${typeLabel}\n\n`
+  text += `${header}*${statusTitle}*\n${messageBody}`
+
   if (pixExpiresAt) {
     const expiry = new Date(pixExpiresAt)
     if (!Number.isNaN(expiry.getTime())) {
       const hhmm = expiry.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
-      text += `\n⏱ O PIX expira às *${hhmm}*.`
+      text += `\n\n⏱ O PIX expira às *${hhmm}*.`
     }
   }
-  if (trackingUrl) text += `\n${trackingUrl}`
+  if (trackingUrl) text += `\n\n🔗 *Acompanhe aqui:* ${trackingUrl}`
+  
   text += `\n\n_🤖 Mensagem automática — por favor não responda este número._`
 
   const statusKey = `${orderId || orderNumber}:${status}`
