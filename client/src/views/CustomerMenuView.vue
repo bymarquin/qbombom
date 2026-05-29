@@ -270,20 +270,40 @@
     <!-- Banner de Consentimento de Cookies -->
     <Transition name="slide-up">
       <div
-        v-if="consentimento === null"
+        v-if="mostrarBannerHistorico"
         class="absolute bottom-0 left-0 w-full z-50 p-4 pointer-events-none"
       >
-        <div class="bg-neutral-900 dark:bg-neutral-800 text-white rounded-2xl p-4 shadow-2xl pointer-events-auto border border-neutral-700">
-          <p class="text-sm font-medium mb-1">Guardar seus pedidos? 🍨</p>
-          <p class="text-xs text-neutral-400 mb-3">Salvamos seus últimos 3 pedidos neste dispositivo para você repetir com um toque.</p>
+        <div class="pointer-events-auto rounded-2xl border border-neutral-200/70 dark:border-neutral-700 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-sm p-4 shadow-2xl banner-pop-in">
+          <div class="flex items-start gap-3 mb-3">
+            <div class="shrink-0 w-9 h-9 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+              <History class="w-4.5 h-4.5 text-red-600 dark:text-red-400" />
+            </div>
+            <div>
+              <p class="text-sm font-bold text-neutral-900 dark:text-neutral-100">{{ bannerHistoricoCopy.titulo }}</p>
+              <p class="text-xs text-neutral-600 dark:text-neutral-300 mt-0.5">
+                {{ bannerHistoricoCopy.descricao }}
+              </p>
+            </div>
+          </div>
+
+          <div class="rounded-xl bg-neutral-100/80 dark:bg-neutral-800/70 border border-neutral-200 dark:border-neutral-700 px-3 py-2 mb-3">
+            <p class="text-[11px] font-medium text-neutral-600 dark:text-neutral-300">
+              Sem spam. Sem compartilhamento externo. Você pode desativar quando quiser.
+            </p>
+          </div>
+
           <div class="flex gap-2">
             <button
+              @click="lembrarDepois"
+              class="flex-1 py-2.5 rounded-lg text-xs font-semibold border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            >Lembrar depois</button>
+            <button
               @click="recusarCookies"
-              class="flex-1 py-2 rounded-lg text-xs font-semibold bg-neutral-700 hover:bg-neutral-600 transition-colors"
-            >Não, obrigado</button>
+              class="px-3 py-2.5 rounded-lg text-xs font-semibold text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            >Nao salvar</button>
             <button
               @click="aceitarCookies"
-              class="flex-1 py-2 rounded-lg text-xs font-semibold bg-red-600 hover:bg-red-700 transition-colors"
+              class="flex-1 py-2.5 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-700 text-white transition-colors shadow-lg shadow-red-900/20"
             >Aceitar</button>
           </div>
         </div>
@@ -384,10 +404,14 @@ import ProductModal from "@/components/customer/ProductModal.vue";
 import ImageCarousel from "@/components/ImageCarousel.vue";
 import CartCheckout from "@/components/customer/CartCheckout.vue";
 import OrderTracking from "@/components/customer/OrderTracking.vue";
-import { Coffee, Sun, Moon, MapPin, AlertCircle, Search, ShoppingCart, Plus, Wrench } from "lucide-vue-next";
+import { Coffee, Sun, Moon, MapPin, AlertCircle, Search, ShoppingCart, Plus, Wrench, History } from "lucide-vue-next";
 
 const isDark = useDark();
 const toggleDark = useToggle(isDark);
+
+const BANNER_HISTORICO_ADIAR_KEY = "qbombom_history_banner_snooze_until";
+const BANNER_HISTORICO_VARIANTE_KEY = "qbombom_history_banner_variant";
+const BANNER_HISTORICO_ADIAR_MS = 1000 * 60 * 60 * 24;
 
 const toast = useToastStore();
 
@@ -404,6 +428,38 @@ const {
 } = useOrderHistory()
 const mesaDoQr = ref(null)
 const historico = ref(getHistorico())
+const historicoBannerAdiadoAte = ref(0)
+
+const bannerHistoricoVariant = (() => {
+  const salvo = localStorage.getItem(BANNER_HISTORICO_VARIANTE_KEY)
+  if (salvo === "a" || salvo === "b") return salvo
+  const sorteado = Math.random() < 0.5 ? "a" : "b"
+  localStorage.setItem(BANNER_HISTORICO_VARIANTE_KEY, sorteado)
+  return sorteado
+})()
+
+const copyBannerHistorico = {
+  a: {
+    titulo: "Pedir de novo, em segundos?",
+    descricao: "Guardamos seus 3 ultimos pedidos neste aparelho para voce repetir com 1 toque.",
+  },
+  b: {
+    titulo: "Seu pedido favorito em 1 toque",
+    descricao: "Ative para lembrar seus ultimos pedidos e finalizar mais rapido na proxima compra.",
+  },
+}
+
+const bannerHistoricoCopy = computed(() => copyBannerHistorico[bannerHistoricoVariant] || copyBannerHistorico.a)
+const mostrarBannerHistorico = computed(() => {
+  if (consentimento.value !== null) return false
+  return Date.now() >= historicoBannerAdiadoAte.value
+})
+
+const lembrarDepois = () => {
+  const ate = Date.now() + BANNER_HISTORICO_ADIAR_MS
+  historicoBannerAdiadoAte.value = ate
+  localStorage.setItem(BANNER_HISTORICO_ADIAR_KEY, String(ate))
+}
 
 const formatarDataCurta = (iso) => {
   const d = new Date(iso)
@@ -661,6 +717,7 @@ const carregarCatalogo = async () => {
 };
 
 onMounted(async () => {
+  historicoBannerAdiadoAte.value = Number(localStorage.getItem(BANNER_HISTORICO_ADIAR_KEY) || 0)
   carregarCatalogo();
 
   // Ghost Login Load
@@ -1077,6 +1134,11 @@ const enviarPedido = async () => {
   opacity: 0;
 }
 
+.banner-pop-in {
+  transform-origin: bottom center;
+  animation: banner-pop-in 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
@@ -1104,6 +1166,17 @@ const enviarPedido = async () => {
   }
   100% {
     transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes banner-pop-in {
+  0% {
+    transform: translateY(12px) scale(0.98);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
 }
