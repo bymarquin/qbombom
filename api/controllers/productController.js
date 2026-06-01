@@ -137,7 +137,7 @@ exports.create = async (req, res) => {
 
     if (Array.isArray(variations) && variations.length > 0) {
       await ProductVariation.bulkCreate(
-        variations.map((v) => ({ name: v.name, price: v.price, maxAdditionals: v.maxAdditionals ?? null, productId: product.id })),
+        variations.map((v) => ({ name: v.name, price: v.price, maxAdditionals: v.maxAdditionals ?? null, barcode: v.barcode || null, productId: product.id })),
       );
     }
 
@@ -176,7 +176,7 @@ exports.update = async (req, res) => {
       await ProductVariation.destroy({ where: { productId: product.id } });
       if (variations.length > 0) {
         await ProductVariation.bulkCreate(
-          variations.map((v) => ({ name: v.name, price: v.price, maxAdditionals: v.maxAdditionals ?? null, productId: product.id })),
+          variations.map((v) => ({ name: v.name, price: v.price, maxAdditionals: v.maxAdditionals ?? null, barcode: v.barcode || null, productId: product.id })),
         );
       }
     }
@@ -190,6 +190,26 @@ exports.update = async (req, res) => {
   } catch (error) {
     console.error('[update product]', error);
     res.status(500).json({ error: 'Failed to update product' });
+  }
+};
+
+exports.getByBarcode = async (req, res) => {
+  try {
+    const variation = await ProductVariation.findOne({
+      where: { barcode: req.params.code },
+      include: [
+        {
+          model: Product,
+          as: 'product',
+          where: { status: true },
+          include: [imagesInclude],
+        },
+      ],
+    });
+    if (!variation) return res.status(404).json({ error: 'Product not found' });
+    res.json({ product: variation.product, variation });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 

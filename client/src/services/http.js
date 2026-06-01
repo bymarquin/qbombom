@@ -240,6 +240,9 @@ export const CatalogService = {
   getProduct(id, params = {}, config = {}) {
     return api.get(`/products/${id}`, { params, ...config })
   },
+  getProductByBarcode(code) {
+    return api.get(`/products/barcode/${encodeURIComponent(code)}`)
+  },
   createProduct(data) {
     return api.post('/products', data)
   },

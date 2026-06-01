@@ -298,6 +298,17 @@
             <input v-model="variation.name" type="text" placeholder="Ex: 300ml" required class="flex-1 px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15" />
             <input v-model="variation.price" type="number" step="0.01" min="0" placeholder="Preço" required class="w-24 px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15" />
             <input v-model="variation.maxAdditionals" type="number" min="0" placeholder="Máx comp." title="Máximo de complementos neste tamanho" class="w-24 px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15" />
+            <input
+              v-model="variation.barcode"
+              type="text"
+              placeholder="Cód. de barras"
+              title="Código EAN-13 — escaneie em qualquer lugar da tela ou digite aqui"
+              @keydown.enter.prevent
+              class="barcode-input w-36 px-3 py-2 text-sm border rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15 font-mono transition-colors duration-300"
+              :class="barcodeFlash === i
+                ? 'border-green-500 ring-4 ring-green-500/20'
+                : 'border-neutral-300 dark:border-neutral-700'"
+            />
             <button type="button" @click="removeVariation(i)" class="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors">
               <X class="w-4 h-4" />
             </button>
@@ -438,7 +449,47 @@ const storageCache = new Map()
 
 const normalizeStoragePrefix = (value) => String(value || '').trim().replace(/^\/+/, '').replace(/\/+$/, '')
 
+// --- LEITOR DE CÓDIGO DE BARRAS ---
+let barcodeBuffer = ''
+let barcodeLastTime = 0
+const barcodeFlash = ref(null) // índice da variação que acabou de receber scan
+
+const barcodeFormKeyHandler = (e) => {
+  const tag = document.activeElement?.tagName
+  if (tag === 'TEXTAREA') return
+
+  // Se o foco está em um input que não é o de barcode, ignora (deixa digitar normalmente)
+  const isOtherInput = tag === 'INPUT' && !document.activeElement?.classList.contains('barcode-input')
+  if (isOtherInput) return
+
+  const now = Date.now()
+  if (e.key === 'Enter') {
+    if (barcodeBuffer.length >= 6 && (now - barcodeLastTime) < 100) {
+      e.preventDefault()
+      const code = barcodeBuffer
+      const idx = form.value.variations.findIndex((v) => !v.barcode)
+      if (idx !== -1) {
+        form.value.variations[idx].barcode = code
+        barcodeFlash.value = idx
+        setTimeout(() => { barcodeFlash.value = null }, 1500)
+        toast.success(`Código ${code} registrado em "${form.value.variations[idx].name || `Variação ${idx + 1}`}"`)
+      } else {
+        toast.info(`Código ${code} lido — todas as variações já têm barcode`)
+      }
+    }
+    barcodeBuffer = ''
+    return
+  }
+
+  if (e.key.length === 1) {
+    if (now - barcodeLastTime > 100) barcodeBuffer = ''
+    barcodeBuffer += e.key
+    barcodeLastTime = now
+  }
+}
+
 onMounted(async () => {
+  window.addEventListener('keydown', barcodeFormKeyHandler)
   const catRes = await CatalogService.getCategories({ all: true })
   categories.value = catRes.data
 
@@ -463,7 +514,7 @@ onMounted(async () => {
         allowedOrderTypes: data.allowedOrderTypes ?? ['Mesa', 'Viagem', 'Entrega'],
         manageStock: data.manageStock || false,
         stock: data.stock || 0,
-        variations: (data.variations || []).map((v) => ({ name: v.name, price: v.price, maxAdditionals: v.maxAdditionals ?? null })),
+        variations: (data.variations || []).map((v) => ({ name: v.name, price: v.price, maxAdditionals: v.maxAdditionals ?? null, barcode: v.barcode ?? null })),
         weightBased: data.weightBased || false,
         pricePerKg: data.pricePerKg || 0,
         minPrice: data.minPrice || 0,
@@ -478,6 +529,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  window.removeEventListener('keydown', barcodeFormKeyHandler)
   clearCropQueue()
 })
 
@@ -671,7 +723,7 @@ const dragEnd = () => {
   dragOverIdx.value = null
 }
 
-const addVariation = () => { form.value.variations.push({ name: '', price: 0, maxAdditionals: null }) }
+const addVariation = () => { form.value.variations.push({ name: '', price: 0, maxAdditionals: null, barcode: null }) }
 const removeVariation = (i) => { form.value.variations.splice(i, 1) }
 
 const saveProduct = async () => {

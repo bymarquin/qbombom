@@ -838,6 +838,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { pendingBarcode } from '@/composables/useBarcodeScanner'
 import { useRouter } from 'vue-router'
 import {
   Search,
@@ -1004,6 +1005,35 @@ const buscarUsuario = async () => {
   }
 }
 
+// --- LEITOR DE CÓDIGO DE BARRAS ---
+const processarBarcode = async (code) => {
+  if (modalAberto.value || modalPagamentoAberto.value) return
+  try {
+    const { data } = await CatalogService.getProductByBarcode(code)
+    const { product, variation } = data
+    carrinho.value.push({
+      productId: product.id,
+      productName: product.name,
+      allowedOrderTypes: product.allowedOrderTypes ?? ['Mesa', 'Viagem', 'Entrega'],
+      variationId: variation.id,
+      variationName: variation.name,
+      quantity: 1,
+      selectedAdditionals: [],
+      observation: '',
+      totalPrice: Number(variation.price),
+    })
+    toast.success(`${product.name} (${variation.name}) adicionado!`)
+  } catch {
+    toast.error(`Código não encontrado: ${code}`)
+  }
+}
+
+watch(pendingBarcode, (code) => {
+  if (!code) return
+  pendingBarcode.value = null
+  processarBarcode(code)
+})
+
 onMounted(() => {
   if (!AuthService.isAuthenticated()) {
     router.push('/login')
@@ -1089,7 +1119,9 @@ const atalhosTeclado = (e) => {
   }
 }
 
-onUnmounted(() => window.removeEventListener('keydown', atalhosTeclado))
+onUnmounted(() => {
+  window.removeEventListener('keydown', atalhosTeclado)
+})
 
 // --- PAGAMENTO E FECHAMENTO ---
 const modalPagamentoAberto = ref(false)

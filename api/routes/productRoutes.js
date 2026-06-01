@@ -6,6 +6,7 @@ const checkPermission = require('../middlewares/checkPermission');
 
 // Listar produtos
 router.get('/', productController.index);
+router.get('/barcode/:code', productController.getByBarcode);
 router.get('/:id', productController.show);
 
 // MÉTODOS CRUD ADMIN com bloqueios de perfil
