@@ -743,8 +743,8 @@ const saveProduct = async () => {
       toast.success('Criado com sucesso!')
     }
     router.push('/app/produtos')
-  } catch {
-    toast.error('Erro ao salvar produto')
+  } catch (error) {
+    toast.error(error.response?.data?.error || 'Erro ao salvar produto')
   } finally {
     salvando.value = false
   }

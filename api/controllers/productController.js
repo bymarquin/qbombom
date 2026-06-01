@@ -148,6 +148,9 @@ exports.create = async (req, res) => {
     await product.reload({ include: [{ model: ProductVariation, as: 'variations' }, imagesInclude] });
     res.status(201).json(product);
   } catch (error) {
+    if (error.name === 'SequelizeUniqueConstraintError' && error.fields?.barcode) {
+      return res.status(409).json({ error: `O código de barras ${error.fields.barcode} já está cadastrado em outro produto.` });
+    }
     console.error('[create product]', error);
     res.status(500).json({ error: 'Failed to create product' });
   }
@@ -188,6 +191,9 @@ exports.update = async (req, res) => {
     await product.reload({ include: [{ model: ProductVariation, as: 'variations' }, imagesInclude] });
     res.json(product);
   } catch (error) {
+    if (error.name === 'SequelizeUniqueConstraintError' && error.fields?.barcode) {
+      return res.status(409).json({ error: `O código de barras ${error.fields.barcode} já está cadastrado em outro produto.` });
+    }
     console.error('[update product]', error);
     res.status(500).json({ error: 'Failed to update product' });
   }
