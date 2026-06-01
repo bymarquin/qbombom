@@ -321,6 +321,36 @@
       </aside>
     </main>
 
+    <!-- MODAL DE SELEÇÃO DE SABOR (BARCODE AMBÍGUO) -->
+    <div
+      v-if="modalBarcodeAberto"
+      class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200"
+      @click.self="modalBarcodeAberto = false"
+    >
+      <div class="bg-white dark:bg-neutral-900 rounded-2xl w-full max-w-sm shadow-xl border border-neutral-100 dark:border-neutral-800/50 overflow-hidden">
+        <div class="flex justify-between items-center px-5 py-4 border-b border-neutral-100 dark:border-neutral-800/50">
+          <h3 class="font-semibold text-neutral-900 dark:text-neutral-100">Qual sabor?</h3>
+          <button @click="modalBarcodeAberto = false" class="p-1 rounded-lg text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+            <X class="w-4 h-4" />
+          </button>
+        </div>
+        <ul class="divide-y divide-neutral-100 dark:divide-neutral-800/50">
+          <li v-for="opcao in barcodeOpcoes" :key="opcao.variation.id">
+            <button
+              @click="selecionarOpcaoBarcode(opcao)"
+              class="w-full flex items-center justify-between px-5 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+            >
+              <div>
+                <p class="text-sm font-medium text-neutral-900 dark:text-neutral-100">{{ opcao.product.name }}</p>
+                <p class="text-xs text-neutral-400">{{ opcao.variation.name }}</p>
+              </div>
+              <span class="text-sm font-semibold text-red-600">{{ formatarMoeda(opcao.variation.price) }}</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+
     <!-- MODAL DE CONSTRUÇÃO DO PRODUTO -->
     <div
       v-if="modalAberto"
@@ -1006,26 +1036,43 @@ const buscarUsuario = async () => {
 }
 
 // --- LEITOR DE CÓDIGO DE BARRAS ---
+const modalBarcodeAberto = ref(false)
+const barcodeOpcoes = ref([])
+
+const adicionarPorBarcode = ({ product, variation }) => {
+  carrinho.value.push({
+    productId: product.id,
+    productName: product.name,
+    allowedOrderTypes: product.allowedOrderTypes ?? ['Mesa', 'Viagem', 'Entrega'],
+    variationId: variation.id,
+    variationName: variation.name,
+    quantity: 1,
+    selectedAdditionals: [],
+    observation: '',
+    totalPrice: Number(variation.price),
+  })
+  toast.success(`${product.name} (${variation.name}) adicionado!`)
+}
+
 const processarBarcode = async (code) => {
-  if (modalAberto.value || modalPagamentoAberto.value) return
+  if (modalAberto.value || modalPagamentoAberto.value || modalBarcodeAberto.value) return
   try {
     const { data } = await CatalogService.getProductByBarcode(code)
-    const { product, variation } = data
-    carrinho.value.push({
-      productId: product.id,
-      productName: product.name,
-      allowedOrderTypes: product.allowedOrderTypes ?? ['Mesa', 'Viagem', 'Entrega'],
-      variationId: variation.id,
-      variationName: variation.name,
-      quantity: 1,
-      selectedAdditionals: [],
-      observation: '',
-      totalPrice: Number(variation.price),
-    })
-    toast.success(`${product.name} (${variation.name}) adicionado!`)
+    if (data.length === 1) {
+      adicionarPorBarcode(data[0])
+    } else {
+      barcodeOpcoes.value = data
+      modalBarcodeAberto.value = true
+    }
   } catch {
     toast.error(`Código não encontrado: ${code}`)
   }
+}
+
+const selecionarOpcaoBarcode = (opcao) => {
+  adicionarPorBarcode(opcao)
+  modalBarcodeAberto.value = false
+  barcodeOpcoes.value = []
 }
 
 watch(pendingBarcode, (code) => {
@@ -1105,7 +1152,8 @@ const atalhosTeclado = (e) => {
       if (!modalAberto.value && !modalPagamentoAberto.value) limparPedido()
       break
     case 'Escape':
-      if (modalAberto.value) fecharModalProduto()
+      if (modalBarcodeAberto.value) modalBarcodeAberto.value = false
+      else if (modalAberto.value) fecharModalProduto()
       else if (modalPagamentoAberto.value) fecharModalPagamento()
       break
     case 'Enter':

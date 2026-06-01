@@ -42,7 +42,6 @@ module.exports = (sequelize, DataTypes) => {
     barcode: {
       type: DataTypes.STRING(100),
       allowNull: true,
-      unique: true
     },
     productId: {
       type: DataTypes.UUID,

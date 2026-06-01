@@ -148,12 +148,6 @@ exports.create = async (req, res) => {
     await product.reload({ include: [{ model: ProductVariation, as: 'variations' }, imagesInclude] });
     res.status(201).json(product);
   } catch (error) {
-    if (error.name === 'SequelizeUniqueConstraintError' && error.fields?.barcode) {
-      const barcode = error.fields.barcode;
-      const conflict = await ProductVariation.findOne({ where: { barcode }, include: [{ model: Product, as: 'product', attributes: ['id', 'name'] }] });
-      console.error(`[create product] barcode ${barcode} já cadastrado em: ${conflict?.product?.name ?? 'produto desconhecido'} (${conflict?.product?.id ?? '?'})`);
-      return res.status(409).json({ error: `O código de barras ${barcode} já está cadastrado em outro produto.` });
-    }
     console.error('[create product]', error);
     res.status(500).json({ error: 'Failed to create product' });
   }
@@ -194,12 +188,6 @@ exports.update = async (req, res) => {
     await product.reload({ include: [{ model: ProductVariation, as: 'variations' }, imagesInclude] });
     res.json(product);
   } catch (error) {
-    if (error.name === 'SequelizeUniqueConstraintError' && error.fields?.barcode) {
-      const barcode = error.fields.barcode;
-      const conflict = await ProductVariation.findOne({ where: { barcode }, include: [{ model: Product, as: 'product', attributes: ['id', 'name'] }] });
-      console.error(`[update product] barcode ${barcode} já cadastrado em: ${conflict?.product?.name ?? 'produto desconhecido'} (${conflict?.product?.id ?? '?'})`);
-      return res.status(409).json({ error: `O código de barras ${barcode} já está cadastrado em outro produto.` });
-    }
     console.error('[update product]', error);
     res.status(500).json({ error: 'Failed to update product' });
   }
@@ -207,19 +195,19 @@ exports.update = async (req, res) => {
 
 exports.getByBarcode = async (req, res) => {
   try {
-    const variation = await ProductVariation.findOne({
+    const variations = await ProductVariation.findAll({
       where: { barcode: req.params.code },
       include: [
         {
           model: Product,
           as: 'product',
           where: { status: true },
-          include: [imagesInclude],
+          attributes: ['id', 'name', 'allowedOrderTypes'],
         },
       ],
     });
-    if (!variation) return res.status(404).json({ error: 'Product not found' });
-    res.json({ product: variation.product, variation });
+    if (!variations.length) return res.status(404).json({ error: 'Product not found' });
+    res.json(variations.map((v) => ({ product: v.product, variation: { id: v.id, name: v.name, price: v.price } })));
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
