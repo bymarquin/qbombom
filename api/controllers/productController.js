@@ -149,7 +149,10 @@ exports.create = async (req, res) => {
     res.status(201).json(product);
   } catch (error) {
     if (error.name === 'SequelizeUniqueConstraintError' && error.fields?.barcode) {
-      return res.status(409).json({ error: `O código de barras ${error.fields.barcode} já está cadastrado em outro produto.` });
+      const barcode = error.fields.barcode;
+      const conflict = await ProductVariation.findOne({ where: { barcode }, include: [{ model: Product, as: 'product', attributes: ['id', 'name'] }] });
+      console.error(`[create product] barcode ${barcode} já cadastrado em: ${conflict?.product?.name ?? 'produto desconhecido'} (${conflict?.product?.id ?? '?'})`);
+      return res.status(409).json({ error: `O código de barras ${barcode} já está cadastrado em outro produto.` });
     }
     console.error('[create product]', error);
     res.status(500).json({ error: 'Failed to create product' });
@@ -192,7 +195,10 @@ exports.update = async (req, res) => {
     res.json(product);
   } catch (error) {
     if (error.name === 'SequelizeUniqueConstraintError' && error.fields?.barcode) {
-      return res.status(409).json({ error: `O código de barras ${error.fields.barcode} já está cadastrado em outro produto.` });
+      const barcode = error.fields.barcode;
+      const conflict = await ProductVariation.findOne({ where: { barcode }, include: [{ model: Product, as: 'product', attributes: ['id', 'name'] }] });
+      console.error(`[update product] barcode ${barcode} já cadastrado em: ${conflict?.product?.name ?? 'produto desconhecido'} (${conflict?.product?.id ?? '?'})`);
+      return res.status(409).json({ error: `O código de barras ${barcode} já está cadastrado em outro produto.` });
     }
     console.error('[update product]', error);
     res.status(500).json({ error: 'Failed to update product' });
