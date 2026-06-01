@@ -29,7 +29,7 @@ export function initGlobalBarcodeScanner(router) {
         } else {
           // Outra tela — navega pro PDV e deixa o código pendente
           pendingBarcode.value = code
-          router.push('/pdv')
+          router.push('/app/pdv')
         }
         return
       }
