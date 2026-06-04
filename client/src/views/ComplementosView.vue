@@ -70,8 +70,8 @@
               <div>
                 <div class="flex items-center gap-2">
                   <p class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{{ group.name }}</p>
-                  <span v-if="group.minChoices > 0" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">obrigatório</span>
-                  <span v-else class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400">opcional</span>
+                  <span v-if="group.minChoices > 0" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800/50">obrigatório</span>
+                  <span v-else class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50">opcional</span>
                   <span v-if="group.countsTowardLimit === false" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">não conta</span>
                 </div>
                 <p class="text-xs text-neutral-400">{{ group.items?.length || 0 }} opções · mín {{ group.minChoices }} / máx {{ group.maxChoices }}</p>
@@ -241,8 +241,8 @@
             <div class="min-w-0 flex-1 cursor-pointer" @click="toggleAssign(group)">
               <div class="flex items-center gap-1.5 flex-wrap">
                 <p class="text-sm font-medium text-neutral-900 dark:text-neutral-100">{{ group.name }}</p>
-                <span v-if="group.minChoices > 0" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">obrigatório</span>
-                <span v-else class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400">opcional</span>
+                <span v-if="group.minChoices > 0" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800/50">obrigatório</span>
+                <span v-else class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50">opcional</span>
               </div>
               <p v-if="group.items?.length" class="text-xs text-neutral-400 truncate">
                 {{ group.items.map(i => i.name).join(' · ') }}
