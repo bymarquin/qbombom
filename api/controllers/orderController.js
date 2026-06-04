@@ -1,4 +1,4 @@
-const { Order, OrderItem, Product, ProductVariation, Customer, Setting, sequelize } = require('../models');
+const { Order, OrderItem, OrderPayment, Product, ProductVariation, Customer, Setting, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const whatsappService = require('../services/whatsappService');
 const thermalPrinter = require('../services/print/thermalPrinterService');
@@ -42,7 +42,12 @@ const ORDER_INCLUDES = [
       { model: Product, as: 'product', attributes: ['id', 'name', 'requiresPreparation'] },
       { model: ProductVariation, as: 'variation', attributes: ['id', 'name'] }
     ]
-  }
+  },
+  {
+    model: OrderPayment,
+    as: 'payments',
+    attributes: ['id', 'method', 'amount', 'status'],
+  },
 ];
 
 function clamp(value, min, max) {
@@ -503,7 +508,8 @@ exports.create = async (req, res) => {
     const {
       type, customerName, customerPhone, tableNumber, deliveryAddress,
       deliveryLatitude, deliveryLongitude, deliveryAccuracyMeters, deliveryLocationCapturedAt,
-      paymentStatus, paymentMethod, subtotal, discount, serviceFee, total, observation, items, whatsappOptIn
+      paymentStatus, paymentMethod, subtotal, discount, serviceFee, total, observation, items, whatsappOptIn,
+      payments,
     } = req.body;
 
     const resolvedServiceFee = Number.parseFloat(serviceFee);
@@ -655,6 +661,19 @@ exports.create = async (req, res) => {
       );
 
       await reserveStockAtomically(items, transaction);
+    }
+
+    // Persiste pagamentos estruturados quando enviados pelo frontend
+    if (Array.isArray(payments) && payments.length > 0) {
+      await OrderPayment.bulkCreate(
+        payments.map(p => ({
+          orderId: order.id,
+          method: p.method,
+          amount: parseFloat(p.amount),
+          status: p.status || (paymentStatus === 'pago' ? 'pago' : 'pendente'),
+        })),
+        { transaction }
+      );
     }
 
     await transaction.commit();
@@ -985,6 +1004,35 @@ exports.pixGatewayWebhook = async (req, res) => {
   } catch (error) {
     logger.error('orders.webhook.failed', error);
     return res.status(200).json({ ok: true });
+  }
+};
+
+exports.confirmPayment = async (req, res) => {
+  try {
+    const order = await Order.findByPk(req.params.id, { include: ORDER_INCLUDES });
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    const payment = await OrderPayment.findOne({
+      where: { id: req.params.paymentId, orderId: order.id },
+    });
+    if (!payment) return res.status(404).json({ error: 'Payment not found' });
+
+    payment.status = 'pago';
+    await payment.save();
+
+    // Recarrega pagamentos para derivar status consolidado do pedido
+    const allPayments = await OrderPayment.findAll({ where: { orderId: order.id } });
+    const allPaid = allPayments.every(p => p.status === 'pago');
+    if (allPaid) {
+      order.paymentStatus = 'pago';
+      await order.save();
+    }
+
+    const updated = await Order.findByPk(order.id, { include: ORDER_INCLUDES });
+    req.app.get('io')?.emit('orderUpdated', updated);
+    return res.json(updated);
+  } catch (error) {
+    return handleControllerError(res, 'orders.confirmPayment', error);
   }
 };
 

@@ -107,7 +107,28 @@
           </div>
           <div>
             <p class="text-xs text-neutral-500 dark:text-neutral-500 font-medium">Pagamento</p>
-            <p class="text-sm font-semibold text-neutral-900 dark:text-neutral-100 capitalize">
+            <!-- Pedidos com pagamentos estruturados (split) -->
+            <template v-if="order.payments?.length">
+              <div v-for="p in order.payments" :key="p.id" class="flex items-center gap-1.5 mt-0.5">
+                <span class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{{ p.method }}</span>
+                <span class="text-sm text-neutral-500 dark:text-neutral-400">{{ formatMoney(p.amount) }}</span>
+                <span
+                  class="text-[10px] font-bold px-1.5 py-0.5 rounded border"
+                  :class="p.status === 'pago'
+                    ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50'
+                    : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/50'"
+                >{{ p.status }}</span>
+                <button
+                  v-if="p.status !== 'pago' && (userRole === 'SUPER_ADMIN' || userRole === 'MANAGER' || userRole === 'CASHIER')"
+                  @click="confirmarPagamento(p.id)"
+                  class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-600 text-white hover:bg-green-700 transition ml-1"
+                >
+                  Confirmar
+                </button>
+              </div>
+            </template>
+            <!-- Pedidos legados (campo único) -->
+            <p v-else class="text-sm font-semibold text-neutral-900 dark:text-neutral-100 capitalize">
               {{ order.paymentStatus }} ({{ order.paymentMethod }})
             </p>
           </div>
@@ -366,6 +387,17 @@ const printOrder = async () => {
   }
   if (order.value.status === 'novo') {
     await updateStatus('em_preparo')
+  }
+}
+
+const confirmarPagamento = async (paymentId) => {
+  if (!order.value) return
+  try {
+    const res = await OrderService.confirmPayment(order.value.id, paymentId)
+    order.value = res.data
+    toast.success('Pagamento confirmado!')
+  } catch {
+    toast.error('Erro ao confirmar pagamento')
   }
 }
 

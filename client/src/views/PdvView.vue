@@ -765,30 +765,82 @@
 
           <!-- Métodos de Pagamento -->
           <section>
-            <h3
-              class="font-semibold text-neutral-900 dark:text-neutral-100 mb-3 text-sm uppercase tracking-wider"
-            >
-              Forma de Pagamento
-            </h3>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-semibold text-neutral-900 dark:text-neutral-100 text-sm uppercase tracking-wider">
+                Forma de Pagamento
+              </h3>
+              <button
+                type="button"
+                @click="togglePagamentoDividido"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all"
+                :class="pagamentoDividido
+                  ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300'
+                  : 'border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:border-neutral-300'"
+              >
+                {{ pagamentoDividido ? 'Dividido ✓' : 'Dividir pagamento' }}
+              </button>
+            </div>
+
+            <!-- Pagamento simples -->
+            <div v-if="!pagamentoDividido" class="grid grid-cols-2 gap-3">
               <button
                 v-for="metodo in metodosPagamento"
                 :key="metodo"
                 @click="metodoPagamentoSelecionado = metodo"
                 class="p-3 rounded-xl border font-medium text-sm transition-all duration-200 text-center"
-                :class="
-                  metodoPagamentoSelecionado === metodo
-                    ? 'border-red-600 bg-red-50 text-red-700 ring-1 ring-red-600'
-                    : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 dark:bg-neutral-950 hover:border-neutral-300 dark:border-neutral-700'
-                "
+                :class="metodoPagamentoSelecionado === metodo
+                  ? 'border-red-600 bg-red-50 text-red-700 ring-1 ring-red-600'
+                  : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 hover:border-neutral-300 dark:border-neutral-700'"
               >
                 {{ metodo }}
               </button>
             </div>
+
+            <!-- Pagamento dividido -->
+            <div v-else class="space-y-4">
+              <div v-for="(parcela, idx) in parcelas" :key="idx" class="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-3">
+                <p class="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                  {{ idx === 0 ? '1ª Forma' : '2ª Forma' }}
+                </p>
+                <div class="grid grid-cols-2 gap-2">
+                  <button
+                    v-for="metodo in metodosPagamento"
+                    :key="metodo"
+                    type="button"
+                    @click="parcela.method = metodo"
+                    class="py-2 rounded-lg border text-xs font-semibold transition-all text-center"
+                    :class="parcela.method === metodo
+                      ? 'border-red-600 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 ring-1 ring-red-600'
+                      : 'border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:border-neutral-300'"
+                  >
+                    {{ metodo }}
+                  </button>
+                </div>
+                <div>
+                  <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1 block">
+                    Valor (R$)
+                    <span v-if="idx === 0 && parcelas[1]" class="text-neutral-400 font-normal">
+                      — restante: {{ formatarMoeda(subtotal - (parseFloat(parcela.amount) || 0)) }}
+                    </span>
+                  </label>
+                  <input
+                    v-model.number="parcela.amount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    :max="subtotal"
+                    :placeholder="idx === 0 ? 'R$ 0,00' : formatarMoeda(subtotal - (parseFloat(parcelas[0].amount) || 0))"
+                    class="w-full p-2.5 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15"
+                    @input="idx === 0 && autoCompletarSegundaParcela()"
+                  />
+                </div>
+              </div>
+              <p v-if="erroParcelas" class="text-xs text-red-600 dark:text-red-400 font-medium">{{ erroParcelas }}</p>
+            </div>
           </section>
 
           <div
-            v-if="metodoPagamentoSelecionado === 'Dinheiro'"
+            v-if="!pagamentoDividido && metodoPagamentoSelecionado === 'Dinheiro'"
             class="animate-in fade-in slide-in-from-top-2"
           >
             <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block"
@@ -1176,6 +1228,52 @@ const modalPagamentoAberto = ref(false)
 const metodosPagamento = ['PIX', 'Crédito', 'Débito', 'Dinheiro']
 const metodoPagamentoSelecionado = ref('PIX')
 const aguardandoPix = ref(false)
+const pagamentoDividido = ref(false)
+const parcelas = ref([
+  { method: 'PIX', amount: '' },
+  { method: 'Dinheiro', amount: '' },
+])
+const erroParcelas = ref('')
+
+const togglePagamentoDividido = () => {
+  pagamentoDividido.value = !pagamentoDividido.value
+  parcelas.value = [{ method: 'PIX', amount: '' }, { method: 'Dinheiro', amount: '' }]
+  erroParcelas.value = ''
+}
+
+const autoCompletarSegundaParcela = () => {
+  const primeira = parseFloat(parcelas.value[0].amount) || 0
+  const restante = parseFloat((subtotal.value - primeira).toFixed(2))
+  if (restante >= 0) parcelas.value[1].amount = restante
+}
+
+const validarParcelas = () => {
+  const total = parcelas.value.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0)
+  if (Math.abs(total - subtotal.value) > 0.01) {
+    erroParcelas.value = `A soma das parcelas (${formatarMoeda(total)}) não bate com o total (${formatarMoeda(subtotal.value)}).`
+    return false
+  }
+  if (parcelas.value.some(p => !p.method || !(parseFloat(p.amount) > 0))) {
+    erroParcelas.value = 'Preencha o método e o valor de cada parcela.'
+    return false
+  }
+  erroParcelas.value = ''
+  return true
+}
+
+const paymentsPayload = (pago) => {
+  if (!pagamentoDividido.value) return undefined
+  return parcelas.value.map(p => ({
+    method: p.method,
+    amount: parseFloat(p.amount),
+    status: pago ? 'pago' : 'pendente',
+  }))
+}
+
+const paymentMethodSummary = () => {
+  if (!pagamentoDividido.value) return metodoPagamentoSelecionado.value
+  return parcelas.value.map(p => p.method).join(' + ')
+}
 
 const abrirModalPagamento = () => {
   if (carrinho.value.length === 0) return
@@ -1186,6 +1284,9 @@ const fecharModalPagamento = () => {
   modalPagamentoAberto.value = false
   metodoPagamentoSelecionado.value = 'PIX'
   aguardandoPix.value = false
+  pagamentoDividido.value = false
+  parcelas.value = [{ method: 'PIX', amount: '' }, { method: 'Dinheiro', amount: '' }]
+  erroParcelas.value = ''
 }
 
 const cancelarPedido = async () => {
@@ -1246,6 +1347,7 @@ const finalizarPagarDepois = async () => {
 
 const finalizarPedido = async () => {
   if (carrinho.value.length === 0) return
+  if (pagamentoDividido.value && !validarParcelas()) return
   salvandoPedido.value = true
 
   try {
@@ -1256,16 +1358,17 @@ const finalizarPedido = async () => {
       tableNumber: tipoConsumo.value === 'Mesa' ? numeroMesa.value.trim() || undefined : undefined,
       deliveryAddress: tipoConsumo.value === 'Entrega' ? enderecoEntrega.value : undefined,
       paymentStatus: 'pago',
-      paymentMethod: metodoPagamentoSelecionado.value,
+      paymentMethod: paymentMethodSummary(),
       subtotal: subtotal.value,
       discount: 0,
       total: subtotal.value,
+      payments: paymentsPayload(true),
       items: carrinho.value.map((item) => ({
         productId: item.productId,
         productVariationId: item.variationId || null,
         variationName: item.variationName || null,
         quantity: item.quantity,
-        unitPrice: item.totalPrice, // O totalPrice por 1 un é gravado como unitPrice
+        unitPrice: item.totalPrice,
         totalPrice: item.totalPrice * item.quantity,
         observation: item.observation,
         selectedAdditionals: item.selectedAdditionals,

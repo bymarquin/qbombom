@@ -342,6 +342,9 @@ export const OrderService = {
   cancelOrder(id) {
     return api.patch(`/orders/${id}/cancel`)
   },
+  confirmPayment(orderId, paymentId) {
+    return api.patch(`/orders/${orderId}/payments/${paymentId}/confirm`)
+  },
 }
 
 export const GeocodeService = {
