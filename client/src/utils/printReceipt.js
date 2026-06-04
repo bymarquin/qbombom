@@ -390,14 +390,22 @@ const buildReceiptHtml = (order, paperSize, deliveryQrUrl = '') => {
         <hr class="divider">
 
         <div class="totals">
-          <div class="total-row">
-            <span>Pagamento</span>
-            <span>${order.paymentMethod || 'Nao informado'}</span>
-          </div>
-          <div class="total-row">
-            <span>Situacao</span>
-            <span>${order.paymentStatus === 'pago' ? 'PAGO' : 'PENDENTE'}</span>
-          </div>
+          ${Array.isArray(order.payments) && order.payments.length > 0
+            ? order.payments.map(p => `
+              <div class="total-row">
+                <span>${esc(p.method)}</span>
+                <span>R$ ${Number(p.amount || 0).toFixed(2).replace('.', ',')} &mdash; ${p.status === 'pago' ? 'PAGO' : 'PENDENTE'}</span>
+              </div>`).join('')
+            : `
+              <div class="total-row">
+                <span>Pagamento</span>
+                <span>${esc(order.paymentMethod || 'Nao informado')}</span>
+              </div>
+              <div class="total-row">
+                <span>Situacao</span>
+                <span>${order.paymentStatus === 'pago' ? 'PAGO' : 'PENDENTE'}</span>
+              </div>`
+          }
           <div class="total-row grand">
             <span>TOTAL</span>
             <span>R$ ${Number(order.total || 0).toFixed(2).replace('.', ',')}</span>

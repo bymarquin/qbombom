@@ -231,8 +231,16 @@ function buildOrderBuffer(order, storeConfig = {}) {
     parts.push(pad('Desconto', `-R$${Number(order.discount).toFixed(2).replace('.', ',')}`, cols));
   }
 
-  parts.push(pad('Pagamento', sanitize(order.paymentMethod || 'Nao informado'), cols));
-  parts.push(pad('Situacao', order.paymentStatus === 'pago' ? 'PAGO' : 'PENDENTE', cols));
+  if (Array.isArray(order.payments) && order.payments.length > 0) {
+    for (const p of order.payments) {
+      const valor = `R$${Number(p.amount || 0).toFixed(2).replace('.', ',')}`;
+      const status = p.status === 'pago' ? 'PAGO' : 'PEND';
+      parts.push(pad(sanitize(p.method), `${valor} ${status}`, cols));
+    }
+  } else {
+    parts.push(pad('Pagamento', sanitize(order.paymentMethod || 'Nao informado'), cols));
+    parts.push(pad('Situacao', order.paymentStatus === 'pago' ? 'PAGO' : 'PENDENTE', cols));
+  }
 
   parts.push(CMD.BOLD_ON, CMD.DOUBLE_ON);
   parts.push(pad('TOTAL', `R$${Number(order.total || 0).toFixed(2).replace('.', ',')}`, cols));
