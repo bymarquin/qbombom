@@ -174,7 +174,7 @@
                 <!-- Obrigatório: seleção única -->
                 <span
                   v-if="!isSaborGroup(grupo) && grupo.minChoices >= 1 && grupo.maxChoices === 1"
-                  class="bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-[10px] uppercase px-2 py-0.5 rounded font-bold border border-neutral-200 dark:border-neutral-800"
+                  class="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[10px] uppercase px-2 py-0.5 rounded font-bold border border-red-200 dark:border-red-800/50"
                 >
                   Obrigatório
                 </span>
