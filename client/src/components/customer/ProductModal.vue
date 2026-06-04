@@ -171,26 +171,29 @@
                 <h3 class="font-bold text-neutral-900 dark:text-neutral-100 text-sm tracking-tight">
                   {{ grupo.name }}
                 </h3>
+                <!-- Obrigatório: seleção única -->
                 <span
-                  v-if="grupo.stepperMode"
-                  class="bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-[10px] uppercase px-2 py-0.5 rounded font-bold border border-neutral-200 dark:border-neutral-800"
-                >
-                  Opcional
-                </span>
-                <span
-                  v-else-if="!isSaborGroup(grupo) && grupo.maxChoices === 1 && grupo.minChoices >= 1"
+                  v-if="!isSaborGroup(grupo) && grupo.minChoices >= 1 && grupo.maxChoices === 1"
                   class="bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-[10px] uppercase px-2 py-0.5 rounded font-bold border border-neutral-200 dark:border-neutral-800"
                 >
                   Obrigatório
                 </span>
+                <!-- Obrigatório: múltipla escolha — mostra contador -->
                 <span
-                  v-else-if="grupo.minChoices > 0"
+                  v-else-if="!isSaborGroup(grupo) && grupo.minChoices > 0"
                   class="text-xs font-semibold px-2 py-1 rounded-md border"
                   :class="qtdSelecionadaNoGrupo(grupo.id) < minEfetivoGrupo(grupo)
                     ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-100 dark:border-red-800/50'
                     : 'bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700'"
                 >
                   {{ qtdSelecionadaNoGrupo(grupo.id) }} / {{ minEfetivoGrupo(grupo) }}
+                </span>
+                <!-- Opcional -->
+                <span
+                  v-else-if="!isSaborGroup(grupo)"
+                  class="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] uppercase px-2 py-0.5 rounded font-bold border border-amber-200 dark:border-amber-800/50"
+                >
+                  Opcional
                 </span>
               </div>
 
