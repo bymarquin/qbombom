@@ -53,21 +53,35 @@
       <!-- Confirmação PIX pendente -->
       <div
         v-if="order.paymentMethod === 'PIX' && order.paymentStatus !== 'pago'"
-        class="p-4 rounded-xl flex items-center justify-between gap-4"
-        :class="'bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800/40'"
+        class="p-4 rounded-xl border border-orange-200 dark:border-orange-800/40 bg-orange-50 dark:bg-orange-900/10"
       >
-        <div>
-          <p class="text-sm font-bold"
-            :class="'text-orange-800 dark:text-orange-300'"
+        <p class="text-sm font-bold text-orange-800 dark:text-orange-300 mb-1">
+          Aguardando pagamento PIX — R$ {{ parseFloat(order.total).toFixed(2) }}
+        </p>
+        <p class="text-xs text-orange-700 dark:text-orange-400 mb-3">
+          A confirmação automática pelo Gateway PIX pode demorar. Se o cliente enviou o comprovante pelo WhatsApp, selecione o método e confirme manualmente.
+        </p>
+        <template v-if="userRole === 'SUPER_ADMIN' || userRole === 'MANAGER' || userRole === 'CASHIER'">
+          <div class="flex flex-wrap gap-2 mb-3">
+            <button
+              v-for="metodo in ['PIX', 'Crédito', 'Débito', 'Dinheiro']"
+              :key="metodo"
+              @click="metodoPagamentoReceber = metodo"
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all"
+              :class="metodoPagamentoReceber === metodo
+                ? 'border-orange-600 bg-orange-600 text-white'
+                : 'border-orange-300 dark:border-orange-700 bg-white dark:bg-neutral-900 text-orange-800 dark:text-orange-300 hover:bg-orange-50'"
+            >
+              {{ metodo }}
+            </button>
+          </div>
+          <button
+            @click="receberPagamento"
+            class="w-full px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition"
           >
-            Aguardando pagamento PIX
-          </p>
-          <p class="text-xs"
-            :class="'text-orange-700 dark:text-orange-400'"
-          >
-            A confirmação acontece automaticamente pelo Gateway PIX.
-          </p>
-        </div>
+            Confirmar Recebimento
+          </button>
+        </template>
       </div>
 
       <!-- Info Grid -->
