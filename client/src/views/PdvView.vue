@@ -885,7 +885,7 @@
               Voltar
             </button>
             <button
-              v-if="!aguardandoPix"
+              v-if="!aguardandoPix && !pagamentoDividido"
               @click="finalizarPagarDepois"
               :disabled="salvandoPedido"
               class="px-5 py-2.5 font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 disabled:opacity-70 disabled:cursor-not-allowed rounded-lg transition-colors"
@@ -894,7 +894,7 @@
             </button>
             <button
               v-if="!aguardandoPix"
-              @click="metodoPagamentoSelecionado === 'PIX' ? (aguardandoPix = true) : finalizarPedido()"
+              @click="pagamentoDividido ? finalizarPedido() : (metodoPagamentoSelecionado === 'PIX' ? (aguardandoPix = true) : finalizarPedido())"
               :disabled="salvandoPedido"
               class="px-6 py-2.5 font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-70 disabled:cursor-not-allowed rounded-lg shadow-sm dark:shadow-none transition-all duration-200 active:scale-[0.98] flex items-center gap-2"
             >
@@ -1212,7 +1212,7 @@ const atalhosTeclado = (e) => {
       if (e.target.tagName === 'TEXTAREA') break
       if (modalAberto.value && podeConfirmarProduto.value && !loadingProduto.value) confirmarItem()
       else if (modalPagamentoAberto.value && !salvandoPedido.value) {
-        if (metodoPagamentoSelecionado.value === 'PIX' && !aguardandoPix.value) aguardandoPix.value = true
+        if (!pagamentoDividido.value && metodoPagamentoSelecionado.value === 'PIX' && !aguardandoPix.value) aguardandoPix.value = true
         else finalizarPedido()
       }
       break
