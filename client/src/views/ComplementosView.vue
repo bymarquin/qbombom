@@ -70,9 +70,11 @@
               <div>
                 <div class="flex items-center gap-2">
                   <p class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{{ group.name }}</p>
+                  <span v-if="group.minChoices > 0" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">obrigatório</span>
+                  <span v-else class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400">opcional</span>
                   <span v-if="group.countsTowardLimit === false" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">não conta</span>
                 </div>
-                <p class="text-xs text-neutral-400">{{ group.items?.length || 0 }} opções</p>
+                <p class="text-xs text-neutral-400">{{ group.items?.length || 0 }} opções · mín {{ group.minChoices }} / máx {{ group.maxChoices }}</p>
               </div>
               <div class="flex items-center gap-1.5">
                 <button @click="editGroup(group)" class="p-1.5 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors">
@@ -111,11 +113,30 @@
           <form @submit.prevent="saveGroup" class="flex flex-col gap-3">
             <p class="text-xs font-semibold text-neutral-700 dark:text-neutral-300">{{ groupForm.id ? 'Editar Grupo' : 'Novo Grupo' }}</p>
             <input v-model="groupForm.name" type="text" required placeholder="Nome do grupo" class="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-red-500" />
-            <div class="grid grid-cols-4 gap-2">
-              <div class="flex flex-col gap-1">
-                <label class="text-xs text-neutral-500 dark:text-neutral-400">Mínimo</label>
-                <input v-model.number="groupForm.minChoices" type="number" min="0" class="w-full px-2 py-1.5 text-xs border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-500" />
-              </div>
+            <!-- Obrigatório / Opcional -->
+            <div class="flex gap-2">
+              <button
+                type="button"
+                @click="groupForm.minChoices = 1"
+                class="flex-1 py-2 rounded-lg text-xs font-bold border transition-all"
+                :class="groupForm.minChoices > 0
+                  ? 'bg-red-600 border-red-600 text-white'
+                  : 'bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:border-red-400'"
+              >
+                Obrigatório
+              </button>
+              <button
+                type="button"
+                @click="groupForm.minChoices = 0"
+                class="flex-1 py-2 rounded-lg text-xs font-bold border transition-all"
+                :class="groupForm.minChoices === 0
+                  ? 'bg-neutral-700 dark:bg-neutral-600 border-neutral-700 dark:border-neutral-600 text-white'
+                  : 'bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:border-neutral-500'"
+              >
+                Opcional
+              </button>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
               <div class="flex flex-col gap-1">
                 <label class="text-xs text-neutral-500 dark:text-neutral-400">Máximo</label>
                 <input v-model.number="groupForm.maxChoices" type="number" min="0" class="w-full px-2 py-1.5 text-xs border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-500" />
@@ -218,7 +239,11 @@
               <Check v-if="isAssigned(group.id)" class="w-3 h-3 text-white" />
             </div>
             <div class="min-w-0 flex-1 cursor-pointer" @click="toggleAssign(group)">
-              <p class="text-sm font-medium text-neutral-900 dark:text-neutral-100">{{ group.name }}</p>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <p class="text-sm font-medium text-neutral-900 dark:text-neutral-100">{{ group.name }}</p>
+                <span v-if="group.minChoices > 0" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">obrigatório</span>
+                <span v-else class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400">opcional</span>
+              </div>
               <p v-if="group.items?.length" class="text-xs text-neutral-400 truncate">
                 {{ group.items.map(i => i.name).join(' · ') }}
               </p>
