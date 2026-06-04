@@ -203,7 +203,7 @@
                   class="p-3 rounded-xl border text-left transition-all duration-200"
                   :class="checkout.tipo === 'Mesa' ? 'border-red-500 bg-red-50 dark:bg-red-900/20 ring-2 ring-red-500/30' : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:border-neutral-300 dark:hover:border-neutral-600'"
                 >
-                  <p class="text-sm font-bold text-neutral-900 dark:text-neutral-100">Mesa</p>
+                  <p class="text-sm font-bold text-neutral-900 dark:text-neutral-100">Mesa/Local</p>
                   <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Consumir no local</p>
                 </button>
                 <button
@@ -211,7 +211,7 @@
                   class="p-3 rounded-xl border text-left transition-all duration-200"
                   :class="checkout.tipo === 'Viagem' ? 'border-red-500 bg-red-50 dark:bg-red-900/20 ring-2 ring-red-500/30' : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:border-neutral-300 dark:hover:border-neutral-600'"
                 >
-                  <p class="text-sm font-bold text-neutral-900 dark:text-neutral-100">Levar</p>
+                  <p class="text-sm font-bold text-neutral-900 dark:text-neutral-100">Levar/Buscar</p>
                   <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Retirar no balcão</p>
                 </button>
                 <button
@@ -219,7 +219,7 @@
                   class="p-3 rounded-xl border text-left transition-all duration-200"
                   :class="checkout.tipo === 'Entrega' ? 'border-red-500 bg-red-50 dark:bg-red-900/20 ring-2 ring-red-500/30' : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:border-neutral-300 dark:hover:border-neutral-600'"
                 >
-                  <p class="text-sm font-bold text-neutral-900 dark:text-neutral-100">Entrega</p>
+                  <p class="text-sm font-bold text-neutral-900 dark:text-neutral-100">Entrega/Delivery</p>
                   <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Receber em casa</p>
                 </button>
               </div>
@@ -288,61 +288,101 @@
             </div>
 
             <div v-show="etapaAtual === 4" class="space-y-4">
-              <div class="flex flex-col gap-2">
-                <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300"
-                  >Forma de Pagamento</label
+              <div class="flex items-center justify-between">
+                <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Forma de Pagamento</label>
+                <button
+                  type="button"
+                  @click="toggleSplit"
+                  class="text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all"
+                  :class="checkout.pagamentoDividido
+                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300'
+                    : 'border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:border-neutral-300'"
                 >
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <button
-                    v-for="option in paymentOptions"
-                    :key="option"
-                    type="button"
-                    @click="checkout.pagamento = option"
-                    class="p-3 rounded-xl border text-left text-sm font-semibold transition-all duration-200"
-                    :class="checkout.pagamento === option
-                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 ring-2 ring-red-500/30'
-                      : 'border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-900 hover:border-neutral-300 dark:hover:border-neutral-600'"
-                  >
-                    {{ option }}
-                  </button>
-                </div>
+                  {{ checkout.pagamentoDividido ? 'Dividido ✓' : 'Dividir pagamento' }}
+                </button>
               </div>
 
-              <div v-if="checkout.pagamento === 'Dinheiro'" class="flex flex-col gap-2">
-              <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300"
-                >Precisa de troco?</label
-              >
-              <div class="flex items-center gap-3">
-                <label
-                  class="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400"
+              <!-- Pagamento simples -->
+              <div v-if="!checkout.pagamentoDividido" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  v-for="option in paymentOptions"
+                  :key="option"
+                  type="button"
+                  @click="checkout.pagamento = option"
+                  class="p-3 rounded-xl border text-left text-sm font-semibold transition-all duration-200"
+                  :class="checkout.pagamento === option
+                    ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 ring-2 ring-red-500/30'
+                    : 'border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-900 hover:border-neutral-300 dark:hover:border-neutral-600'"
                 >
-                  <input
-                    type="radio"
-                    :value="false"
-                    v-model="checkout.precisaTroco"
-                    class="accent-red-600 w-4 h-4"
-                  />
-                  Não
-                </label>
-                <label
-                  class="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400"
-                >
-                  <input
-                    type="radio"
-                    :value="true"
-                    v-model="checkout.precisaTroco"
-                    class="accent-red-600 w-4 h-4"
-                  />
-                  Sim
-                </label>
+                  {{ option }}
+                </button>
               </div>
-              <input
-                v-if="checkout.precisaTroco"
-                v-model="checkout.trocoPara"
-                type="number"
-                placeholder="Troco para quanto? (Ex: 50)"
-                class="w-full px-3.5 py-2.5 mt-1 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-all duration-200 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15"
-              />
+
+              <!-- Pagamento dividido -->
+              <div v-else class="space-y-3">
+                <div
+                  v-for="(parcela, idx) in checkout.parcelas"
+                  :key="idx"
+                  class="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-3"
+                >
+                  <p class="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                    {{ idx === 0 ? '1ª Forma' : '2ª Forma' }}
+                  </p>
+                  <div class="grid grid-cols-2 gap-2">
+                    <button
+                      v-for="option in paymentOptions"
+                      :key="option"
+                      type="button"
+                      @click="parcela.method = option"
+                      class="py-2 rounded-lg border text-xs font-semibold transition-all text-center"
+                      :class="parcela.method === option
+                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 ring-2 ring-red-500/30'
+                        : 'border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:border-neutral-300'"
+                    >
+                      {{ option }}
+                    </button>
+                  </div>
+                  <div>
+                    <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1 block">
+                      Valor (R$)
+                      <span v-if="idx === 0" class="text-neutral-400 font-normal">
+                        — restante: {{ formatarMoeda(props.total - (parseFloat(parcela.amount) || 0)) }}
+                      </span>
+                    </label>
+                    <input
+                      v-model.number="parcela.amount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      :max="props.total"
+                      :placeholder="idx === 0 ? '0,00' : formatarMoeda(props.total - (parseFloat(checkout.parcelas[0].amount) || 0))"
+                      class="w-full px-3.5 py-2.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15"
+                      @input="idx === 0 && autoCompletarSegunda()"
+                    />
+                  </div>
+                </div>
+                <p v-if="erroParcelas" class="text-xs text-red-600 dark:text-red-400 font-medium">{{ erroParcelas }}</p>
+              </div>
+
+              <div v-if="!checkout.pagamentoDividido && checkout.pagamento === 'Dinheiro'" class="flex flex-col gap-2">
+                <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Precisa de troco?</label>
+                <div class="flex items-center gap-3">
+                  <label class="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                    <input type="radio" :value="false" v-model="checkout.precisaTroco" class="accent-red-600 w-4 h-4" />
+                    Não
+                  </label>
+                  <label class="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                    <input type="radio" :value="true" v-model="checkout.precisaTroco" class="accent-red-600 w-4 h-4" />
+                    Sim
+                  </label>
+                </div>
+                <input
+                  v-if="checkout.precisaTroco"
+                  v-model="checkout.trocoPara"
+                  type="number"
+                  placeholder="Troco para quanto? (Ex: 50)"
+                  class="w-full px-3.5 py-2.5 mt-1 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 transition-all duration-200 focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/15"
+                />
               </div>
             </div>
           </div>
@@ -499,6 +539,7 @@ const props = defineProps({
 const emit = defineEmits(["remover-item", "enviar-pedido"]);
 
 const etapaAtual = ref(1);
+const erroParcelas = ref('');
 
 const checkoutSteps = [
   { id: 1, label: 'Pedido', icon: Package },
@@ -543,8 +584,25 @@ const fechar = () => {
   isOpen.value = false;
 };
 
+const toggleSplit = () => {
+  checkout.value.pagamentoDividido = !checkout.value.pagamentoDividido;
+  checkout.value.parcelas = [{ method: 'PIX', amount: '' }, { method: 'Dinheiro', amount: '' }];
+  erroParcelas.value = '';
+};
+
+const autoCompletarSegunda = () => {
+  const primeira = parseFloat(checkout.value.parcelas[0].amount) || 0;
+  const restante = parseFloat((props.total - primeira).toFixed(2));
+  if (restante >= 0) checkout.value.parcelas[1].amount = restante;
+};
+
 watch(isOpen, (opened) => {
-  if (opened) etapaAtual.value = 1;
+  if (opened) {
+    etapaAtual.value = 1;
+    checkout.value.pagamentoDividido = false;
+    checkout.value.parcelas = [{ method: 'PIX', amount: '' }, { method: 'Dinheiro', amount: '' }];
+    erroParcelas.value = '';
+  }
 });
 
 watch(() => checkout.value.tipo, (tipo) => {

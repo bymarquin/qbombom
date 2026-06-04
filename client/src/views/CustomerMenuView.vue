@@ -543,6 +543,8 @@ const checkout = ref(
     mesa: "",
     whatsappOptIn: false,
     pagamento: "PIX",
+    pagamentoDividido: false,
+    parcelas: [{ method: "PIX", amount: "" }, { method: "Dinheiro", amount: "" }],
     precisaTroco: false,
     trocoPara: "",
     endereco: {
@@ -581,11 +583,13 @@ const podeFinalizarPedido = computed(() => {
   if (!checkout.value.tipo) return false;
   if (itensIncompativeis.value.length > 0) return false;
   if (checkout.value.tipo === "Entrega") {
-    return Boolean(
-      checkout.value.endereco.rua &&
-      checkout.value.endereco.numero &&
-      checkout.value.endereco.bairro,
-    );
+    if (!checkout.value.endereco.rua || !checkout.value.endereco.numero || !checkout.value.endereco.bairro) return false;
+  }
+  if (checkout.value.pagamentoDividido) {
+    const parcelas = checkout.value.parcelas || [];
+    if (parcelas.some(p => !p.method || !(parseFloat(p.amount) > 0))) return false;
+    const soma = parcelas.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
+    if (Math.abs(soma - totalComTaxaServico.value) > 0.01) return false;
   }
   return true;
 });
@@ -1058,8 +1062,13 @@ const enviarPedido = async () => {
         deliveryAccuracyMeters: geo.accuracyMeters ?? undefined,
         deliveryLocationCapturedAt: geo.capturedAt ?? undefined,
       } : {}),
-      paymentStatus: "pendente", // Pedido online nasce como pagamento pendente sempre
-      paymentMethod: checkout.value.pagamento,
+      paymentStatus: "pendente",
+      paymentMethod: checkout.value.pagamentoDividido
+        ? checkout.value.parcelas.map(p => p.method).join(" + ")
+        : checkout.value.pagamento,
+      payments: checkout.value.pagamentoDividido
+        ? checkout.value.parcelas.map(p => ({ method: p.method, amount: parseFloat(p.amount), status: "pendente" }))
+        : undefined,
       subtotal: subtotal.value,
       serviceFee: roundToCents(taxaServico.value + taxaEntrega.value),
       discount: 0,
